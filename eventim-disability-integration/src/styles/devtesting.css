@@ -1,0 +1,22 @@
+/* src/styles/devtesting.css */
+
+.devtesting-container {
+    padding: 2rem;
+    max-width: 600px;
+    margin: 0 auto;
+}
+
+.devtesting-container input {
+    display: block;
+    margin: 0.5rem 0;
+}
+
+.devtesting-container button {
+    margin: 0.5rem 0;
+}
+
+.devtesting-container img {
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    max-width: 100%;
+}
