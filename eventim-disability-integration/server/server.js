@@ -46,6 +46,32 @@ app.get('/image/:id', async (req, res) => {
     }
 });
 
+app.post('/register', async (req, res) => {
+    try {
+        const { firstName, lastName, email, password, dateOfBirth, phone, accessibilityNeeds } = req.body;
+
+        // Check if user already exists
+        const userCheck = await client.query('SELECT * FROM users WHERE email = $1', [email]);
+        if (userCheck.rows.length > 0) {
+            return res.status(400).json({ message: 'Email already registered' });
+        }
+
+        // Insert new user
+        const result = await client.query(
+            'INSERT INTO users (first_name, last_name, email, password, date_of_birth, phone, accessibility_needs) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING *',
+            [firstName, lastName, email, password, dateOfBirth || null, phone || null, accessibilityNeeds || null]
+        );
+
+        // Return success without sending password back
+        const user = result.rows[0];
+        delete user.password;
+        res.status(201).json({ message: 'Registration successful', user });
+    } catch (error) {
+        console.error('Registration error:', error);
+        res.status(500).json({ message: 'Server error during registration' });
+    }
+});
+
 const credentials = require('./credentials.json')
 
 const client = new Client(credentials);
