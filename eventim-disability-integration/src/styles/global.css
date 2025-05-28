@@ -23,6 +23,10 @@ body, html {
     flex: 1;
 }
 
+.homepage{
+    margin: 20px 0px 0px 0px;
+}
+
 .link-clean{
     text-decoration: none;
     color: inherit;
@@ -323,7 +327,6 @@ nav-bar .dropdown-menu .dropdown-item:hover > .sub-menu {
 .footer-hotline-title {
     font-size: 15px;
     margin-bottom: 1px;
-
     margin-top: 1px;
 }
 
@@ -343,4 +346,94 @@ nav-bar .dropdown-menu .dropdown-item:hover > .sub-menu {
     font-size: 10px;
     margin-top: 0;
 }
+
+
+/*SmallEventCard*/
+.event-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 16px;
+    justify-content: flex-start;
+}
+
+.small-event-card {
+    width: 170px;
+    height: auto;
+    background-color: white;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+}
+
+.small-event-image {
+    width: 170px;
+    height: 200px;
+    object-fit: cover; /* Wichtig: beschneidet und füllt das Bild */
+    object-position: center;
+}
+
+.event-info {
+    padding: 8px;
+    text-align: center;
+    width: 100%;
+}
+
+.small-event-title {
+    font-size: 14px;
+    font-weight: 600;
+    margin-top: 5px;
+}
+
+.event-link {
+    font-size: 14px;
+    color: #2563eb;
+    cursor: pointer;
+    margin-top: auto;
+    margin-bottom: 10px;
+    text-decoration: none;
+    text-align: center;
+}
+
+.event-link:hover {
+    color: #1e40af;
+}
+
+/*Scoller*/
+.scroller-container {
+    width: 100%;
+    overflow: hidden;
+    position: relative;
+}
+
+.scroller {
+    display: flex;
+    animation: scroll 40s linear infinite;
+}
+
+.scroller-img {
+    width: 200px;
+    height: auto;
+    margin-right: 10px;
+    border-radius: 12px;
+    transition: transform 0.3s ease-in-out;
+}
+
+.scroller-img:hover {
+    transform: scale(1.05);
+}
+
+@keyframes scroll {
+    0% {
+        transform: translateX(0);
+    }
+    100% {
+        transform: translateX(-50%);
+    }
+}
+
+
 

@@ -1,25 +1,28 @@
-// pages/index.jsx
-import Link from 'next/link';
-import NavBar from '../components/nav-bar';
+import SmallEventCard from "../components/smallEventCard.jsx";
+import ImageScroller from "../components/ImageScroller";
 
-export default function Home() {
-    const pages = [
-        { href: '/', label: 'Homepage' },
-        { href: '/devtesting', label: 'Dev Testing' },
-    ];
+const eventData = [
+    { image: "/pictures/TestPictures/Test-Picture-EventCard.jpg", title: "Teddy Teclebrhan", link: "https://www.google.com"},
+    { image: "/pictures/TestPictures/Test-Picture-EventCard2.jpg", title: "Lisa Eckhart" },
+    { image: "/pictures/TestPictures/Test-Picture-EventCard.jpg", title: "Teddy Teclebrhan" },
+    { image: "/pictures/TestPictures/Test-Picture-EventCard2.jpg", title: "Lisa Eckhart" },
+    { image: "/pictures/TestPictures/Test-Picture-EventCard.jpg", title: "Teddy Teclebrhan" },
+    { image: "/pictures/TestPictures/Test-Picture-EventCard2.jpg", title: "Lisa Eckhart" },
+    { image: "/pictures/TestPictures/Test-Picture-EventCard.jpg", title: "Teddy Teclebrhan" },
+    { image: "/pictures/TestPictures/Test-Picture-EventCard2.jpg", title: "Lisa Eckhart" },
+    { image: "/pictures/TestPictures/Test-Picture-EventCard.jpg", title: "Teddy Teclebrhan" },
+    { image: "/pictures/TestPictures/Test-Picture-EventCard2.jpg", title: "Lisa Eckhart" },
+];
 
+export default function MyApp() {
     return (
-        <div style={{ padding: '1rem' }}>
-            <h1>Homepage</h1>
-            <ul style={{ listStyle: 'none', padding: 0 }}>
-                {pages.map(({ href, label }) => (
-                    <li key={href} style={{ margin: '0.5rem 0' }}>
-                        <Link href={href} style={{ textDecoration: 'none', color: '#0070f3' }}>
-                            {label}
-                        </Link>
-                    </li>
-                ))}
-            </ul>
-        </div>
+        <>
+            <div className="homepage">
+                <ImageScroller events={eventData} />
+                <div className="content">
+                    <SmallEventCard events={eventData} />
+                </div>
+            </div>
+        </>
     );
 }
