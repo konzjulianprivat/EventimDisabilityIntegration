@@ -6,6 +6,7 @@ export default function Home() {
     const pages = [
         { href: '/', label: 'Homepage' },
         { href: '/devtesting', label: 'Dev Testing' },
+        { href: '/registration', label: 'Registration' },
     ];
 
     return (
