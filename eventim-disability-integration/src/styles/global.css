@@ -228,7 +228,7 @@ nav-bar .dropdown-menu .dropdown-item:hover > .sub-menu {
     color: #4B5563;
     padding: 10px 32px 10px 32px;
     margin-top: auto;
-    font-size: 0.875rem; /* ~14px, 2px kleiner als Standard */
+    font-size: 14px;
     border-top: 1px solid #D1D5DB;
 }
 
@@ -248,18 +248,24 @@ nav-bar .dropdown-menu .dropdown-item:hover > .sub-menu {
 .footer-heading {
     font-weight: 600;
     margin-bottom: 0.5rem;
-    font-size: 0.9375rem; /* ~15px */
+    font-size: 15px;
 }
 
 .footer-links {
     list-style: none;
     padding: 0;
     margin: 0;
+    text-decoration: none;
+    color: inherit;
 }
 
 .footer-links li {
     color: #3B82F6;
     margin-bottom: 0.25rem;
+}
+
+.link-clean:hover {
+    color: #1e40af;
 }
 
 .footer-bottom {
@@ -268,7 +274,7 @@ nav-bar .dropdown-menu .dropdown-item:hover > .sub-menu {
     display: flex;
     flex-direction: column;
     align-items: center;
-    font-size: 0.75rem; /* ~12px */
+    font-size: 12px;
 }
 
 @media (min-width: 768px) {
@@ -302,7 +308,7 @@ nav-bar .dropdown-menu .dropdown-item:hover > .sub-menu {
 
 .footer-label {
     font-weight: 500;
-    font-size: 0.8125rem; /* ~13px */
+    font-size: 13px;
 }
 
 .footer-img {
@@ -316,7 +322,8 @@ nav-bar .dropdown-menu .dropdown-item:hover > .sub-menu {
 
 .footer-hotline-title {
     font-size: 15px;
-    margin-bottom: 1px; /* Abstand zum nächsten Element verringert */
+    margin-bottom: 1px;
+
     margin-top: 1px;
 }
 
@@ -324,12 +331,16 @@ nav-bar .dropdown-menu .dropdown-item:hover > .sub-menu {
     font-size: 25px;
     color: #3B82F6;
     text-decoration: none;
-    margin-bottom: 1px; /* Abstand zum nächsten Element verringert */
+    margin-bottom: 1px;
     margin-top: 1px;
+}
+
+.footer-hotline-number:hover {
+    color: #1e40af;
 }
 
 .footer-hotline-subtext {
     font-size: 10px;
-    margin-top: 0px; /* Kein zusätzlicher Abstand nach oben */
+    margin-top: 0;
 }
 
