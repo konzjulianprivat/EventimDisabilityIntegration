@@ -5,8 +5,8 @@ const ImageScroller = ({ tour }) => {
     const loopedTournen = [...tour, ...tour];
 
     return (
-        <div className="scroller-container">
-            <div className="scroller">
+        <div className="homepage-scroller-container">
+            <div className="homepage-scroller">
                 {loopedTournen.map((tour, index) => (
                     <a
                         href={tour.link || "#"}
@@ -17,7 +17,7 @@ const ImageScroller = ({ tour }) => {
                         <img
                             src={tour.image}
                             alt={tour.title || `img-${index}`}
-                            className="scroller-img"
+                            className="homepage-scroller-img"
                         />
                     </a>
                 ))}

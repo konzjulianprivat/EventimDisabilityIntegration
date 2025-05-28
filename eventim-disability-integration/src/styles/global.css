@@ -9,6 +9,15 @@ body, html {
     font-family: Helvetica, Arial, sans-serif;
 }
 
+.highlights-section{
+    margin: 40px 0px 0px 0px;
+}
+
+.artists-section{
+    margin: 40px 0px 0px 0px;
+}
+
+
 .page {
     margin: 0 1%;
     background-color: white;
@@ -349,14 +358,14 @@ nav-bar .dropdown-menu .dropdown-item:hover > .sub-menu {
 
 
 /*SmallTourCard*/
-.tour-grid {
+.small-tourCard-grid {
     display: flex;
     flex-wrap: wrap;
     gap: 16px;
     justify-content: flex-start;
 }
 
-.small-tour-card {
+.small-tourCard-class {
     width: 170px;
     height: auto;
     background-color: white;
@@ -369,26 +378,26 @@ nav-bar .dropdown-menu .dropdown-item:hover > .sub-menu {
     text-align: center;
 }
 
-.small-tour-image {
+.small-tourCard-image {
     width: 170px;
     height: 200px;
-    object-fit: cover; /* Wichtig: beschneidet und füllt das Bild */
+    object-fit: cover;
     object-position: center;
 }
 
-.tour-info {
+.small-tourCard-info {
     padding: 8px;
     text-align: center;
     width: 100%;
 }
 
-.small-tour-title {
+.small-tourCard-title {
     font-size: 14px;
     font-weight: 600;
     margin-top: 5px;
 }
 
-.tour-link {
+.small-tourCard-link {
     font-size: 14px;
     color: #2563eb;
     cursor: pointer;
@@ -398,23 +407,23 @@ nav-bar .dropdown-menu .dropdown-item:hover > .sub-menu {
     text-align: center;
 }
 
-.tour-link:hover {
+.small-tourCard-link:hover {
     color: #1e40af;
 }
 
 /*Scoller*/
-.scroller-container {
+.homepage-scroller-container {
     width: 100%;
     overflow: hidden;
     position: relative;
 }
 
-.scroller {
+.homepage-scroller {
     display: flex;
     animation: scroll 40s linear infinite;
 }
 
-.scroller-img {
+.homepage-scroller-img {
     width: 200px;
     height: auto;
     margin-right: 10px;
@@ -422,7 +431,7 @@ nav-bar .dropdown-menu .dropdown-item:hover > .sub-menu {
     transition: transform 0.3s ease-in-out;
 }
 
-.scroller-img:hover {
+.homepage-scroller-img:hover {
     transform: scale(1.05);
 }
 
@@ -436,4 +445,162 @@ nav-bar .dropdown-menu .dropdown-item:hover > .sub-menu {
 }
 
 
+/*TourPage-CSS*/
+
+.tour-page-header-flex {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 50px;
+    margin-bottom: 10px;
+    margin-top: 10px;
+}
+
+/* Textbox im Header */
+.tour-header-text {
+    flex: 1;
+    min-width: 300px;
+    margin: 0px 0px 0px 10px;
+
+}
+
+.tour-header-text h1 {
+    font-size: 2.5rem;
+    margin-bottom: 10px;
+}
+
+.tour-header-text p {
+    font-size: 1rem;
+    margin: 5px 0px 0px 0px;
+    color: #333;
+}
+
+.tour-header-image {
+    flex: 1;
+    min-width: 300px;
+    text-align: center;
+}
+
+.tour-header-image img {
+    max-width: 100%;
+    height: auto;
+    border-radius: 8px;
+}
+
+/* Buttons */
+.btn {
+    padding: 10px 20px;
+    margin: 5px 0;
+    border-radius: 4px;
+    border: none;
+    cursor: pointer;
+    font-size: 1rem;
+    transition: background-color 0.2s ease-in-out;
+}
+
+.btn:hover {
+    opacity: 0.9;
+}
+
+.btn-blue {
+    background-color: #007bff;
+    color: #fff;
+}
+
+.btn-outline {
+    background-color: #fff;
+    border: 1px solid #ccc;
+    color: #333;
+}
+
+.btn-yellow {
+    background-color: #ffc107;
+    color: #333;
+}
+
+/* Haupt-Eventbereich */
+.tour-page-container {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 20px;
+    color: #333;
+}
+
+/* Liste der Events */
+.events-list {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+/* Einzelne Event-Karte */
+.tourPage-event-card {
+    display: flex;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    border: 1px solid #e0e0e0;
+    border-radius: 6px;
+    padding: 15px;
+    background-color: #f8f9fa;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+}
+
+/* Datumsspalte */
+.tourPage-event-date {
+    flex: 1;
+    text-align: center;
+    font-weight: bold;
+    min-width: 90px;
+}
+
+.tourPage-event-date .date {
+    font-size: 1.8rem;
+    display: block;
+}
+
+.tourPage-event-date .month-year,
+.tourPage-event-date .weekday {
+    font-size: 0.9rem;
+    color: #777;
+    display: block;
+}
+
+/* Eventdetails */
+.tourPage-event-details {
+    flex: 2;
+    padding: 0 20px;
+    min-width: 200px;
+}
+
+.tourPage-event-details h3 {
+    margin: 0 0 5px;
+    font-size: 1.2rem;
+}
+
+.tourPage-event-details p {
+    margin: 2px 0;
+    color: #555;
+}
+
+/* Aktionen */
+.tourPage-event-actions {
+    flex: 1;
+    text-align: right;
+    min-width: 180px;
+}
+
+.tourPage-price {
+    display: block;
+    margin-bottom: 10px;
+    font-weight: bold;
+    color: #28a745;
+}
+
+.tourPage-not-available {
+    display: block;
+    margin-bottom: 10px;
+    color: red;
+    font-weight: bold;
+}
 
