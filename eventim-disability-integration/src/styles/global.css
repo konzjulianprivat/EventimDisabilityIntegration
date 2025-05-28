@@ -22,6 +22,11 @@ body, html {
     flex: 1;
 }
 
+.link-clean{
+    text-decoration: none;
+    color: inherit;
+}
+
 .nav-bar {
     display: block;
     font-family: sans-serif;
@@ -171,22 +176,6 @@ body, html {
     cursor: pointer;
 }
 
-footer {
-    padding: 1.5rem;
-    background-color: white;
-    margin-top: auto;
-    position: fixed;
-    bottom: 0;
-    right: 1%;
-    left: 1%;
-    border-top-color: grey;
-    border-top-style: solid;
-    border-top-width: 1px;
-}
-
-footer .content {
-    display: flex;
-}
 
 /* ——— New hover‐activated sub‐menu rules ——— */
 
@@ -217,3 +206,119 @@ nav-bar .sub-menu {
 nav-bar .dropdown-menu .dropdown-item:hover > .sub-menu {
     display: block;
 }
+
+
+
+/*FOOTER*/
+.footer {
+    background-color: #EDF0EF;
+    color: #4B5563;
+    padding: 10px 32px 10px 32px;
+    margin-top: auto;
+    font-size: 0.875rem; /* ~14px, 2px kleiner als Standard */
+    border-top: 1px solid #D1D5DB;
+    font-family: Helvetica, Arial, sans-serif;
+}
+
+.footer-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1.5rem;
+    margin-bottom: 2.5rem;
+}
+
+@media (min-width: 768px) {
+    .footer-grid {
+        grid-template-columns: repeat(6, 1fr);
+    }
+}
+
+.footer-heading {
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+    font-size: 0.9375rem; /* ~15px */
+}
+
+.footer-links {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.footer-links li {
+    color: #3B82F6;
+    margin-bottom: 0.25rem;
+}
+
+.footer-bottom {
+    border-top: 1px solid #D1D5DB;
+    padding-top: 1.5rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    font-size: 0.75rem; /* ~12px */
+}
+
+@media (min-width: 768px) {
+    .footer-bottom {
+        flex-direction: row;
+        justify-content: space-between;
+    }
+}
+
+.footer-social,
+.footer-apps {
+    display: flex;
+    flex-direction: column;
+    margin-bottom: 1rem;
+}
+
+.footer-icons-logo {
+    display: flex;
+    gap: 1rem;
+    margin-top: 0.5rem;
+    width: 40px;
+    height: 40px;
+    object-fit: cover;
+    border-radius: 4px;
+}
+
+.footer-icons-badges {
+    display: flex;
+    gap: 1rem;
+    margin-top: 0.5rem;
+}
+
+.footer-label {
+    font-weight: 500;
+    font-size: 0.8125rem; /* ~13px */
+}
+
+.footer-img {
+    width: 125px;
+    height: 45px;
+    object-fit: contain;
+}
+
+.footer-hotline {
+}
+
+.footer-hotline-title {
+    font-size: 15px;
+    margin-bottom: 1px; /* Abstand zum nächsten Element verringert */
+    margin-top: 1px;
+}
+
+.footer-hotline-number {
+    font-size: 25px;
+    color: #3B82F6;
+
+    margin-bottom: 1px; /* Abstand zum nächsten Element verringert */
+    margin-top: 1px;
+}
+
+.footer-hotline-subtext {
+    font-size: 10px;
+    margin-top: 0px; /* Kein zusätzlicher Abstand nach oben */
+}
+
