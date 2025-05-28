@@ -175,13 +175,10 @@ footer {
     padding: 1.5rem;
     background-color: white;
     margin-top: auto;
-    position: fixed;
-    bottom: 0;
-    right: 1%;
-    left: 1%;
     border-top-color: grey;
     border-top-style: solid;
     border-top-width: 1px;
+    width: 98%; /* Match content width */
 }
 
 footer .content {
