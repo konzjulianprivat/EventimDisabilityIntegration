@@ -71,21 +71,35 @@ export default function Footer() {
                 <div className="footer-social">
                     <div className="footer-label">Social Links</div>
                     <div className="footer-icons-logo">
-                        <img src="/pictures/facebook-logo.png" alt="Facebook" className="footer-img" />
-                        <img src="/pictures/instagram-logo.png" alt="Instagram" className="footer-img" />
-                        <img src="/pictures/x-logo.png" alt="X" className="footer-img" />
+                        <a href="https://www.facebook.com" target="_blank" rel="noopener noreferrer"
+                           className="picture-link-clean">
+                            <img src="/pictures/facebook-logo.png" alt="Facebook" className="footer-img"/>
+                        </a>
+                        <a href="https://www.instagram.com" target="_blank" rel="noopener noreferrer"
+                           className="picture-link-clean">
+                            <img src="/pictures/instagram-logo.png" alt="Instagram" className="footer-img"/>
+                        </a>
+                        <a href="https://www.x.com" target="_blank" rel="noopener noreferrer"
+                           className="picture-link-clean">
+                            <img src="/pictures/x-logo.png" alt="X" className="footer-img"/>
+                        </a>
                     </div>
                 </div>
                 <div className="footer-apps">
                     <div className="footer-label">App Download</div>
                     <div className="footer-icons-badges">
-                        <img src="/pictures/apple-store-badge.svg" alt="App Store" className="footer-img" />
-                        <img src="/pictures/google-play-badge.png" alt="Google Play" className="footer-img" />
+                        <a href="https://apps.apple.com/de/app/eventim-de/id408601891" target="_blank"
+                           rel="noopener noreferrer">
+                            <img src="/pictures/apple-store-badge.svg" alt="App Store" className="footer-img"/>
+                        </a>
+                        <a href="https://play.google.com/store/apps/details?id=de.eventim.mobile.app.Android&hl=en" target="_blank" rel="noopener noreferrer">
+                            <img src="/pictures/google-play-badge.png" alt="Google Play" className="footer-img"/>
+                        </a>
                     </div>
                 </div>
                 <div className="footer-hotline">
                     <p className="footer-hotline-title">Bestell-Hotline Mo-Sa von 09:00 Uhr bis 18:00 Uhr</p>
-                    <p className="footer-hotline-number">01806-570070</p>
+                    <a href="tel:01806570070" className="footer-hotline-number">01806-570070</a>
                     <p className="footer-hotline-subtext">(0,20 €/Anruf inkl. MwSt aus allen dt. Netzen)</p>
                 </div>
             </div>
