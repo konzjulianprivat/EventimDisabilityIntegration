@@ -1,26 +1,18 @@
-import SmallEventCard from "../components/smallEventCard.jsx";
+import SmallTourCard from "../components/smallEventCard.jsx";
 import ImageScroller from "../components/ImageScroller";
 
-const eventData = [
+const tourData = [
     { image: "/pictures/TestPictures/Test-Picture-EventCard.jpg", title: "Teddy Teclebrhan", link: "https://www.google.com"},
-    { image: "/pictures/TestPictures/Test-Picture-EventCard2.jpg", title: "Lisa Eckhart" },
-    { image: "/pictures/TestPictures/Test-Picture-EventCard.jpg", title: "Teddy Teclebrhan" },
-    { image: "/pictures/TestPictures/Test-Picture-EventCard2.jpg", title: "Lisa Eckhart" },
-    { image: "/pictures/TestPictures/Test-Picture-EventCard.jpg", title: "Teddy Teclebrhan" },
-    { image: "/pictures/TestPictures/Test-Picture-EventCard2.jpg", title: "Lisa Eckhart" },
-    { image: "/pictures/TestPictures/Test-Picture-EventCard.jpg", title: "Teddy Teclebrhan" },
-    { image: "/pictures/TestPictures/Test-Picture-EventCard2.jpg", title: "Lisa Eckhart" },
-    { image: "/pictures/TestPictures/Test-Picture-EventCard.jpg", title: "Teddy Teclebrhan" },
-    { image: "/pictures/TestPictures/Test-Picture-EventCard2.jpg", title: "Lisa Eckhart" },
+    { image: "picture LINK/ID", title: "TourTitel" },
 ];
 
 export default function MyApp() {
     return (
         <>
             <div className="homepage">
-                <ImageScroller events={eventData} />
+                <ImageScroller tour={tourData} />
                 <div className="content">
-                    <SmallEventCard events={eventData} />
+                    <SmallTourCard tour={tourData} />
                 </div>
             </div>
         </>

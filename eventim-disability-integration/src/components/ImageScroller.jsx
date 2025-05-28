@@ -1,19 +1,22 @@
 import React from "react";
 
-const ImageScroller = ({ events }) => {
+const ImageScroller = ({ tour }) => {
+    // Doppelte Liste zur Endlosschleife
+    const loopedTournen = [...tour, ...tour];
+
     return (
         <div className="scroller-container">
             <div className="scroller">
-                {events.map((event, index) => (
+                {loopedTournen.map((tour, index) => (
                     <a
-                        href={event.link || "#"}
+                        href={tour.link || "#"}
                         key={index}
                         target="_blank"
                         rel="noopener noreferrer"
                     >
                         <img
-                            src={event.image}
-                            alt={event.title || `img-${index}`}
+                            src={tour.image}
+                            alt={tour.title || `img-${index}`}
                             className="scroller-img"
                         />
                     </a>

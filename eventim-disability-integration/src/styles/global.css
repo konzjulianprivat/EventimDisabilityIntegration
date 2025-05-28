@@ -348,15 +348,15 @@ nav-bar .dropdown-menu .dropdown-item:hover > .sub-menu {
 }
 
 
-/*SmallEventCard*/
-.event-grid {
+/*SmallTourCard*/
+.tour-grid {
     display: flex;
     flex-wrap: wrap;
     gap: 16px;
     justify-content: flex-start;
 }
 
-.small-event-card {
+.small-tour-card {
     width: 170px;
     height: auto;
     background-color: white;
@@ -369,26 +369,26 @@ nav-bar .dropdown-menu .dropdown-item:hover > .sub-menu {
     text-align: center;
 }
 
-.small-event-image {
+.small-tour-image {
     width: 170px;
     height: 200px;
     object-fit: cover; /* Wichtig: beschneidet und füllt das Bild */
     object-position: center;
 }
 
-.event-info {
+.tour-info {
     padding: 8px;
     text-align: center;
     width: 100%;
 }
 
-.small-event-title {
+.small-tour-title {
     font-size: 14px;
     font-weight: 600;
     margin-top: 5px;
 }
 
-.event-link {
+.tour-link {
     font-size: 14px;
     color: #2563eb;
     cursor: pointer;
@@ -398,7 +398,7 @@ nav-bar .dropdown-menu .dropdown-item:hover > .sub-menu {
     text-align: center;
 }
 
-.event-link:hover {
+.tour-link:hover {
     color: #1e40af;
 }
 

@@ -1,25 +1,25 @@
 import React from "react";
 
-const SmallEventCard = ({ image, title, link }) => {
+const SmallTourCard = ({ image, title, link }) => {
     return (
-        <div className="small-event-card">
-            <img src={image} alt={title} className="small-event-image" />
-            <div className="small-event-info">
-                <h2 className="small-event-title">{title}</h2>
-                <p> <a href={link} className="event-link">Siehe Mehr</a></p>
+        <div className="small-tour-card">
+            <img src={image} alt={title} className="small-tour-image" />
+            <div className="small-tour-info">
+                <h2 className="small-tour-title">{title}</h2>
+                <p> <a href={link} className="tour-link">Siehe Mehr</a></p>
             </div>
         </div>
     );
 };
 
-const EventGrid = ({ events }) => {
+const TourGrid = ({ tour }) => {
     return (
-        <div className="event-grid">
-            {events.map((event, index) => (
-                <SmallEventCard key={index} image={event.image} title={event.title} link={event.link} />
+        <div className="tour-grid">
+            {tour.map((tour, index) => (
+                <SmallTourCard key={index} image={tour.image} title={tour.title} link={tour.link} />
             ))}
         </div>
     );
 };
 
-export default EventGrid;
+export default TourGrid;
