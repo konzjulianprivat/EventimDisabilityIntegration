@@ -13,7 +13,7 @@ export default function MyApp({ Component, pageProps }) {
                 <footer>
                     <div className="footer-content">
                         <p>© 2023 Eventim. All rights reserved.</p>
-                        <p>Privacy Policy | Terms of Service Change</p>
+                        <p>Privacy Policy | Terms of Service Change test soheil</p>
                     </div>
                 </footer>
             </div>
