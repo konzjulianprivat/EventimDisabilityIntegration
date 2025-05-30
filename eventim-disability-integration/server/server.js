@@ -210,7 +210,7 @@ app.get('/countries', async (req, res) => {
 });
 app.post('/create-artist', upload.single('artistImage'), async (req, res) => {
     try {
-        const { name, biography, website, countryId } = req.body;
+        const { name, biography, website } = req.body;
 
         const artistId = uuidv4();
         let imageId = null;
@@ -224,9 +224,9 @@ app.post('/create-artist', upload.single('artistImage'), async (req, res) => {
         }
 
         const result = await client.query(
-            `INSERT INTO artists (id, name, biography, website, country_id, artist_image)
-             VALUES ($1, $2, $3, $4, $5, $6) RETURNING *`,
-            [artistId, name.trim(), biography || null, website || null, countryId, imageId]
+            `INSERT INTO artists (id, name, biography, website, artist_image)
+             VALUES ($1, $2, $3, $4, $5) RETURNING *`,
+            [artistId, name.trim(), biography || null, website || null, imageId]
         );
 
         const artist = result.rows[0];
@@ -272,6 +272,172 @@ app.post('/create-tour', upload.single('tourImage'), async (req, res) => {
         res.status(500).json({ message: 'Serverfehler beim Erstellen der Tour' });
     }
 });
+
+app.post('/create-city', express.json(), async (req, res) => {
+    try {
+        const { name, countryId } = req.body;
+        if (!name || !name.trim() || !countryId) {
+            return res.status(400).json({ message: 'Name und Land sind erforderlich' });
+        }
+
+        const cityId = uuidv4();
+        const result = await client.query(
+            `INSERT INTO cities (id, name, country_id)
+       VALUES ($1, $2, $3)
+       RETURNING id, name, country_id AS "countryId"`,
+            [cityId, name.trim(), countryId]
+        );
+
+        res.status(201).json({ message: 'Stadt erstellt', city: result.rows[0] });
+    } catch (error) {
+        console.error('Create-city error:', error);
+        res.status(500).json({ message: 'Serverfehler beim Erstellen der Stadt' });
+    }
+});
+// server.js (Express-Backend)
+
+// GET: Alle Städte für Dropdown
+app.get('/cities', async (req, res) => {
+    try {
+        const result = await client.query('SELECT id, name FROM cities ORDER BY name');
+        res.status(200).json({ cities: result.rows });
+    } catch (error) {
+        console.error('Error fetching cities:', error);
+        res.status(500).json({ message: 'Fehler beim Laden der Städte' });
+    }
+});
+
+// POST: Venue erstellen (mit capacity & website)
+// server.js (Express-Backend)
+
+// GET: disability_marks für Dropdown
+app.get('/disability-marks', async (req, res) => {
+    try {
+        const result = await client.query(
+            'SELECT mark_code, description FROM disability_marks ORDER BY mark_code'
+        );
+        res.json({ marks: result.rows });
+    } catch (err) {
+        console.error('Error fetching disability marks', err);
+        res.status(500).json({ message: 'Fehler beim Laden der Markierungen' });
+    }
+});
+
+// POST: Venue inkl. Behinderten-Kapazitäten
+// server.js (Express-Backend with venue_disability_area_capacity)
+
+// GET: disability_areas für Dropdown
+app.get('/disability-areas', async (req, res) => {
+    try {
+        const result = await client.query(
+            'SELECT DISTINCT area_name FROM disability_area ORDER BY area_name'
+        );
+        res.json({ areas: result.rows });
+    } catch (err) {
+        console.error('Error fetching disability areas:', err);
+        res.status(500).json({ message: 'Fehler beim Laden der Bereiche' });
+    }
+});
+
+// POST: Venue erstellen (inkl. area capacities)
+app.post('/create-venue', express.json(), async (req, res) => {
+    const {
+        name, address, cityId, capacity, website,
+        disabilityCapacities = []
+    } = req.body;
+
+    if (!name?.trim() || !address?.trim() || !cityId || capacity == null) {
+        return res.status(400).json({
+            message: 'Name, Adresse, Stadt und Kapazität sind erforderlich'
+        });
+    }
+
+    const sumDis = disabilityCapacities
+        .reduce((s, dc) => s + (parseInt(dc.capacity, 10) || 0), 0);
+    if (sumDis > capacity) {
+        return res.status(400).json({
+            message: 'Summe der Behinderten-Kapazitäten überschreitet Gesamt-Kapazität'
+        });
+    }
+
+    try {
+        await client.query('BEGIN');
+        const venueId = uuidv4();
+
+        const { rows } = await client.query(
+            `INSERT INTO venues
+                 (id, name, address, city_id, capacity, website)
+             VALUES ($1,$2,$3,$4,$5,$6)
+             RETURNING *`,
+            [venueId, name.trim(), address.trim(), cityId, capacity, website || null]
+        );
+
+        for (const dc of disabilityCapacities) {
+            await client.query(
+                `INSERT INTO venue_disability_area_capacity
+                     (venue_id, area_name, capacity)
+                 VALUES ($1,$2,$3)`,
+                [venueId, dc.area_name, parseInt(dc.capacity, 10)]
+            );
+        }
+
+        await client.query('COMMIT');
+        res.status(201).json({ message: 'Venue erstellt', venue: rows[0] });
+    } catch (err) {
+        await client.query('ROLLBACK');
+        console.error('Create-venue error:', err);
+        res.status(500).json({ message: 'Serverfehler beim Erstellen des Venues' });
+    }
+});
+
+app.get('/tours', async (req, res) => {
+    const result = await client.query('SELECT id, title FROM tours ORDER BY title');
+    res.json({ tours: result.rows });
+});
+app.get('/venues', async (req, res) => {
+    const result = await client.query('SELECT id, name FROM venues ORDER BY name');
+    res.json({ venues: result.rows });
+});
+app.post('/create-event', express.json(), async (req, res) => {
+    const {
+        tourId, venueId,
+        doorTime, startTime, endTime,
+        description,
+        eventArtists = []
+    } = req.body;
+    if (!tourId || !venueId || !doorTime || !startTime || !endTime) {
+        return res.status(400).json({ message: 'Tour, Venue und alle Zeitangaben sind erforderlich' });
+    }
+
+    try {
+        await client.query('BEGIN');
+        const eventId = uuidv4();
+        const { rows } = await client.query(
+            `INSERT INTO events
+        (id, tour_id, venue_id, door_time, start_time, end_time, description)
+       VALUES ($1,$2,$3,$4,$5,$6,$7)
+       RETURNING *`,
+            [eventId, tourId, venueId, doorTime, startTime, endTime, description || null]
+        );
+
+        for (const ea of eventArtists) {
+            await client.query(
+                `INSERT INTO event_artists
+          (event_id, artist_id, role)
+         VALUES ($1,$2,$3)`,
+                [eventId, ea.artistId, ea.role]
+            );
+        }
+
+        await client.query('COMMIT');
+        res.status(201).json({ message: 'Event erstellt', event: rows[0] });
+    } catch (err) {
+        await client.query('ROLLBACK');
+        console.error('Create-event error:', err);
+        res.status(500).json({ message: 'Serverfehler beim Erstellen des Events' });
+    }
+});
+
 
 const credentials = require('./credentials.json')
 
