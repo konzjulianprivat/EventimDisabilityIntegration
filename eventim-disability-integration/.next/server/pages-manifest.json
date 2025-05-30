@@ -2,6 +2,5 @@
   "/_app": "pages/_app.js",
   "/_error": "pages/_error.js",
   "/_document": "pages/_document.js",
-  "/admin/tours/create": "pages/admin/tours/create.js",
-  "/admin/countries/create": "pages/admin/countries/create.js"
+  "/admin/events/create": "pages/admin/events/create.js"
 }

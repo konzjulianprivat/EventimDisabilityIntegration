@@ -20,15 +20,10 @@ globalThis.__BUILD_MANIFEST = {
       "static/chunks/main.js",
       "static/chunks/pages/_error.js"
     ],
-    "/admin/countries/create": [
+    "/admin/events/create": [
       "static/chunks/webpack.js",
       "static/chunks/main.js",
-      "static/chunks/pages/admin/countries/create.js"
-    ],
-    "/admin/tours/create": [
-      "static/chunks/webpack.js",
-      "static/chunks/main.js",
-      "static/chunks/pages/admin/tours/create.js"
+      "static/chunks/pages/admin/events/create.js"
     ]
   },
   "ampFirstPages": []

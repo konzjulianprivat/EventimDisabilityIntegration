@@ -7,7 +7,6 @@ export default function ArtistCreation() {
         name: '',
         biography: '',
         website: '',
-        countryId: '',
         artistImage: null
     });
     const [countries, setCountries] = useState([]);
@@ -47,7 +46,6 @@ export default function ArtistCreation() {
             fd.append('name', formData.name);
             fd.append('biography', formData.biography);
             fd.append('website', formData.website);
-            fd.append('countryId', formData.countryId);
             if (formData.artistImage) fd.append('artistImage', formData.artistImage);
 
             const response = await fetch('http://localhost:4000/create-artist', {
@@ -129,23 +127,6 @@ export default function ArtistCreation() {
                         placeholder="https://example.com"
                         style={{ width: '100%', padding: '0.5rem', borderRadius: '4px', border: '1px solid #ccc' }}
                     />
-                </div>
-
-                <div style={{ marginBottom: '1rem' }}>
-                    <label htmlFor="countryId" style={{ display: 'block', fontWeight: 'bold', marginBottom: '0.5rem' }}>
-                        Land *
-                    </label>
-                    <select
-                        id="countryId"
-                        name="countryId"
-                        value={formData.countryId}
-                        onChange={handleChange}
-                        required
-                        style={{ width: '100%', padding: '0.5rem', borderRadius: '4px', border: '1px solid #ccc' }}
-                    >
-                        <option value="">Bitte wählen</option>
-                        {countries.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
-                    </select>
                 </div>
 
                 <div style={{ marginBottom: '1rem' }}>
