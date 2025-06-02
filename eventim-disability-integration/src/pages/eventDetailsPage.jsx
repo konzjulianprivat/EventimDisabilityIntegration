@@ -37,7 +37,7 @@ export default function EventDetailsPage() {
                     </div>
                     <div className="event-image">
                         <img
-                            src="[PLATZHALTER_BANNER_BILD]"
+                            src="/pictures/TestPictures/Test-Picture-EventCard.jpg"
                             alt="Event Banner"
                             className="banner-img"
                         />
