@@ -86,8 +86,12 @@ const WinterConcerts = () => {
             </div>
 
             <div className="events-list">
-                {eventData.map((event , index) => (
-                    <EventCard event={event} title={tourData.title} />
+                {eventData.map((event, index) => (
+                    <EventCard 
+                        key={`${event.date}-${event.time}-${event.location}`} 
+                        event={event} 
+                        title={tourData.title} 
+                    />
                 ))}
             </div>
         </div>
