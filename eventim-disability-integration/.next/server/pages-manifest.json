@@ -3,6 +3,8 @@
   "/_error": "pages/_error.js",
   "/_document": "pages/_document.js",
   "/": "pages/index.js",
-  "/eventDetailsPage": "pages/eventDetailsPage.js",
-  "/devtesting": "pages/devtesting.js"
+  "/admin/tours/create": "pages/admin/tours/create.js",
+  "/login": "pages/login.js",
+  "/admin/artists/create": "pages/admin/artists/create.js",
+  "/registration": "pages/registration.js"
 }
