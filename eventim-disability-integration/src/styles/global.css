@@ -684,3 +684,38 @@ nav-bar .dropdown-menu .dropdown-item:hover > .sub-menu {
     padding: 1rem;
     border-radius: 8px;
 }
+
+.error-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    background-color: #f2f2f2;
+    padding: 2rem;
+    text-align: center;
+}
+
+.error-box {
+    background-color: white;
+    padding: 3rem;
+    border-radius: 12px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+    max-width: 500px;
+    width: 100%;
+}
+
+.error-code {
+    font-size: 6rem;
+    margin: 0;
+    color: #000000;
+}
+
+.error-title {
+    font-size: 2rem;
+    margin: 1rem 0;
+}
+
+.error-message {
+    font-size: 1rem;
+    color: #666;
+}
