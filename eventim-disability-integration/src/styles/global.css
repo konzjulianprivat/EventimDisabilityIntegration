@@ -503,12 +503,12 @@ nav-bar .dropdown-menu .dropdown-item:hover > .sub-menu {
     opacity: 0.9;
 }
 
-.btn-blue {
+.btn-goOn {
     background-color: #007bff;
     color: #fff;
 }
 
-.btn-outline {
+.btn-not-available {
     background-color: #fff;
     border: 1px solid #ccc;
     color: #333;

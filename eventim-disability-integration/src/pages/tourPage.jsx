@@ -59,12 +59,12 @@ const EventCard = ({ event, title }) => (
             {event.available ? (
                 <>
                     <span className="tourPage-price">ab € {event.price}</span>
-                    <button className="btn btn-blue">Weiter</button>
+                    <button className="btn btn-goOn">Weiter</button>
                 </>
             ) : (
                 <>
                     <span className="tourPage-not-available">zur Zeit nicht verfügbar</span>
-                    <button className="btn btn-outline">Infos anzeigen</button>
+                    <button className="btn btn-not-available">Infos anzeigen</button>
                 </>
             )}
         </div>
@@ -86,7 +86,7 @@ const WinterConcerts = () => {
             </div>
 
             <div className="events-list">
-                {eventData.map((event, index) => (
+                {eventData.map((event , index) => (
                     <EventCard event={event} title={tourData.title} />
                 ))}
             </div>
