@@ -682,6 +682,80 @@ app.post('/create-genre', async (req, res) => {
     }
 });
 
+app.get('/genres-with-subgenres', async (req, res) => {
+    try {
+        // 1) Fetch each genre, plus its subgenres in a single query.
+        // We use a LEFT JOIN so that genres without subgenres still appear.
+        const { rows } = await client.query(`
+      SELECT
+        g.id              AS genre_id,
+        g.name            AS genre_name,
+        COALESCE(
+          json_agg(
+            json_build_object(
+              'id', s.id,
+              'name', s.name
+            )
+          ) FILTER (WHERE s.id IS NOT NULL),
+          '[]'
+        ) AS subgenres
+      FROM genres g
+      LEFT JOIN subgenres s
+        ON s.genre_id = g.id
+      GROUP BY g.id, g.name
+      ORDER BY g.name
+    `);
+
+        // 2) Transform rows into a simpler array-of-objects format:
+        //    [{ id: <genre_id>, name: <genre_name>, subgenres: [{ id, name }, …] }, …]
+        const genresWithSub = rows.map((r) => ({
+            id: r.genre_id,
+            name: r.genre_name,
+            subgenres: r.subgenres,
+        }));
+
+        return res.status(200).json({ genres: genresWithSub });
+    } catch (error) {
+        console.error('Error fetching genres with subgenres:', error);
+        return res.status(500).json({ message: 'Fehler beim Laden der Genres und Subgenres' });
+    }
+});
+
+app.get('/cities-with-venues', async (req, res) => {
+    try {
+        const { rows } = await client.query(`
+      SELECT
+        ci.id            AS city_id,
+        ci.name          AS city_name,
+        COALESCE(
+          json_agg(
+            json_build_object(
+              'id', v.id,
+              'name', v.name
+            )
+          ) FILTER (WHERE v.id IS NOT NULL),
+          '[]'
+        ) AS venues
+      FROM cities ci
+      LEFT JOIN venues v
+        ON v.city_id = ci.id
+      GROUP BY ci.id, ci.name
+      ORDER BY ci.name
+    `);
+
+        const citiesWithVenues = rows.map(r => ({
+            id: r.city_id,
+            name: r.city_name,
+            venues: r.venues
+        }));
+
+        return res.status(200).json({ cities: citiesWithVenues });
+    } catch (error) {
+        console.error('Error fetching cities with venues:', error);
+        return res.status(500).json({ message: 'Fehler beim Laden der Städte und Venues' });
+    }
+});
+
 const credentials = require('./credentials.json')
 
 const client = new Client(credentials);
