@@ -1,4 +1,5 @@
 import '../styles/global.css';
+import '../styles/login.css';
 import NavBar from '../components/nav-bar.jsx';
 import Footer from "../components/footer.jsx";
 
