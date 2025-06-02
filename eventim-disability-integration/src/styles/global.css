@@ -10,11 +10,11 @@ body, html {
 }
 
 .highlights-section{
-    margin: 40px 0px 0px 0px;
+    margin: 40px 0 0 0;
 }
 
 .artists-section{
-    margin: 40px 0px 0px 0px;
+    margin: 40px 0 0 0;
 }
 
 
@@ -33,7 +33,7 @@ body, html {
 }
 
 .homepage{
-    margin: 20px 0px 0px 0px;
+    margin: 20px;
 }
 
 .link-clean{
@@ -461,7 +461,7 @@ nav-bar .dropdown-menu .dropdown-item:hover > .sub-menu {
 .tour-header-text {
     flex: 1;
     min-width: 300px;
-    margin: 0px 0px 0px 10px;
+    margin: 0 0 0 10px;
 
 }
 
@@ -472,7 +472,7 @@ nav-bar .dropdown-menu .dropdown-item:hover > .sub-menu {
 
 .tour-header-text p {
     font-size: 1rem;
-    margin: 5px 0px 0px 0px;
+    margin: 5px 0 0 0;
     color: #333;
 }
 
