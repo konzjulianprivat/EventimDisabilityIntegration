@@ -203,12 +203,14 @@ export default function NavBar() {
                         width={24}
                         height={24}
                     />
-                    <Image
-                        src="/pictures/profile_icon.png"
-                        alt="Profile"
-                        width={24}
-                        height={24}
-                    />
+                    <a href="/login">
+                        <Image
+                            src="/pictures/profile_icon.png"
+                            alt="Profile"
+                            width={24}
+                            height={24}
+                        />
+                    </a>
                 </div>
             </div>
         </div>

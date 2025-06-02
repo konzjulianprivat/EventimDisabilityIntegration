@@ -1,5 +1,6 @@
 // src/pages/_app.js
 import '../styles/global.css';
+import '../styles/login.css';
 import NavBar from '../components/nav-bar.jsx';
 
 export default function MyApp({ Component, pageProps }) {
