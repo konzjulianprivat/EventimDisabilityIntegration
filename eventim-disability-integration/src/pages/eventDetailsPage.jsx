@@ -28,62 +28,42 @@ export default function EventDetailsPage() {
     return (
         <div className="page">
             <div className="content">
-                {/* Event Banner */}
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <div>
+                <div className="event-header">
+                    <div className="event-info">
                         <h1>{eventDetailsPage.title}</h1>
                         <p><strong>{eventDetailsPage.date}</strong></p>
                         <p>{eventDetailsPage.location}</p>
                         <p>{'★'.repeat(5)} ({eventDetailsPage.stars})</p>
                     </div>
-                    <div>
+                    <div className="event-image">
                         <img
                             src="[PLATZHALTER_BANNER_BILD]"
                             alt="Event Banner"
-                            style={{ width: '300px', borderRadius: '8px' }}
+                            className="banner-img"
                         />
                     </div>
                 </div>
 
-                {/* Ticket Section */}
-                <div style={{ marginTop: '2rem' }}>
-                    <div style={{ display: 'flex', gap: '2rem' }}>
-                        <div style={{ flex: 1, padding: '1rem', border: '1px solid #ddd', borderRadius: '10px', background: '#fff' }}>
-                            <h3>Bestplatzbuchung</h3>
-                            <p>Du wählst den Preis - wir die besten verfügbaren Plätze</p>
-                        </div>
-                        <div style={{ flex: 1, padding: '1rem', border: '1px solid #ddd', borderRadius: '10px', background: '#fafafa' }}>
-                            <h3>Saalplanbuchung</h3>
-                            <p>Such dir deinen Platz selbst aus</p>
-                        </div>
+                <div className="ticket-section">
+                    <div className="ticket-box">
+                        <h3>Bestplatzbuchung</h3>
+                        <p>Du wählst den Preis - wir die besten verfügbaren Plätze</p>
                     </div>
 
-                    {/* Anzahl */}
-                    <h4 style={{ marginTop: '2rem' }}>1. Bitte wähle die Anzahl der Tickets:</h4>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                    <h4 className="ticket-heading">1. Bitte wähle die Anzahl der Tickets:</h4>
+                    <div className="quantity-selector">
                         <button onClick={() => handleQuantity(-1)}>-</button>
                         <span>{quantity}</span>
                         <button onClick={() => handleQuantity(1)}>+</button>
                     </div>
 
-                    {/* Kategorien */}
-                    <h4 style={{ marginTop: '2rem' }}>2. Bitte wähle die Platzkategorie:</h4>
-                    <div>
+                    <h4 className="ticket-heading">2. Bitte wähle die Platzkategorie:</h4>
+                    <div className="categories">
                         {eventDetailsPage.categories.map((cat) =>
                             cat.show !== false ? (
                                 <div
                                     key={cat.id}
-                                    style={{
-                                        display: 'flex',
-                                        justifyContent: 'space-between',
-                                        alignItems: 'center',
-                                        padding: '1rem',
-                                        marginBottom: '1rem',
-                                        border: '1px solid #ccc',
-                                        borderRadius: '8px',
-                                        backgroundColor: cat.available ? '#fff' : '#eee',
-                                        color: cat.available ? '#000' : '#aaa',
-                                    }}
+                                    className={`category-card ${cat.available ? 'available' : 'unavailable'}`}
                                 >
                                     <div>
                                         <strong>{cat.name}</strong> <br />
@@ -97,7 +77,7 @@ export default function EventDetailsPage() {
                                             disabled={!cat.available}
                                             checked={selectedCategory === cat.id}
                                             onChange={() => setSelectedCategory(cat.id)}
-                                            style={{ marginLeft: '1rem' }}
+                                            className="radio-btn"
                                         />
                                     </div>
                                 </div>
@@ -105,21 +85,13 @@ export default function EventDetailsPage() {
                         )}
                     </div>
 
-                    {/* Warenkorb */}
                     {selectedCategory && (
-                        <div style={{ marginTop: '2rem', background: '#002b55', color: 'white', padding: '1rem', borderRadius: '8px' }}>
+                        <div className="summary-box">
                             <strong>{quantity} Ticket(s), € {total.toFixed(2)}</strong>
                         </div>
                     )}
                 </div>
             </div>
-
-            {/* Footer */}
-            <footer>
-                <div className="content">
-                    <p>©️ EVENTIM – Verlinkungen auf rechtliche Hinweise folgen...</p>
-                </div>
-            </footer>
         </div>
     );
 }

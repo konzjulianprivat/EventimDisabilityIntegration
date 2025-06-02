@@ -604,3 +604,83 @@ nav-bar .dropdown-menu .dropdown-item:hover > .sub-menu {
     font-weight: bold;
 }
 
+/*eventDetailPage*/
+
+.event-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+.event-info {
+    flex: 1;
+}
+
+.event-image {
+    flex: 1;
+    text-align: right;
+}
+
+.banner-img {
+    width: 300px;
+    border-radius: 8px;
+}
+
+.ticket-section {
+    margin-top: 2rem;
+}
+
+.ticket-box {
+    flex: 1;
+    padding: 1rem;
+    border: 1px solid #ddd;
+    border-radius: 10px;
+    background: #fff;
+}
+
+.ticket-heading {
+    margin-top: 2rem;
+}
+
+.quantity-selector {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.categories {
+    margin-top: 1rem;
+}
+
+.category-card {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem;
+    margin-bottom: 1rem;
+    border: 1px solid #ccc;
+    border-radius: 8px;
+}
+
+.category-card.available {
+    background-color: #fff;
+    color: #000;
+}
+
+.category-card.unavailable {
+    background-color: #eee;
+    color: #aaa;
+}
+
+.radio-btn {
+    margin-left: 1rem;
+}
+
+.summary-box {
+    margin-top: 2rem;
+    background: #002b55;
+    color: white;
+    padding: 1rem;
+    border-radius: 8px;
+}
