@@ -1,25 +1,47 @@
-// pages/index.jsx
-import Link from 'next/link';
-import NavBar from '../components/nav-bar';
+import SmallTourCard from "../components/smallEventCard.jsx";
+import ImageScroller from "../components/ImageScroller.jsx";
+import SmallArtistCard from "../components/smallArtistCard.jsx";
 
-export default function Home() {
-    const pages = [
-        { href: '/', label: 'Homepage' },
-        { href: '/devtesting', label: 'Dev Testing' },
-    ];
+const tourData = [
+    { image: "/pictures/TestPictures/Test-Picture-EventCard.jpg",
+        title: "Teddy Teclebrhan Tour",
+        link: "/tourPage"},
 
+    { image: "picture-artist LINK/ID",
+        title: "TourTitel" },
+];
+
+const artistData = [
+    { image: "/pictures/TestPictures/Test-Picture-EventCard.jpg",
+        title: "Teddy Teclebrhan",
+        link: "https://www.google.com" },
+
+    { image: "pincture-artist LINK/ID",
+        title: "Künstler 2"},
+
+];
+
+export default function MyApp() {
     return (
-        <div style={{ padding: '1rem' }}>
-            <h1>Homepage</h1>
-            <ul style={{ listStyle: 'none', padding: 0 }}>
-                {pages.map(({ href, label }) => (
-                    <li key={href} style={{ margin: '0.5rem 0' }}>
-                        <Link href={href} style={{ textDecoration: 'none', color: '#0070f3' }}>
-                            {label}
-                        </Link>
-                    </li>
-                ))}
-            </ul>
-        </div>
+        <>
+            <div className="homepage">
+                <ImageScroller tour={tourData}/>
+
+                <div className="highlights-section">
+                    <h2>Highlights</h2>
+                    <div className="small-tourCard-grid">
+                        <SmallTourCard tour={tourData}/>
+                    </div>
+                </div>
+
+
+                <div className="artists-section">
+                    <h2>Künstler</h2>
+                    <div className="small-tourCard-grid">
+                        <SmallArtistCard artist={artistData}/>
+                    </div>
+                </div>
+            </div>
+        </>
     );
 }
