@@ -7,7 +7,7 @@ export default function ArtistsTooling() {
         { label: 'Edit/Delete', url: 'tours/edit' },
     ];
 
-    const TourList = [
+    const eventLinks = [
         { label: 'Create', url: 'tours/events/create' },
         { label: 'Edit/Delete', url: 'tours/events/edit' },
     ];
@@ -30,7 +30,7 @@ export default function ArtistsTooling() {
             <div className="tooling-section">
                 <h1 className="admin-heading">Admin-Events-Tooling</h1>
                 <div className="button-row">
-                    {TourList.map((link, index) => (
+                    {eventLinks.map((link, index) => (
                         <a key={index} href={link.url} className="admin-button" target="_blank" rel="noopener noreferrer">
                             {link.label}
                         </a>

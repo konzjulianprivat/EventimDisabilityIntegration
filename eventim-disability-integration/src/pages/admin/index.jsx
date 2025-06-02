@@ -2,8 +2,7 @@ export default function AdminTooling() {
 
     const links = [
         { label: 'Artist', url: 'admin/artists' },
-        { label: 'Cities', url: 'admin/cities' },
-        { label: 'Countries', url: 'admin/countries' },
+        { label: 'Cities/Countries', url: 'admin/countries' },
         { label: 'Genres', url: 'admin/genres' },
         { label: 'Tours/Events', url: 'admin/tours' },
         { label: 'Venues', url: 'admin/venues' },

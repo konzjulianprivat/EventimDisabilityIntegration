@@ -61,7 +61,7 @@ export default function EventCreation() {
             });
             const data = await res.json();
             if (res.ok) {
-                setMessage(`Event ${data.event.id} erstellt`);
+                setMessage(`Event erstellt`);
                 setFormData({ tourId:'', venueId:'', doorTime:'', startTime:'', endTime:'', description:'' });
                 setEventArtists([]);
             } else {

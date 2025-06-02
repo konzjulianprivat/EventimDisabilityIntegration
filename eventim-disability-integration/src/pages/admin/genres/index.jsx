@@ -1,8 +1,8 @@
 export default function ArtistsTooling() {
 
     const links = [
-        { label: 'Create', url: 'tours/create' },
-        { label: 'Edit/Delete', url: 'tours/edit' },
+        { label: 'Create', url: 'genres/create' },
+        { label: 'Edit/Delete', url: 'genres/edit' },
     ];
 
     return (

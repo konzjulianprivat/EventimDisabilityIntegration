@@ -42,9 +42,7 @@ export default function TourCreation() {
             .catch((err) => console.error('Fehler beim Laden der Genres:', err));
     }, []);
 
-    // ----------------------------------------------------------------------
-    // 2) Hilfs-Funktionen
-    // ----------------------------------------------------------------------
+
     const handleChange = (e) => {
         const { name, type, value, files } = e.target;
         setFormData((prev) => ({
@@ -79,7 +77,6 @@ export default function TourCreation() {
                     `http://localhost:4000/subgenres?genreId=${newGenreId}`
                 );
                 const data = await res.json();
-                // data.subgenres ist ein Array von { id, name, genre_id }
                 setSubgenresByGenre((prev) => ({
                     ...prev,
                     [newGenreId]: data.subgenres,
@@ -128,15 +125,12 @@ export default function TourCreation() {
         );
     };
 
-    // ----------------------------------------------------------------------
-    // 3) Submit-Handler für das Formular
-    // ----------------------------------------------------------------------
+
     const handleSubmit = async (e) => {
         e.preventDefault();
         setLoading(true);
         setMessage('');
 
-        // Pflichtprüfungen:
         if (
             !formData.title.trim() ||
             !formData.startDate ||
