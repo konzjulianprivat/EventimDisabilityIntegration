@@ -58,13 +58,8 @@ export default function Footer() {
                 <div>
                 <h3 className="footer-heading">Musicals</h3>
                     <ul className="footer-links">
-                        <li></li>
-                        <li></li>
-                        <li></li>
+                        {/* No Musicals listed yet. This section may be populated in the future. */}
                         <li>No Musicals listed yet</li>
-                        <li></li>
-                        <li></li>
-                        <li></li>
                     </ul>
                 </div>
             </div>
