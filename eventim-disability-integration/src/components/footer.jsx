@@ -18,7 +18,7 @@ export default function Footer() {
                     <ul className="footer-links">
                         <li><a href="https://corporate.eventim.de/" className="link-clean">Corporate Website</a></li>
                         <li><a href="https://karriere.eventim.de/" className="link-clean">Jobs & Karriere</a></li>
-                        <li><a href="/devtesting" className="link-clean">DevTesting</a></li>
+                        <li><a href="/devtesting" className="link-clean">Dev-Testing</a></li>
                     </ul>
                 </div>
                 <div>

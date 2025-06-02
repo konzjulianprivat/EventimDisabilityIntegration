@@ -1,5 +1,5 @@
-import SmallTourCard from "../components/smallEventCard.jsx";
 import ImageScroller from "../components/ImageScroller.jsx";
+import SmallTourCard from "../components/smallEventCard.jsx";
 import SmallArtistCard from "../components/smallArtistCard.jsx";
 
 const tourData = [
@@ -7,7 +7,7 @@ const tourData = [
         title: "Teddy Teclebrhan Tour",
         link: "/tourPage"},
 
-    { image: "picture-artist LINK/ID",
+    { image: "picture-artist LINK",
         title: "TourTitel" },
 ];
 
