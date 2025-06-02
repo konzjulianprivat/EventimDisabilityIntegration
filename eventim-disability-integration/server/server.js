@@ -2,6 +2,7 @@ const express = require('express');
 const cors = require('cors');
 const path = require('path');
 const { Client } = require('pg');
+const bcrypt = require('bcrypt');
 const multer = require('multer');
 const crypto = require('crypto');
 const { v4: uuidv4 } = require('uuid');
@@ -50,127 +51,185 @@ app.get('/image/:id', async (req, res) => {
 app.post('/register-user', upload.single('disabilityCardImage'), async (req, res) => {
     try {
         const {
-            firstName, lastName, email, password, birthDate, phone,
-            disabilityCheck, disabilityDegree,
-            streetAddress, city, postalCode, country,
-            company, salutation
+            firstName,
+            lastName,
+            email,
+            password,
+            birthDate,
+            phone,
+            disabilityCheck,
+            disabilityDegree,
+            streetAddress,
+            city,
+            postalCode,
+            country,
+            company,
+            salutation,
         } = req.body;
 
-        // Check if user already exists
-        const userCheck = await client.query('SELECT * FROM users WHERE email = $1', [email]);
-        if (userCheck.rows.length > 0) {
-            return res.status(400).json({ message: 'Email already registered' });
+        // Pflichtfelder prüfen
+        if (!email || !password || !firstName || !lastName) {
+            return res
+                .status(400)
+                .json({ message: 'Vorname, Nachname, E-Mail und Passwort sind erforderlich.' });
         }
 
-        // Generate user_id using uuidv4
+        // Prüfen, ob E-Mail schon existiert
+        const userCheck = await client.query('SELECT user_id FROM users WHERE email = $1', [
+            email.trim(),
+        ]);
+        if (userCheck.rows.length > 0) {
+            return res.status(400).json({ message: 'E-Mail ist bereits registriert.' });
+        }
+
+        // Neues user_id generieren
         const userId = uuidv4();
 
-        // Initialize imageId outside the if block
+        // Hashen des Passworts
+        const saltRounds = 10;
+        const hashedPass = await bcrypt.hash(password, saltRounds);
+        console.log('DEBUG: plain=', password, 'hash=', hashedPass);
+
+        // Datei‐Upload verarbeiten (falls vorhanden)
         let imageId = null;
-
-        // Process the image if uploaded - BEFORE user insertion
         if (req.file) {
-            imageId = uuidv4(); // Remove 'const' to update the outer variable
-            const imageBuffer = req.file.buffer;
-            const mimeType = req.file.mimetype;
-
-            // Save image to images table with reference to user - fixed parameter count
+            imageId = uuidv4();
             await client.query(
-                'INSERT INTO images (id, image_data, image_type, entity_type, entity_id) VALUES ($1, $2, $3, $4, $5)',
-                [imageId, imageBuffer, mimeType, 'user', userId]
+                `INSERT INTO images (id, image_data, image_type, entity_type, entity_id)
+                 VALUES ($1, $2, $3, $4, $5)`,
+                [imageId, req.file.buffer, req.file.mimetype, 'user', userId]
             );
         }
 
+        // Benutzer in users‐Tabelle einfügen
         const result = await client.query(
-            `INSERT INTO users (
-                user_id, first_name, last_name, email, password,
-                birth_date, phone, disability_check, disability_degree,
-                street_address, city, postal_code, country,
-                company, salutation, disability_card_image
-            ) VALUES (
-                $1, $2, $3, $4, $5, $6, $7, $8, $9, 
-                $10, $11, $12, $13, $14, $15, $16
-            ) RETURNING *`,
+            `
+                INSERT INTO users (
+                    user_id,
+                    first_name,
+                    last_name,
+                    email,
+                    password,
+                    birth_date,
+                    phone,
+                    disability_check,
+                    disability_degree,
+                    street_address,
+                    city,
+                    postal_code,
+                    country,
+                    company,
+                    salutation,
+                    disability_card_image,
+                    created_at,
+                    updated_at
+                ) VALUES (
+                             $1, $2, $3, $4, $5, $6, $7, $8, $9,
+                             $10, $11, $12, $13, $14, $15, $16, NOW(), NOW()
+                         ) RETURNING *;
+            `,
             [
-                userId, firstName, lastName, email, password,
-                birthDate || null, phone || null, disabilityCheck === 'true', disabilityDegree || null,
-                streetAddress, city, postalCode, country || 'Deutschland',
-                company || null, salutation || null, imageId
+                userId,
+                firstName.trim(),
+                lastName.trim(),
+                email.trim(),
+                hashedPass,             // <<< hier auf jeden Fall der Hash, nicht password
+                birthDate || null,
+                phone || null,
+                disabilityCheck === 'true',
+                disabilityDegree || null,
+                streetAddress.trim(),
+                city.trim(),
+                postalCode.trim(),
+                country?.trim() || 'Deutschland',
+                company?.trim() || null,
+                salutation?.trim() || null,
+                imageId,
             ]
         );
 
-        // Return success without sending password back
-        const user = result.rows[0];
-        delete user.password;
+        // Passwort‐Feld nicht zurücksenden
+        const newUser = result.rows[0];
+        delete newUser.password;
 
-        res.status(201).json({ message: 'Registration successful', user });
+        return res.status(201).json({
+            message: 'Registrierung erfolgreich',
+            user: newUser,
+        });
     } catch (error) {
         console.error('Registration error:', error);
-        res.status(500).json({ message: 'Server error during registration' });
+        return res.status(500).json({ message: 'Serverfehler während der Registrierung' });
     }
 });
 
-app.post('/register', upload.single('disabilityCardImage'), async (req, res) => {
+app.post('/login-user', async (req, res) => {
     try {
-        const {
-            firstName, lastName, email, password, birthDate, phone,
-            disabilityCheck, disabilityDegree,
-            streetAddress, city, postalCode, country,
-            company, salutation
-        } = req.body;
+        const { email, password } = req.body;
 
-        // Check if user already exists
-        const userCheck = await client.query('SELECT * FROM users WHERE email = $1', [email]);
-        if (userCheck.rows.length > 0) {
-            return res.status(400).json({ message: 'Email already registered' });
+        // 1) Pflichtfeld‐Prüfung
+        if (!email || !password) {
+            return res
+                .status(400)
+                .json({ message: 'E-Mail und Passwort sind erforderlich.' });
         }
 
-        // Generate user_id using uuidv4
-        const userId = uuidv4();
-
-        // Initialize imageId outside the if block
-        let imageId = null;
-
-        // Process the image if uploaded - BEFORE user insertion
-        if (req.file) {
-            imageId = uuidv4(); // Remove 'const' to update the outer variable
-            const imageBuffer = req.file.buffer;
-            const mimeType = req.file.mimetype;
-
-            // Save image to images table with reference to user - fixed parameter count
-            await client.query(
-                'INSERT INTO images (id, image_data, image_type, entity_type, entity_id) VALUES ($1, $2, $3, $4, $5)',
-                [imageId, imageBuffer, mimeType, 'user', userId]
-            );
-        }
-
-        // Insert new user with disability_card_image if available
+        // 2) Nutzer mit gegebener E-Mail abrufen
         const result = await client.query(
-            `INSERT INTO users (
-                user_id, first_name, last_name, email, password,
-                birth_date, phone, disability_check, disability_degree,
-                street_address, city, postal_code, country,
-                company, salutation, disability_card_image
-            ) VALUES (
-                $1, $2, $3, $4, $5, $6, $7, $8, $9, 
-                $10, $11, $12, $13, $14, $15, $16
-            ) RETURNING *`,
-            [
-                userId, firstName, lastName, email, password,
-                birthDate || null, phone || null, disabilityCheck === 'true', disabilityDegree || null,
-                streetAddress, city, postalCode, country || 'Deutschland',
-                company || null, salutation || null, imageId
-            ]
+            `
+      SELECT
+        user_id,
+        email,
+        password,            -- bcrypt-Hash
+        first_name,
+        last_name,
+        salutation,
+        company,
+        street_address,
+        postal_code,
+        city,
+        country,
+        phone,
+        birth_date,
+        disability_check,
+        disability_degree,
+        disability_card_image,
+        created_at,
+        updated_at
+      FROM users
+      WHERE email = $1
+      LIMIT 1
+      `,
+            [email.trim()]
         );
 
-        // Return success without sending password back
-        const user = result.rows[0];
-        delete user.password;
+        if (result.rows.length === 0) {
+            // Kein Nutzer mit dieser E-Mail gefunden
+            return res.status(401).json({ message: 'Ungültige Anmeldedaten.' });
+        }
 
-        res.status(201).json({ message: 'Registration successful', user });
-    } catch (error) {
-        console.error('Registration error:', error);
-        res.status(500).json({ message: 'Server error during registration' });
+        const user = result.rows[0];
+
+        // 3) Passwort vergleichen (bcrypt.compare)
+        const match = await bcrypt.compare(password, user.password);
+        if (!match) {
+            return res.status(401).json({ message: 'Ungültige Anmeldedaten.' });
+        }
+
+        // 4) Login erfolgreich → sichere Nutzerdaten zurückgeben (ohne password)
+        const safeUser = { ...user };
+        delete safeUser.password;
+
+        return res.status(200).json({
+            message: 'Login erfolgreich',
+            user: safeUser,
+            // OPTIONAL: hier könntest du direkt ein JWT signen und mit zurückschicken
+            // token: '…'
+        });
+    } catch (err) {
+        console.error('Login‐Fehler:', err);
+        return res
+            .status(500)
+            .json({ message: 'Serverfehler beim Einloggen.' });
     }
 });
 app.post('/create-country', async (req, res) => {
@@ -245,29 +304,162 @@ app.get('/artists', async (req, res) => {
         res.status(500).json({ message: 'Fehler beim Laden der Künstler' });
     }
 });
-app.post('/create-tour', upload.single('tourImage'), async (req, res) => {
+
+app.get('/genres', async (req, res) => {
     try {
-        const { title, description, startDate, endDate, artistId } = req.body;
-        if (!title || !startDate || !endDate || !artistId) {
-            return res.status(400).json({ message: 'Titel, Startdatum, Enddatum und Künstler sind erforderlich' });
+        const result = await client.query(
+            'SELECT id, name FROM genres ORDER BY name'
+        );
+        res.json({ genres: result.rows });
+    } catch (err) {
+        console.error('Error fetching genres:', err);
+        res.status(500).json({ message: 'Fehler beim Laden der Genres' });
+    }
+});
+
+// -------------------------------------------------------------
+// 2) GET /subgenres?genreId=<UUID>  → liefert nur Subgenres für ein bestimmtes Genre
+// -------------------------------------------------------------
+app.get('/subgenres', async (req, res) => {
+    const { genreId } = req.query;
+    if (!genreId) {
+        return res
+            .status(400)
+            .json({ message: 'genreId als Query-Parameter ist erforderlich' });
+    }
+
+    try {
+        const result = await client.query(
+            `SELECT id, name, genre_id 
+         FROM subgenres 
+        WHERE genre_id = $1 
+     ORDER BY name`,
+            [genreId]
+        );
+        res.json({ subgenres: result.rows });
+    } catch (err) {
+        console.error('Error fetching subgenres:', err);
+        res.status(500).json({ message: 'Fehler beim Laden der Subgenres' });
+    }
+});
+app.post('/create-tour', upload.single('tourImage'), async (req, res) => {
+    // Aus dem multipart/form-data-Body:
+    const {
+        title,
+        description,
+        startDate,
+        endDate,
+        artistId,
+        genres: genresJson,
+    } = req.body;
+
+    // 3.1 Pflichtfelder prüfen
+    if (!title || !startDate || !endDate || !artistId) {
+        return res.status(400).json({
+            message: 'Titel, Startdatum, Enddatum und Künstler sind erforderlich',
+        });
+    }
+
+    // 3.2 tourGenres parsen (Array von { genreId, subgenreIds: [...] })
+    let tourGenres = [];
+    if (genresJson) {
+        try {
+            tourGenres = JSON.parse(genresJson);
+        } catch {
+            return res
+                .status(400)
+                .json({ message: 'Ungültiges Format für genres/subgenres' });
         }
+    }
+
+    // 3.3 Validierung der Genre-/Subgenre-Struktur
+    for (let i = 0; i < tourGenres.length; i++) {
+        const { genreId, subgenreIds } = tourGenres[i] || {};
+        if (!genreId) {
+            return res
+                .status(400)
+                .json({ message: `Genre ${i + 1} muss ausgewählt werden` });
+        }
+        if (!Array.isArray(subgenreIds) || subgenreIds.length === 0) {
+            return res.status(400).json({
+                message: `Für Genre ${i + 1} muss mindestens ein Subgenre angegeben sein`,
+            });
+        }
+        for (let j = 0; j < subgenreIds.length; j++) {
+            if (!subgenreIds[j]) {
+                return res.status(400).json({
+                    message: `Subgenre ${j + 1} in Genre-Block ${i + 1} ist erforderlich`,
+                });
+            }
+            // Optional: Hier könnten Sie noch per SELECT prüfen,
+            // ob subgenreIds[j] tatsächlich zu genreId gehört.
+        }
+    }
+
+    try {
+        await client.query('BEGIN');
+
+        // 3.4 Tour-ID generieren
         const tourId = uuidv4();
+
+        // 3.5 Bild speichern (falls vorhanden) – mit tourId als entity_id
         let imageId = null;
         if (req.file) {
             imageId = uuidv4();
             await client.query(
-                'INSERT INTO images (id, image_data, image_type, entity_type, entity_id) VALUES ($1,$2,$3,$4,$5)',
-                [imageId, req.file.buffer, req.file.mimetype, 'tour', tourId]
+                `
+        INSERT INTO images
+          (id, image_data, image_type, entity_type, entity_id)
+        VALUES ($1, $2, $3, $4, $5)
+        `,
+                [
+                    imageId,
+                    req.file.buffer,
+                    req.file.mimetype,
+                    'tour',
+                    tourId, // sofort auf die neue Tour verweisen
+                ]
             );
         }
-        const result = await client.query(
-            `INSERT INTO tours (id, title, subtitle, start_date, end_date, artist_id, tour_image)
-             VALUES ($1, $2, $3, $4, $5, $6, $7)
-             RETURNING *`,
-            [tourId, title.trim(), description||null, startDate, endDate, artistId, imageId]
+
+        // 3.6 Tour-Datensatz speichern
+        const {
+            rows: [createdTour],
+        } = await client.query(
+            `
+                INSERT INTO tours
+                    (id, title, subtitle, start_date, end_date, artist_id, tour_image)
+                VALUES ($1, $2, $3, $4, $5, $6, $7)
+                RETURNING *
+            `,
+            [
+                tourId,
+                title.trim(),
+                description || null,
+                startDate,
+                endDate,
+                artistId,
+                imageId,
+            ]
         );
-        res.status(201).json({ message: 'Tour erstellt', tour: result.rows[0] });
+
+        // 3.7 Für jedes Genre-Objekt → alle Subgenre-IDs in tour_subgenres einfügen
+        for (const blk of tourGenres) {
+            for (const subId of blk.subgenreIds) {
+                await client.query(
+                    `
+          INSERT INTO tour_subgenres (tour_id, subgenre_id)
+          VALUES ($1, $2)
+          `,
+                    [tourId, subId]
+                );
+            }
+        }
+
+        await client.query('COMMIT');
+        res.status(201).json({ message: 'Tour erstellt', tour: createdTour });
     } catch (error) {
+        await client.query('ROLLBACK');
         console.error('Create-tour error:', error);
         res.status(500).json({ message: 'Serverfehler beim Erstellen der Tour' });
     }
@@ -438,6 +630,57 @@ app.post('/create-event', express.json(), async (req, res) => {
     }
 });
 
+app.post('/create-genre', async (req, res) => {
+    const { name, subgenres = [] } = req.body;
+
+    if (!name || !name.trim()) {
+        return res.status(400).json({ message: 'Ein Genre-Name ist erforderlich' });
+    }
+
+    // Check that each subgenre has a name
+    for (let i = 0; i < subgenres.length; i++) {
+        if (!subgenres[i].name || !subgenres[i].name.trim()) {
+            return res
+                .status(400)
+                .json({ message: `Subgenre ${i + 1} benötigt einen Namen` });
+        }
+    }
+
+    try {
+        await client.query('BEGIN');
+
+        // Insert into "genres"
+        const genreId = uuidv4();
+        const insertGenreText =
+            'INSERT INTO genres (id, name) VALUES ($1, $2) RETURNING *';
+        const { rows: genreRows } = await client.query(insertGenreText, [
+            genreId,
+            name.trim(),
+        ]);
+
+        // Insert subgenres (one-to-many)
+        const insertSubgenreText =
+            'INSERT INTO subgenres (id, genre_id, name) VALUES ($1, $2, $3)';
+        for (const sg of subgenres) {
+            const subId = uuidv4();
+            await client.query(insertSubgenreText, [
+                subId,
+                genreId,
+                sg.name.trim(),
+            ]);
+        }
+
+        await client.query('COMMIT');
+        res.status(201).json({
+            message: 'Genre und Subgenres erstellt',
+            genre: genreRows[0],
+        });
+    } catch (err) {
+        await client.query('ROLLBACK');
+        console.error('Create-genre error:', err);
+        res.status(500).json({ message: 'Serverfehler beim Erstellen des Genres' });
+    }
+});
 
 const credentials = require('./credentials.json')
 
