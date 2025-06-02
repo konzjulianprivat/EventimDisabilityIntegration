@@ -1,7 +1,8 @@
-// src/pages/_app.js
 import '../styles/global.css';
 import '../styles/login.css';
 import NavBar from '../components/nav-bar.jsx';
+import Footer from "../components/footer.jsx";
+
 
 export default function MyApp({ Component, pageProps }) {
     return (
@@ -11,12 +12,7 @@ export default function MyApp({ Component, pageProps }) {
                 <div className="content">
                     <Component {...pageProps} />
                 </div>
-                <footer>
-                    <div className="footer-content">
-                        <p>© 2023 Eventim. All rights reserved.</p>
-                        <p>Privacy Policy | Terms of Service Change</p>
-                    </div>
-                </footer>
+                <Footer />
             </div>
         </>
     );

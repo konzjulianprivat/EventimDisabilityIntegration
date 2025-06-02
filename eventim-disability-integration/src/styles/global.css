@@ -6,7 +6,17 @@ body, html {
     height: 100%;
     width: 100%;
     background-color: #f5f5f5;
+    font-family: Helvetica, Arial, sans-serif;
 }
+
+.highlights-section{
+    margin: 40px 0px 0px 0px;
+}
+
+.artists-section{
+    margin: 40px 0px 0px 0px;
+}
+
 
 .page {
     margin: 0 1%;
@@ -20,6 +30,27 @@ body, html {
     padding: 2rem;
     margin-top: 2%; /* Account for fixed navbar height */
     flex: 1;
+}
+
+.homepage{
+    margin: 20px 0px 0px 0px;
+}
+
+.link-clean{
+    text-decoration: none;
+    color: inherit;
+}
+
+.picture-link-clean{
+    text-decoration: none;
+    color: inherit;
+    line-height: 0;
+    display: flex;
+    gap: 1rem;
+    width: 40px;
+    height: 40px;
+    object-fit: cover;
+    border-radius: 4px;
 }
 
 .nav-bar {
@@ -171,19 +202,6 @@ body, html {
     cursor: pointer;
 }
 
-footer {
-    padding: 1.5rem;
-    background-color: white;
-    margin-top: auto;
-    border-top-color: grey;
-    border-top-style: solid;
-    border-top-width: 1px;
-    width: 98%; /* Match content width */
-}
-
-footer .content {
-    display: flex;
-}
 
 /* ——— New hover‐activated sub‐menu rules ——— */
 
@@ -213,4 +231,456 @@ nav-bar .sub-menu {
 /* Show sub‐menu when hovering its parent */
 nav-bar .dropdown-menu .dropdown-item:hover > .sub-menu {
     display: block;
+}
+
+
+
+/*FOOTER*/
+.footer {
+    background-color: #EDF0EF;
+    color: #4B5563;
+    padding: 10px 32px 10px 32px;
+    margin-top: auto;
+    font-size: 14px;
+    border-top: 1px solid #D1D5DB;
+}
+
+.footer-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1.5rem;
+    margin-bottom: 2.5rem;
+}
+
+@media (min-width: 768px) {
+    .footer-grid {
+        grid-template-columns: repeat(6, 1fr);
+    }
+}
+
+.footer-heading {
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+    font-size: 15px;
+}
+
+.footer-links {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    text-decoration: none;
+    color: inherit;
+}
+
+.footer-links li {
+    color: #3B82F6;
+    margin-bottom: 0.25rem;
+}
+
+.link-clean:hover {
+    color: #1e40af;
+}
+
+.footer-bottom {
+    border-top: 1px solid #D1D5DB;
+    padding-top: 1.5rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    font-size: 12px;
+}
+
+@media (min-width: 768px) {
+    .footer-bottom {
+        flex-direction: row;
+        justify-content: space-between;
+    }
+}
+
+.footer-social,
+.footer-apps {
+    display: flex;
+    flex-direction: column;
+    margin-bottom: 1rem;
+}
+
+.footer-icons-logo {
+    display: flex;
+    gap: 1rem;
+    margin-top: 0.5rem;
+    width: 40px;
+    height: 40px;
+    object-fit: cover;
+}
+
+.footer-icons-badges {
+    display: flex;
+    gap: 1rem;
+    margin-top: 0.5rem;
+}
+
+.footer-label {
+    font-weight: 500;
+    font-size: 13px;
+}
+
+.footer-img {
+    width: 125px;
+    height: 45px;
+    object-fit: contain;
+}
+
+.footer-hotline {
+}
+
+.footer-hotline-title {
+    font-size: 15px;
+    margin-bottom: 1px;
+    margin-top: 1px;
+}
+
+.footer-hotline-number {
+    font-size: 25px;
+    color: #3B82F6;
+    text-decoration: none;
+    margin-bottom: 1px;
+    margin-top: 1px;
+}
+
+.footer-hotline-number:hover {
+    color: #1e40af;
+}
+
+.footer-hotline-subtext {
+    font-size: 10px;
+    margin-top: 0;
+}
+
+
+/*SmallTourCard*/
+.small-tourCard-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 16px;
+    justify-content: flex-start;
+}
+
+.small-tourCard-class {
+    width: 170px;
+    height: auto;
+    background-color: white;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+}
+
+.small-tourCard-image {
+    width: 170px;
+    height: 200px;
+    object-fit: cover;
+    object-position: center;
+}
+
+.small-tourCard-info {
+    padding: 8px;
+    text-align: center;
+    width: 100%;
+}
+
+.small-tourCard-title {
+    font-size: 14px;
+    font-weight: 600;
+    margin-top: 5px;
+}
+
+.small-tourCard-link {
+    font-size: 14px;
+    color: #2563eb;
+    cursor: pointer;
+    margin-top: auto;
+    margin-bottom: 10px;
+    text-decoration: none;
+    text-align: center;
+}
+
+.small-tourCard-link:hover {
+    color: #1e40af;
+}
+
+/*Scoller*/
+.homepage-scroller-container {
+    width: 100%;
+    overflow: hidden;
+    position: relative;
+}
+
+.homepage-scroller {
+    display: flex;
+    animation: scroll 40s linear infinite;
+}
+
+.homepage-scroller-img {
+    width: 200px;
+    height: auto;
+    margin-right: 10px;
+    border-radius: 12px;
+    transition: transform 0.3s ease-in-out;
+}
+
+.homepage-scroller-img:hover {
+    transform: scale(1.05);
+}
+
+@keyframes scroll {
+    0% {
+        transform: translateX(0);
+    }
+    100% {
+        transform: translateX(-50%);
+    }
+}
+
+
+/*TourPage-CSS*/
+
+.tour-page-header-flex {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 50px;
+    margin-bottom: 10px;
+    margin-top: 10px;
+}
+
+/* Textbox im Header */
+.tour-header-text {
+    flex: 1;
+    min-width: 300px;
+    margin: 0px 0px 0px 10px;
+
+}
+
+.tour-header-text h1 {
+    font-size: 2.5rem;
+    margin-bottom: 10px;
+}
+
+.tour-header-text p {
+    font-size: 1rem;
+    margin: 5px 0px 0px 0px;
+    color: #333;
+}
+
+.tour-header-image {
+    flex: 1;
+    min-width: 300px;
+    text-align: center;
+}
+
+.tour-header-image img {
+    max-width: 100%;
+    height: auto;
+    border-radius: 8px;
+}
+
+/* Buttons */
+.btn {
+    padding: 10px 20px;
+    margin: 5px 0;
+    border-radius: 4px;
+    border: none;
+    cursor: pointer;
+    font-size: 1rem;
+    transition: background-color 0.2s ease-in-out;
+}
+
+.btn:hover {
+    opacity: 0.9;
+}
+
+.btn-goOn {
+    background-color: #007bff;
+    color: #fff;
+}
+
+.btn-not-available {
+    background-color: #fff;
+    border: 1px solid #ccc;
+    color: #333;
+}
+
+.btn-yellow {
+    background-color: #ffc107;
+    color: #333;
+}
+
+/* Haupt-Eventbereich */
+.tour-page-container {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 20px;
+    color: #333;
+}
+
+/* Liste der Events */
+.events-list {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+/* Einzelne Event-Karte */
+.tourPage-event-card {
+    display: flex;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    border: 1px solid #e0e0e0;
+    border-radius: 6px;
+    padding: 15px;
+    background-color: #f8f9fa;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+}
+
+/* Datumsspalte */
+.tourPage-event-date {
+    flex: 1;
+    text-align: center;
+    font-weight: bold;
+    min-width: 90px;
+}
+
+.tourPage-event-date .date {
+    font-size: 1.8rem;
+    display: block;
+}
+
+.tourPage-event-date .month-year,
+.tourPage-event-date .weekday {
+    font-size: 0.9rem;
+    color: #777;
+    display: block;
+}
+
+/* Eventdetails */
+.tourPage-event-details {
+    flex: 2;
+    padding: 0 20px;
+    min-width: 200px;
+}
+
+.tourPage-event-details h3 {
+    margin: 0 0 5px;
+    font-size: 1.2rem;
+}
+
+.tourPage-event-details p {
+    margin: 2px 0;
+    color: #555;
+}
+
+/* Aktionen */
+.tourPage-event-actions {
+    flex: 1;
+    text-align: right;
+    min-width: 180px;
+}
+
+.tourPage-price {
+    display: block;
+    margin-bottom: 10px;
+    font-weight: bold;
+    color: #28a745;
+}
+
+.tourPage-not-available {
+    display: block;
+    margin-bottom: 10px;
+    color: red;
+    font-weight: bold;
+}
+
+/*eventDetailPage*/
+
+.event-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+.event-info {
+    flex: 1;
+}
+
+.event-image {
+    flex: 1;
+    text-align: right;
+}
+
+.banner-img {
+    width: 300px;
+    border-radius: 8px;
+}
+
+.ticket-section {
+    margin-top: 2rem;
+}
+
+.ticket-box {
+    flex: 1;
+    padding: 1rem;
+    border: 1px solid #ddd;
+    border-radius: 10px;
+    background: #fff;
+}
+
+.ticket-heading {
+    margin-top: 2rem;
+}
+
+.quantity-selector {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.categories {
+    margin-top: 1rem;
+}
+
+.category-card {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem;
+    margin-bottom: 1rem;
+    border: 1px solid #ccc;
+    border-radius: 8px;
+}
+
+.category-card.available {
+    background-color: #fff;
+    color: #000;
+}
+
+.category-card.unavailable {
+    background-color: #eee;
+    color: #aaa;
+}
+
+.radio-btn {
+    margin-left: 1rem;
+}
+
+.summary-box {
+    margin-top: 2rem;
+    background: #002b55;
+    color: white;
+    padding: 1rem;
+    border-radius: 8px;
 }
