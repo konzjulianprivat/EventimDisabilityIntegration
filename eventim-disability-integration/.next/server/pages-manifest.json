@@ -2,7 +2,9 @@
   "/_app": "pages/_app.js",
   "/_error": "pages/_error.js",
   "/_document": "pages/_document.js",
-  "/login": "pages/login.js",
   "/": "pages/index.js",
-  "/admin/genres/create": "pages/admin/genres/create.js"
+  "/admin/tours/create": "pages/admin/tours/create.js",
+  "/login": "pages/login.js",
+  "/admin/artists/create": "pages/admin/artists/create.js",
+  "/registration": "pages/registration.js"
 }

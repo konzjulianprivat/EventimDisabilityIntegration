@@ -2,66 +2,48 @@
 import React, { useState, useRef, useEffect } from 'react';
 import Image from 'next/image';
 
-const eventsMenu = [
-    {
-        label: 'Konzerte',
-        items: [
-            'Übersicht Konzerte',
-            'Rock & Pop (10380)',
-            'HipHop & R’n’B (1608)',
-            'Schlager & Volksmusik (1707)',
-            'Hard & Heavy (2576)',
-            'Clubkonzerte (1128)',
-            'Festivals (2025)',
-            'Electronic & Dance (538)',
-            'Jazz & Blues (1238)',
-            'Country & Folk (377)',
-            'Weitere Konzerte (7862)',
-        ],
-    },
-    {
-        label: 'Kultur',
-        items: [
-            'Ausstellungen (234)',
-            'Lesungen (98)',
-            'Theater (317)',
-            'Oper & Ballett (156)',
-            'Film (485)',
-        ],
-    },
-    {
-        label: 'Musical & Show',
-        items: ['Musicals (412)', 'Shows & Varieté (254)'],
-    },
-    {
-        label: 'Humor',
-        items: ['Stand-up (198)', 'Kabarett (122)'],
-    },
-    {
-        label: 'Sport',
-        items: ['Fußball (512)', 'Basketball (76)', 'Tennis (44)'],
-    },
-    {
-        label: 'Freizeit',
-        items: ['Messen (87)', 'Parks & Freizeit (63)'],
-    },
-    {
-        label: 'VIP & Extras',
-        items: ['VIP-Packages (39)', 'Backstage-Tour (12)'],
-    },
-];
-
-const placesMenu = [
-    { label: 'Deutschland', items: ['Berlin', 'München', 'Hamburg'] },
-    { label: 'Österreich', items: ['Wien', 'Salzburg', 'Graz'] },
-    { label: 'Schweiz', items: ['Zürich', 'Basel', 'Genf'] },
-];
-
 export default function NavBar() {
     const [openDropdown, setOpenDropdown] = useState(null);
+
+    // Holds genres + their subgenres
+    const [genres, setGenres] = useState([]);
+    // Holds cities + their venues
+    const [cities, setCities] = useState([]);
+
     const eventsRef = useRef(null);
     const placesRef = useRef(null);
 
+    // Fetch genres + subgenres on mount
+    useEffect(() => {
+        async function fetchGenres() {
+            try {
+                const res = await fetch('http://localhost:4000/genres-with-subgenres');
+                if (!res.ok) throw new Error('Fetch fehlgeschlagen');
+                const body = await res.json();
+                setGenres(body.genres);
+            } catch (err) {
+                console.error('Error loading genres:', err);
+            }
+        }
+        fetchGenres();
+    }, []);
+
+    // Fetch cities + venues on mount
+    useEffect(() => {
+        async function fetchCities() {
+            try {
+                const res = await fetch('http://localhost:4000/cities-with-venues');
+                if (!res.ok) throw new Error('Fetch fehlgeschlagen');
+                const body = await res.json();
+                setCities(body.cities);
+            } catch (err) {
+                console.error('Error loading cities:', err);
+            }
+        }
+        fetchCities();
+    }, []);
+
+    // Close any open dropdown when clicking outside
     useEffect(() => {
         function handleClickOutside(e) {
             if (
@@ -92,10 +74,9 @@ export default function NavBar() {
                 </div>
 
                 <nav className="menu">
+                    {/* “Alle Events” dropdown (genres + subgenres) */}
                     <div
-                        className={`dropdown ${
-                            openDropdown === 'events' ? 'show' : ''
-                        }`}
+                        className={`dropdown ${openDropdown === 'events' ? 'show' : ''}`}
                         ref={eventsRef}
                     >
                         <a
@@ -103,32 +84,23 @@ export default function NavBar() {
                             className="dropdown-toggle"
                             onClick={(e) => {
                                 e.preventDefault();
-                                setOpenDropdown(
-                                    openDropdown === 'events'
-                                        ? null
-                                        : 'events'
-                                );
+                                setOpenDropdown(prev => (prev === 'events' ? null : 'events'));
                             }}
                         >
                             Alle Events
                         </a>
                         <div className="dropdown-menu">
-                            {eventsMenu.map((cat) => (
-                                <div
-                                    className="dropdown-item"
-                                    key={cat.label}
-                                >
-                                    <span className="label">
-                                        {cat.label}
-                                    </span>
+                            {genres.map((genre) => (
+                                <div className="dropdown-item" key={genre.id}>
+                                    <span className="label">{genre.name}</span>
                                     <div className="sub-menu">
-                                        {cat.items.map((item) => (
+                                        {genre.subgenres.map((sub) => (
                                             <a
-                                                href="#"
+                                                href={`#/events/genre/${genre.id}/subgenre/${sub.id}`}
                                                 className="dropdown-item"
-                                                key={item}
+                                                key={sub.id}
                                             >
-                                                {item}
+                                                {sub.name}
                                             </a>
                                         ))}
                                     </div>
@@ -137,10 +109,9 @@ export default function NavBar() {
                         </div>
                     </div>
 
+                    {/* “Alle Orte” dropdown (cities + venues) */}
                     <div
-                        className={`dropdown ${
-                            openDropdown === 'places' ? 'show' : ''
-                        }`}
+                        className={`dropdown ${openDropdown === 'places' ? 'show' : ''}`}
                         ref={placesRef}
                     >
                         <a
@@ -148,32 +119,23 @@ export default function NavBar() {
                             className="dropdown-toggle"
                             onClick={(e) => {
                                 e.preventDefault();
-                                setOpenDropdown(
-                                    openDropdown === 'places'
-                                        ? null
-                                        : 'places'
-                                );
+                                setOpenDropdown(prev => (prev === 'places' ? null : 'places'));
                             }}
                         >
                             Alle Orte
                         </a>
                         <div className="dropdown-menu">
-                            {placesMenu.map((region) => (
-                                <div
-                                    className="dropdown-item"
-                                    key={region.label}
-                                >
-                                    <span className="label">
-                                        {region.label}
-                                    </span>
+                            {cities.map((city) => (
+                                <div className="dropdown-item" key={city.id}>
+                                    <span className="label">{city.name}</span>
                                     <div className="sub-menu">
-                                        {region.items.map((city) => (
+                                        {city.venues.map((venue) => (
                                             <a
-                                                href="#"
+                                                href={`#/events/city/${city.id}/venue/${venue.id}`}
                                                 className="dropdown-item"
-                                                key={city}
+                                                key={venue.id}
                                             >
-                                                {city}
+                                                {venue.name}
                                             </a>
                                         ))}
                                     </div>
