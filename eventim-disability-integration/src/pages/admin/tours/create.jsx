@@ -1,59 +1,77 @@
 // src/pages/admin/tours/create.jsx
-import React, { useState, useEffect } from 'react';
-import { useRouter } from 'next/router';
+"use client";
+
+import React, { useState, useEffect } from "react";
 
 export default function TourCreation() {
-    const router = useRouter();
-
+    // --------------------------------------------------
+    // 1) State
+    // --------------------------------------------------
     const [formData, setFormData] = useState({
-        title: '',
-        description: '',
-        startDate: '',
-        endDate: '',
-        artistId: '',
+        title: "",
+        description: "",
+        startDate: "",
+        endDate: "",
         tourImage: null,
     });
 
+    // Array von ausgewählten Künstler-IDs (strings), z.B. ["uuid1", "uuid2", …]
+    const [tourArtists, setTourArtists] = useState([]);
+
     const [artists, setArtists] = useState([]);
     const [genres, setGenres] = useState([]);
-    // Wir speichern Subgenres pro Genre-id in einem Objekt:
-    //    { [genreId]: [ { id, name, genre_id }, … ] }
     const [subgenresByGenre, setSubgenresByGenre] = useState({});
-
-    // Für die Tour-zuordnung, ein Array von “Blöcken”:
-    //    [{ genreId: '', subgenreIds: ['','',…] }, …]
     const [tourGenres, setTourGenres] = useState([]);
 
-    const [message, setMessage] = useState('');
+    const [message, setMessage] = useState("");
     const [loading, setLoading] = useState(false);
 
-    // ----------------------------------------------------------------------
-    // 1) Beim Mount alle Künstler und Haupt-Genres einmal laden
-    // ----------------------------------------------------------------------
+    // --------------------------------------------------
+    // 2) Hook: Künstler & Genres laden
+    // --------------------------------------------------
     useEffect(() => {
-        fetch('http://localhost:4000/artists')
+        fetch("http://localhost:4000/artists")
             .then((res) => res.json())
             .then((data) => setArtists(data.artists))
-            .catch((err) => console.error('Fehler beim Laden der Künstler:', err));
+            .catch((err) => console.error("Fehler beim Laden der Künstler:", err));
 
-        fetch('http://localhost:4000/genres')
+        fetch("http://localhost:4000/genres")
             .then((res) => res.json())
             .then((data) => setGenres(data.genres))
-            .catch((err) => console.error('Fehler beim Laden der Genres:', err));
+            .catch((err) => console.error("Fehler beim Laden der Genres:", err));
     }, []);
 
-
+    // --------------------------------------------------
+    // 3) Helper-Funktionen
+    // --------------------------------------------------
+    // Einfacher onChange-Handler für Title, Description, Start-/Enddatum, Image
     const handleChange = (e) => {
         const { name, type, value, files } = e.target;
-        setFormData((prev) => ({
-            ...prev,
-            [name]: type === 'file' ? files[0] : value,
-        }));
+        if (type === "file") {
+            setFormData((prev) => ({ ...prev, [name]: files[0] }));
+        } else {
+            setFormData((prev) => ({ ...prev, [name]: value }));
+        }
     };
 
-    // Genre-/Subgenre-Blöcke verwalten:
+    // Künstler-Blocks verwalten:
+    const addArtistBlock = () => {
+        setTourArtists((prev) => [...prev, ""]); // neuer leerer Eintrag
+    };
+
+    const removeArtistBlock = (index) => {
+        setTourArtists((prev) => prev.filter((_, idx) => idx !== index));
+    };
+
+    const updateArtistInBlock = (index, newArtistId) => {
+        setTourArtists((prev) =>
+            prev.map((aid, idx) => (idx === index ? newArtistId : aid))
+        );
+    };
+
+    // Genre-/Subgenre-Logik (unverändert von vorher):
     const addGenreBlock = () => {
-        setTourGenres((prev) => [...prev, { genreId: '', subgenreIds: [] }]);
+        setTourGenres((prev) => [...prev, { genreId: "", subgenreIds: [] }]);
     };
 
     const removeGenreBlock = (blockIndex) => {
@@ -61,7 +79,6 @@ export default function TourCreation() {
     };
 
     const updateGenreInBlock = async (blockIndex, newGenreId) => {
-        // Wenn Genre gewechselt wird, Subgenres zurücksetzen
         setTourGenres((prev) =>
             prev.map((blk, idx) =>
                 idx === blockIndex
@@ -70,7 +87,6 @@ export default function TourCreation() {
             )
         );
 
-        // Nur dann Subgenres vom Server laden, wenn wir sie noch nicht haben
         if (newGenreId && !subgenresByGenre[newGenreId]) {
             try {
                 const res = await fetch(
@@ -94,7 +110,7 @@ export default function TourCreation() {
         setTourGenres((prev) =>
             prev.map((blk, idx) =>
                 idx === blockIndex
-                    ? { ...blk, subgenreIds: [...blk.subgenreIds, ''] }
+                    ? { ...blk, subgenreIds: [...blk.subgenreIds, ""] }
                     : blk
             )
         );
@@ -125,20 +141,24 @@ export default function TourCreation() {
         );
     };
 
-
+    // --------------------------------------------------
+    // 4) Submit-Handler
+    // --------------------------------------------------
     const handleSubmit = async (e) => {
         e.preventDefault();
         setLoading(true);
-        setMessage('');
+        setMessage("");
 
+        // Pflichtprüfungen:
         if (
             !formData.title.trim() ||
             !formData.startDate ||
             !formData.endDate ||
-            !formData.artistId
+            tourArtists.length === 0 ||
+            tourArtists.some((aid) => !aid)
         ) {
             setMessage(
-                'Titel, Startdatum, Enddatum und Künstler sind erforderlich'
+                "Titel, Startdatum, Enddatum und mindestens ein ausgewählter Künstler sind erforderlich"
             );
             setLoading(false);
             return;
@@ -167,28 +187,25 @@ export default function TourCreation() {
                     setLoading(false);
                     return;
                 }
-                // Optional: Hier könnten wir serverseitig prüfen, ob subgenreIds[j]
-                // wirklich zu genreId gehört (das Foreign Key in der DB übernimmt das
-                // eigentlich ohnehin).
             }
         }
 
-        // FormData zusammenpacken
+        //  FormData zusammenbauen:
         const fd = new FormData();
-        fd.append('title', formData.title.trim());
-        fd.append('description', formData.description || '');
-        fd.append('startDate', formData.startDate);
-        fd.append('endDate', formData.endDate);
-        fd.append('artistId', formData.artistId);
+        fd.append("title", formData.title.trim());
+        fd.append("description", formData.description || "");
+        fd.append("startDate", formData.startDate);
+        fd.append("endDate", formData.endDate);
+        // Künstler-IDs als JSON-String übertragen
+        fd.append("artistIdsJson", JSON.stringify(tourArtists));
         if (formData.tourImage) {
-            fd.append('tourImage', formData.tourImage);
+            fd.append("tourImage", formData.tourImage);
         }
-        // Die tourGenres-Struktur als JSON-String mitsenden
-        fd.append('genres', JSON.stringify(tourGenres));
+        fd.append("genres", JSON.stringify(tourGenres));
 
         try {
-            const res = await fetch('http://localhost:4000/create-tour', {
-                method: 'POST',
+            const res = await fetch("http://localhost:4000/create-tour", {
+                method: "POST",
                 body: fd,
             });
             const data = await res.json();
@@ -196,47 +213,45 @@ export default function TourCreation() {
                 setMessage(`Tour „${data.tour.title}“ erstellt`);
                 // Formular zurücksetzen
                 setFormData({
-                    title: '',
-                    description: '',
-                    startDate: '',
-                    endDate: '',
-                    artistId: '',
+                    title: "",
+                    description: "",
+                    startDate: "",
+                    endDate: "",
                     tourImage: null,
                 });
                 setTourGenres([]);
+                setTourArtists([]);
             } else {
-                setMessage(data.message || 'Fehler beim Erstellen der Tour');
+                setMessage(data.message || "Fehler beim Erstellen der Tour");
             }
         } catch (err) {
-            console.error('Create tour error:', err);
-            setMessage('Serverfehler beim Erstellen der Tour');
+            console.error("Create tour error:", err);
+            setMessage("Serverfehler beim Erstellen der Tour");
         } finally {
             setLoading(false);
         }
     };
 
-    // ----------------------------------------------------------------------
-    // 4) JSX Render-Teil
-    // ----------------------------------------------------------------------
+    // --------------------------------------------------
+    // 5) JSX-Render
+    // --------------------------------------------------
     return (
         <div
             className="registration-container"
-            style={{ maxWidth: '600px', margin: '0 auto', padding: '2rem' }}
+            style={{ maxWidth: "600px", margin: "0 auto", padding: "2rem" }}
         >
-            <h1 style={{ color: '#002b55', marginBottom: '1.5rem' }}>
+            <h1 style={{ color: "#002b55", marginBottom: "1.5rem" }}>
                 Neue Tour erstellen
             </h1>
 
             {message && (
                 <div
                     style={{
-                        padding: '0.75rem',
-                        backgroundColor: message.includes('erstellt')
-                            ? '#d4edda'
-                            : '#f8d7da',
-                        color: message.includes('erstellt') ? '#155724' : '#721c24',
-                        borderRadius: '4px',
-                        marginBottom: '1rem',
+                        padding: "0.75rem",
+                        backgroundColor: message.includes("erstellt") ? "#d4edda" : "#f8d7da",
+                        color: message.includes("erstellt") ? "#155724" : "#721c24",
+                        borderRadius: "4px",
+                        marginBottom: "1rem",
                     }}
                 >
                     {message}
@@ -245,10 +260,14 @@ export default function TourCreation() {
 
             <form onSubmit={handleSubmit}>
                 {/* === Titel === */}
-                <div style={{ marginBottom: '1rem' }}>
+                <div style={{ marginBottom: "1rem" }}>
                     <label
                         htmlFor="title"
-                        style={{ display: 'block', fontWeight: 'bold', marginBottom: '0.5rem' }}
+                        style={{
+                            display: "block",
+                            fontWeight: "bold",
+                            marginBottom: "0.5rem",
+                        }}
                     >
                         Titel *
                     </label>
@@ -260,19 +279,23 @@ export default function TourCreation() {
                         onChange={handleChange}
                         required
                         style={{
-                            width: '100%',
-                            padding: '0.5rem',
-                            borderRadius: '4px',
-                            border: '1px solid #ccc',
+                            width: "100%",
+                            padding: "0.5rem",
+                            borderRadius: "4px",
+                            border: "1px solid #ccc",
                         }}
                     />
                 </div>
 
                 {/* === Beschreibung === */}
-                <div style={{ marginBottom: '1rem' }}>
+                <div style={{ marginBottom: "1rem" }}>
                     <label
                         htmlFor="description"
-                        style={{ display: 'block', fontWeight: 'bold', marginBottom: '0.5rem' }}
+                        style={{
+                            display: "block",
+                            fontWeight: "bold",
+                            marginBottom: "0.5rem",
+                        }}
                     >
                         Beschreibung
                     </label>
@@ -283,20 +306,24 @@ export default function TourCreation() {
                         onChange={handleChange}
                         rows={4}
                         style={{
-                            width: '100%',
-                            padding: '0.5rem',
-                            borderRadius: '4px',
-                            border: '1px solid #ccc',
+                            width: "100%",
+                            padding: "0.5rem",
+                            borderRadius: "4px",
+                            border: "1px solid #ccc",
                         }}
                     />
                 </div>
 
                 {/* === Start- & Enddatum === */}
-                <div style={{ marginBottom: '1rem', display: 'flex', gap: '1rem' }}>
+                <div style={{ marginBottom: "1rem", display: "flex", gap: "1rem" }}>
                     <div style={{ flex: 1 }}>
                         <label
                             htmlFor="startDate"
-                            style={{ display: 'block', fontWeight: 'bold', marginBottom: '0.5rem' }}
+                            style={{
+                                display: "block",
+                                fontWeight: "bold",
+                                marginBottom: "0.5rem",
+                            }}
                         >
                             Startdatum *
                         </label>
@@ -308,17 +335,21 @@ export default function TourCreation() {
                             onChange={handleChange}
                             required
                             style={{
-                                width: '100%',
-                                padding: '0.5rem',
-                                borderRadius: '4px',
-                                border: '1px solid #ccc',
+                                width: "100%",
+                                padding: "0.5rem",
+                                borderRadius: "4px",
+                                border: "1px solid #ccc",
                             }}
                         />
                     </div>
                     <div style={{ flex: 1 }}>
                         <label
                             htmlFor="endDate"
-                            style={{ display: 'block', fontWeight: 'bold', marginBottom: '0.5rem' }}
+                            style={{
+                                display: "block",
+                                fontWeight: "bold",
+                                marginBottom: "0.5rem",
+                            }}
                         >
                             Enddatum *
                         </label>
@@ -330,50 +361,95 @@ export default function TourCreation() {
                             onChange={handleChange}
                             required
                             style={{
-                                width: '100%',
-                                padding: '0.5rem',
-                                borderRadius: '4px',
-                                border: '1px solid #ccc',
+                                width: "100%",
+                                padding: "0.5rem",
+                                borderRadius: "4px",
+                                border: "1px solid #ccc",
                             }}
                         />
                     </div>
                 </div>
 
-                {/* === Künstler === */}
-                <div style={{ marginBottom: '1rem' }}>
+                {/* === Künstler hinzufügen === */}
+                <div style={{ marginBottom: "1rem" }}>
                     <label
-                        htmlFor="artistId"
-                        style={{ display: 'block', fontWeight: 'bold', marginBottom: '0.5rem' }}
-                    >
-                        Künstler *
-                    </label>
-                    <select
-                        id="artistId"
-                        name="artistId"
-                        value={formData.artistId}
-                        onChange={handleChange}
-                        required
                         style={{
-                            width: '100%',
-                            padding: '0.5rem',
-                            borderRadius: '4px',
-                            border: '1px solid #ccc',
+                            display: "block",
+                            fontWeight: "bold",
+                            marginBottom: "0.5rem",
                         }}
                     >
-                        <option value="">Bitte wählen</option>
-                        {artists.map((a) => (
-                            <option key={a.id} value={a.id}>
-                                {a.name}
-                            </option>
-                        ))}
-                    </select>
+                        Künstler hinzufügen
+                    </label>
+                    {tourArtists.map((artistId, idx) => (
+                        <div
+                            key={idx}
+                            style={{
+                                display: "flex",
+                                alignItems: "center",
+                                gap: "0.5rem",
+                                marginBottom: "0.75rem",
+                            }}
+                        >
+                            <select
+                                value={artistId}
+                                onChange={(e) => updateArtistInBlock(idx, e.target.value)}
+                                required
+                                style={{
+                                    flex: 1,
+                                    padding: "0.5rem",
+                                    border: "1px solid #ccc",
+                                    borderRadius: "4px",
+                                }}
+                            >
+                                <option value="">Künstler wählen</option>
+                                {artists.map((a) => (
+                                    <option key={a.id} value={a.id}>
+                                        {a.name}
+                                    </option>
+                                ))}
+                            </select>
+                            <button
+                                type="button"
+                                onClick={() => removeArtistBlock(idx)}
+                                style={{
+                                    background: "transparent",
+                                    border: "none",
+                                    color: "#c00",
+                                    fontSize: "1.25rem",
+                                    cursor: "pointer",
+                                }}
+                                aria-label="Künstler entfernen"
+                            >
+                                ✕
+                            </button>
+                        </div>
+                    ))}
+
+                    <button
+                        type="button"
+                        onClick={addArtistBlock}
+                        style={{
+                            background: "#eee",
+                            border: "1px solid #ccc",
+                            padding: "0.5rem",
+                            borderRadius: "4px",
+                            cursor: "pointer",
+                        }}
+                    >
+                        + Künstler hinzufügen
+                    </button>
                 </div>
 
-                {/* === Tour-Bild === */}
-                <div style={{ marginBottom: '1rem' }}>
+                {/* === Tour-Bild hochladen === */}
+                <div style={{ marginBottom: "1rem" }}>
                     <label
                         htmlFor="tourImage"
-                        style={{ display: 'block', fontWeight: 'bold', marginBottom: '0.5rem' }}
+                        style={{
+                            display: "block",
+                            fontWeight: "bold",
+                            marginBottom: "0.5rem",
+                        }}
                     >
                         Tour-Bild hochladen
                     </label>
@@ -381,48 +457,46 @@ export default function TourCreation() {
                         type="file"
                         id="tourImage"
                         name="tourImage"
+                        accept="image/*"
                         onChange={handleChange}
                         style={{
-                            width: '100%',
-                            padding: '0.5rem',
-                            borderRadius: '4px',
-                            border: '1px solid #ccc',
+                            width: "100%",
+                            padding: "0.5rem",
+                            borderRadius: "4px",
+                            border: "1px solid #ccc",
                         }}
                     />
                 </div>
 
                 {/* === Genres & Subgenres === */}
-                <div style={{ marginBottom: '2rem' }}>
+                <div style={{ marginBottom: "2rem" }}>
                     <label
                         style={{
-                            display: 'block',
-                            fontWeight: 'bold',
-                            marginBottom: '0.5rem',
+                            display: "block",
+                            fontWeight: "bold",
+                            marginBottom: "0.5rem",
                         }}
                     >
                         Genres & Subgenres
                     </label>
 
                     {tourGenres.map((blk, i) => {
-                        // Nur Subgenres für das aktuell gewählte Genre aus subgenresByGenre abrufen:
-                        const optionsForThisGenre =
-                            subgenresByGenre[blk.genreId] || [];
-
+                        const optionsForThisGenre = subgenresByGenre[blk.genreId] || [];
                         return (
                             <div
                                 key={i}
                                 style={{
-                                    marginBottom: '1rem',
-                                    padding: '1rem',
-                                    border: '1px solid #ddd',
-                                    borderRadius: '4px',
+                                    marginBottom: "1rem",
+                                    padding: "1rem",
+                                    border: "1px solid #ddd",
+                                    borderRadius: "4px",
                                 }}
                             >
                                 <div
                                     style={{
-                                        display: 'flex',
-                                        justifyContent: 'space-between',
-                                        marginBottom: '0.5rem',
+                                        display: "flex",
+                                        justifyContent: "space-between",
+                                        marginBottom: "0.5rem",
                                     }}
                                 >
                                     <strong>Genre {i + 1}</strong>
@@ -430,29 +504,28 @@ export default function TourCreation() {
                                         type="button"
                                         onClick={() => removeGenreBlock(i)}
                                         style={{
-                                            background: 'transparent',
-                                            border: 'none',
-                                            color: '#c00',
-                                            fontSize: '1.25rem',
+                                            background: "transparent",
+                                            border: "none",
+                                            color: "#c00",
+                                            fontSize: "1.25rem",
+                                            cursor: "pointer",
                                         }}
+                                        aria-label="Genre entfernen"
                                     >
                                         ✕
                                     </button>
                                 </div>
 
-                                {/* Hauptgenre-Auswahl */}
-                                <div style={{ marginBottom: '0.75rem' }}>
+                                <div style={{ marginBottom: "0.75rem" }}>
                                     <select
                                         value={blk.genreId}
-                                        onChange={(e) =>
-                                            updateGenreInBlock(i, e.target.value)
-                                        }
+                                        onChange={(e) => updateGenreInBlock(i, e.target.value)}
                                         required
                                         style={{
-                                            width: '100%',
-                                            padding: '0.5rem',
-                                            border: '1px solid #ccc',
-                                            borderRadius: '4px',
+                                            width: "100%",
+                                            padding: "0.5rem",
+                                            border: "1px solid #ccc",
+                                            borderRadius: "4px",
                                         }}
                                     >
                                         <option value="">Genre wählen</option>
@@ -464,14 +537,13 @@ export default function TourCreation() {
                                     </select>
                                 </div>
 
-                                {/* Subgenre-Liste (dynamisch) */}
                                 {blk.subgenreIds.map((subId, subIdx) => (
                                     <div
                                         key={subIdx}
                                         style={{
-                                            display: 'flex',
-                                            gap: '1rem',
-                                            marginBottom: '0.5rem',
+                                            display: "flex",
+                                            gap: "1rem",
+                                            marginBottom: "0.5rem",
                                         }}
                                     >
                                         <select
@@ -482,9 +554,9 @@ export default function TourCreation() {
                                             required
                                             style={{
                                                 flex: 1,
-                                                padding: '0.5rem',
-                                                border: '1px solid #ccc',
-                                                borderRadius: '4px',
+                                                padding: "0.5rem",
+                                                border: "1px solid #ccc",
+                                                borderRadius: "4px",
                                             }}
                                         >
                                             <option value="">Subgenre wählen</option>
@@ -498,11 +570,13 @@ export default function TourCreation() {
                                             type="button"
                                             onClick={() => removeSubgenreFromBlock(i, subIdx)}
                                             style={{
-                                                background: 'transparent',
-                                                border: 'none',
-                                                color: '#c00',
-                                                fontSize: '1.25rem',
+                                                background: "transparent",
+                                                border: "none",
+                                                color: "#c00",
+                                                fontSize: "1.25rem",
+                                                cursor: "pointer",
                                             }}
+                                            aria-label="Subgenre entfernen"
                                         >
                                             ✕
                                         </button>
@@ -514,10 +588,11 @@ export default function TourCreation() {
                                     onClick={() => addSubgenreToBlock(i)}
                                     disabled={!blk.genreId}
                                     style={{
-                                        background: '#eee',
-                                        border: '1px solid #ccc',
-                                        padding: '0.5rem',
-                                        borderRadius: '4px',
+                                        background: "#eee",
+                                        border: "1px solid #ccc",
+                                        padding: "0.5rem",
+                                        borderRadius: "4px",
+                                        cursor: blk.genreId ? "pointer" : "not-allowed",
                                     }}
                                 >
                                     + Subgenre hinzufügen
@@ -530,10 +605,11 @@ export default function TourCreation() {
                         type="button"
                         onClick={addGenreBlock}
                         style={{
-                            background: '#eee',
-                            border: '1px solid #ccc',
-                            padding: '0.5rem',
-                            borderRadius: '4px',
+                            background: "#eee",
+                            border: "1px solid #ccc",
+                            padding: "0.5rem",
+                            borderRadius: "4px",
+                            cursor: "pointer",
                         }}
                     >
                         + Genre hinzufügen
@@ -545,16 +621,16 @@ export default function TourCreation() {
                     type="submit"
                     disabled={loading}
                     style={{
-                        backgroundColor: '#002b55',
-                        color: 'white',
-                        padding: '0.75rem 1.5rem',
-                        border: 'none',
-                        borderRadius: '4px',
-                        cursor: 'pointer',
-                        width: '100%',
+                        backgroundColor: "#002b55",
+                        color: "white",
+                        padding: "0.75rem 1.5rem",
+                        border: "none",
+                        borderRadius: "4px",
+                        cursor: "pointer",
+                        width: "100%",
                     }}
                 >
-                    {loading ? 'Bitte warten...' : 'Tour erstellen'}
+                    {loading ? "Bitte warten..." : "Tour erstellen"}
                 </button>
             </form>
         </div>

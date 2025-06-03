@@ -33,7 +33,7 @@ export default function EventCreation() {
     };
 
     const addArtist = () => {
-        setEventArtists(ea => [...ea, { artistId: '', role: '' }]);
+        setEventArtists(ea => [...ea, { artistId: ''}]);
     };
     const updateArtist = (i, field, val) => {
         setEventArtists(ea => ea.map((it, idx) => idx===i ? { ...it, [field]: val } : it));
@@ -135,22 +135,16 @@ export default function EventCreation() {
                 </div>
                 {/* Artists */}
                 <div style={{ marginBottom:'1rem' }}>
-                    <label style={{ display:'block', fontWeight:'bold', marginBottom:'.5rem' }}>Künstler hinzufügen</label>
+                    <label style={{ display:'block', fontWeight:'bold', marginBottom:'.5rem' }}>Begleitungs-Acts hinzufügen</label>
                     {eventArtists.map((ea,i)=>(
                         <div key={i} style={{ display:'flex',gap:'1rem',marginBottom:'.5rem' }}>
                             <select value={ea.artistId}
                                     onChange={e=>updateArtist(i,'artistId',e.target.value)}
                                     required
                                     style={{ flex:2,padding:'.5rem',border:'1px solid #ccc',borderRadius:'4px' }}>
-                                <option value="">Künstler wählen</option>
+                                <option value="">Begleitungs-Acts wählen</option>
                                 {artists.map(a=><option key={a.id} value={a.id}>{a.name}</option>)}
                             </select>
-                            <input type="text" placeholder="Rolle"
-                                   value={ea.role}
-                                   onChange={e=>updateArtist(i,'role',e.target.value)}
-                                   style={{ flex:1,padding:'.5rem',border:'1px solid #ccc',borderRadius:'4px' }}
-                                   required
-                            />
                             <button type="button" onClick={()=>removeArtist(i)}
                                     style={{ background:'transparent',border:'none',color:'#c00',fontSize:'1.25rem' }}>✕</button>
                         </div>

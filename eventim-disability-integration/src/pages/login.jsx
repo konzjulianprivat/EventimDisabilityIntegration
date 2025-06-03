@@ -1,3 +1,4 @@
+"use client";
 import React, { useState } from 'react';
 import { useRouter } from 'next/router';
 
@@ -5,22 +6,20 @@ export default function LoginPage() {
     const router = useRouter();
     const [activeTab, setActiveTab] = useState('login');
 
-    // States für Login-Formular
+    // Login‐Form
     const [loginEmail, setLoginEmail] = useState('');
     const [loginPassword, setLoginPassword] = useState('');
     const [loginError, setLoginError] = useState('');
     const [loginLoading, setLoginLoading] = useState(false);
 
-    // States für Registrierungs-Tab (Zwischenspeichern)
+    // Registrierungs‐States (unverändert)
     const [registerEmail, setRegisterEmail] = useState('');
     const [registerPassword, setRegisterPassword] = useState('');
     const [registerError, setRegisterError] = useState('');
 
-    const isValidEmail = (email) => {
-        return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
-    };
+    const isValidEmail = (email) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 
-    // 1) Login-Handler (unverändert)
+    // 1) Login‐Handler: jetzt mit credentials: 'include'
     const handleLogin = async (e) => {
         e.preventDefault();
         setLoginError('');
@@ -31,18 +30,30 @@ export default function LoginPage() {
             setLoginLoading(false);
             return;
         }
+
         try {
             const res = await fetch('http://localhost:4000/login-user', {
                 method: 'POST',
+                credentials: 'include',              // ← Cookie einschließen
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     email: loginEmail.trim(),
                     password: loginPassword,
                 }),
             });
+
             const data = await res.json();
             if (res.ok) {
-                router.push('/');
+                localStorage.setItem(
+                    'user',
+                    JSON.stringify({
+                          userId: data.user.user_id,
+                          email: data.user.email,
+                          firstName: data.user.first_name,
+                        lastName: data.user.last_name,
+                    })
+                );
+                router.push('/').then(() => window.location.reload());
             } else {
                 setLoginError(data.message || 'Ungültige Anmeldedaten.');
             }
@@ -54,7 +65,7 @@ export default function LoginPage() {
         }
     };
 
-    // 2) Registrieren-Handler: speichere in sessionStorage und redirect
+    // 2) Registrierungs‐Handler bleibt – nur Posten in sessionStorage + Redirect
     const handleRegisterRedirect = (e) => {
         e.preventDefault();
         setRegisterError('');
@@ -67,13 +78,8 @@ export default function LoginPage() {
             setRegisterError('Bitte eine gültige E-Mail-Adresse eingeben.');
             return;
         }
-        // (optional) Passwort-Längenprüfung etc.
-
-        // Speichere in sessionStorage, damit nicht in der URL steht
         sessionStorage.setItem('preRegEmail', registerEmail.trim());
         sessionStorage.setItem('preRegPassword', registerPassword);
-
-        // Leite weiter auf /registration (ohne Query)
         router.push('/registration');
     };
 
@@ -87,7 +93,9 @@ export default function LoginPage() {
                     onClick={() => setActiveTab('login')}
                 >
                     <div className="tab-label">Ich habe bereits ein Konto</div>
-                    <div className="tab-subtitle">Login mit E-Mail-Adresse und Passwort</div>
+                    <div className="tab-subtitle">
+                        Login mit E-Mail-Adresse und Passwort
+                    </div>
                 </button>
                 <button
                     className={`tab ${activeTab === 'register' ? 'tab-active' : ''}`}
@@ -209,8 +217,7 @@ export default function LoginPage() {
                             Kleinschreibung), Zahlen und Sonderzeichen enthalten sein.
                         </p>
                         <p className="info-text">
-                            EVENTIM legt großen Wert auf Datenschutz. Die
-                            Datenschutzinformation kannst du{' '}
+                            EVENTIM legt großen Wert auf Datenschutz. Die Datenschutzinformation kannst du{' '}
                             <a href="#" className="link-inline">
                                 hier
                             </a>{' '}
