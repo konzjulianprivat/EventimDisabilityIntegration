@@ -1,47 +1,90 @@
+// pages/index.jsx
+"use client";
+
+import React, { useState, useEffect } from "react";
 import SmallTourCard from "../components/smallEventCard.jsx";
-import ImageScroller from "../components/ImageScroller.jsx";
 import SmallArtistCard from "../components/smallArtistCard.jsx";
+import ImageScroller from "../components/ImageScroller.jsx";
 
-const tourData = [
-    { image: "/pictures/TestPictures/Test-Picture-EventCard.jpg",
-        title: "Teddy Teclebrhan Tour",
-        link: "/tourPage"},
+export default function HomePage() {
+    const [tours, setTours] = useState([]);
+    const [artists, setArtists] = useState([]);
+    const [loadingTours, setLoadingTours] = useState(true);
+    const [loadingArtists, setLoadingArtists] = useState(true);
 
-    { image: "picture-artist LINK/ID",
-        title: "TourTitel" },
-];
+    useEffect(() => {
+        async function fetchTours() {
+            try {
+                const res = await fetch("http://localhost:4000/tours-with-images");
+                if (!res.ok) throw new Error("Failed to load tours");
+                const body = await res.json();
+                setTours(body.tours);
+            } catch (err) {
+                console.error(err);
+            } finally {
+                setLoadingTours(false);
+            }
+        }
+        fetchTours();
+    }, []);
 
-const artistData = [
-    { image: "/pictures/TestPictures/Test-Picture-EventCard.jpg",
-        title: "Teddy Teclebrhan",
-        link: "https://www.google.com" },
+    useEffect(() => {
+        async function fetchArtists() {
+            try {
+                const res = await fetch("http://localhost:4000/artists-with-images");
+                if (!res.ok) throw new Error("Failed to load artists");
+                const body = await res.json();
+                setArtists(body.artists);
+            } catch (err) {
+                console.error(err);
+            } finally {
+                setLoadingArtists(false);
+            }
+        }
+        fetchArtists();
+    }, []);
 
-    { image: "pincture-artist LINK/ID",
-        title: "Künstler 2"},
+    if (loadingTours || loadingArtists) {
+        return <div>Lädt…</div>;
+    }
 
-];
-
-export default function MyApp() {
     return (
-        <>
-            <div className="homepage">
-                <ImageScroller tour={tourData}/>
+        <div className="homepage">
+            <ImageScroller
+                tour={tours.map((t) => ({
+                    imageId: t.tour_image,
+                    title: t.title,
+                    link: `/tour/${t.id}`,
+                }))}
+            />
 
-                <div className="highlights-section">
-                    <h2>Highlights</h2>
-                    <div className="small-tourCard-grid">
-                        <SmallTourCard tour={tourData}/>
-                    </div>
-                </div>
-
-
-                <div className="artists-section">
-                    <h2>Künstler</h2>
-                    <div className="small-tourCard-grid">
-                        <SmallArtistCard artist={artistData}/>
-                    </div>
+            <div className="highlights-section">
+                <h2>Highlights</h2>
+                <div className="small-tourCard-grid">
+                    {tours.map((tour) => (
+                        <SmallTourCard
+                            key={tour.id}
+                            imageId={tour.tour_image}
+                            title={tour.title}
+                            link={`/tour/${tour.id}`}
+                        />
+                    ))}
                 </div>
             </div>
-        </>
+
+            <div className="artists-section">
+                <h2>Künstler</h2>
+                <div className="small-tourCard-grid">
+                    {artists.map((artist) => (
+                        <SmallArtistCard
+                            key={artist.id}
+                            imageId={artist.artist_image}
+                            title={artist.name}
+                            link={`/artist/${artist.id}`}
+                        />
+                    ))}
+                </div>
+            </div>
+        </div>
     );
 }
