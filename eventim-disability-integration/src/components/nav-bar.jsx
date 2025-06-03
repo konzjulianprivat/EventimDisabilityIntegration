@@ -186,7 +186,7 @@ export default function NavBar() {
                             </a>
 
                             <div className="dropdown-menu">
-                                <a href="" className="dropdown-item">
+                                <a href="/profile" className="dropdown-item">
                                     Übersicht
                                 </a>
                                 <a href="" className="dropdown-item">

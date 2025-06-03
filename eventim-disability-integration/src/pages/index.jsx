@@ -2,7 +2,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import SmallTourCard from "../components/smallEventCard.jsx";
+import SmallTourCard from "../components/smallTourCard.jsx";
 import SmallArtistCard from "../components/smallArtistCard.jsx";
 import ImageScroller from "../components/ImageScroller.jsx";
 
