@@ -197,7 +197,7 @@ export default function ProfilePage() {
                             </div>
                         </div>
                         <div className="content-inner">
-                            <h3>Empfehlungen basierend auf deinen letzten Buchungen</h3>
+                            <h3>Empfehlungen basierend auf deinen letzten Buchungen lmao</h3>
                             <div className="carousel-container">
                                 <div className="carousel-wrapper">
                                     <button
