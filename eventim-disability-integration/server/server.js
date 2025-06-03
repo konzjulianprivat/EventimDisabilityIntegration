@@ -295,9 +295,12 @@ app.post('/create-artist', upload.single('artistImage'), async (req, res) => {
         res.status(500).json({ message: 'Server error during artist creation' });
     }
 });
+
 app.get('/artists', async (req, res) => {
     try {
-        const result = await client.query('SELECT id, name FROM artists ORDER BY name');
+
+        const result = await client.query(`SELECT id, name, biography, website, artist_image FROM artists ORDER BY name
+    `);
         res.json({ artists: result.rows });
     } catch (err) {
         console.error('Error fetching artists:', err);
