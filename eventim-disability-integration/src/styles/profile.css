@@ -1,0 +1,384 @@
+/* profile.css */
+
+/* -----------------------------------
+   1) Grundlayout: body, Seiten-Container
+   ----------------------------------- */
+.profile-container {
+    display: flex;
+    min-height: 100vh;
+    background-color: #f5f5f5;
+    font-family: Arial, sans-serif;
+}
+
+/* -----------------------------------
+   2) Sidebar links
+   ----------------------------------- */
+.sidebar {
+    width: 260px;
+    background-color: #ffffff;
+    border-right: 1px solid #e0e0e0;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    box-sizing: border-box;
+    padding: 1rem 0;
+}
+
+.sidebar-item {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.75rem 1rem;
+    margin: 0 1rem 0.5rem 1rem;
+    border-radius: 4px;
+    font-size: 1rem;
+    color: #333333;
+    cursor: pointer;
+    transition: background-color 0.2s, color 0.2s;
+    border: 1px solid transparent;
+}
+
+.sidebar-item .icon {
+    width: 20px;
+    height: 20px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.sidebar-item:hover {
+    background-color: #f0f0f0;
+}
+
+.sidebar-item.active {
+    background-color: #ffc700;
+    color: #002b55;
+    border-color: #ffc700;
+}
+
+.sidebar-item span {
+    display: inline-block;
+    line-height: 1;
+}
+
+.sidebar-footer {
+    margin-top: auto;
+    padding: 1rem;
+}
+
+.sidebar-footer-title {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: #666666;
+    margin-bottom: 0.5rem;
+}
+
+.sidebar-footer .sidebar-item {
+    margin: 0 0 0.5rem 0;
+}
+
+/* -----------------------------------
+   3) Hauptbereich rechts
+   ----------------------------------- */
+.main-content {
+    flex: 1;
+    padding: 2rem; /* Außenabstand zum Viewport-Rand */
+    box-sizing: border-box;
+}
+
+/* -------------------------------------------------------
+   .inner-container: legt die absolute Maximalbreite fest
+   (5 Karten × 180px + 6 × 1rem)
+   ------------------------------------------------------- */
+.inner-container {
+    width: 100%;
+    max-width: calc(5 * 180px + 6 * 1rem); /* 5×180px + 6×16px */
+    margin: 0 auto; /* zentriert */
+}
+
+/* -----------------------------------
+   4) Weiße Boxen („white-box“)
+   • events-white-box  (oben)
+   • help-white-box    (unten)
+   ----------------------------------- */
+.white-box {
+    background-color: #ffffff;
+    border-radius: 6px;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
+    margin-bottom: 2rem;
+}
+
+.events-white-box {
+    /* Vertikales Padding oben/unten */
+    padding: 1rem 0;
+}
+
+.help-white-box {
+    /* Vertikales Padding oben/unten */
+    padding: 1rem 0;
+}
+
+/* -----------------------------------
+   5) Gemeinsames inneres Padding
+   für Inhalte in events-white-box und help-white-box
+   • sorgt dafür, dass Überschriften, Boxen, Karussell, FAQ
+     stets 1rem Abstand zu den weißen Rändern auf beiden Seiten haben.
+   ----------------------------------- */
+.content-inner {
+    padding: 0 1rem; /* 1rem links/rechts */
+    box-sizing: border-box;
+}
+
+/* -----------------------------------
+   6) „Meine Events“-Header (in .content-inner)
+   ----------------------------------- */
+.events-header {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 0.25rem;
+}
+
+.events-header h1 {
+    font-size: 1.5rem;
+    color: #002b55;
+    margin: 0;
+}
+
+.events-header .arrow {
+    font-size: 1.25rem;
+    color: #002b55;
+}
+
+.subtitle {
+    font-size: 0.9rem;
+    color: #666666;
+    margin: 0 0 1rem 0;
+}
+
+/* -----------------------------------
+   7) Blauer Platzhalter-Bereich
+   (im .events-white-box, eingerückt via .content-inner)
+   ----------------------------------- */
+.blue-placeholder {
+    background-color: #e8eff7;
+    border-radius: 6px;
+    padding: 2rem 0;     /* nur vertikales Padding, horizontal über .content-inner */
+    margin-bottom: 1.5rem;
+    width: 100%;         /* nimmt volle Breite der .content-inner ein */
+}
+
+.blue-placeholder-text {
+    text-align: center;
+    margin-bottom: 1rem;
+    font-size: 1rem;
+    line-height: 1.4;
+}
+
+/*
+   cards-container: begrenzt auf (5 × 180px + 4 × 1rem) – das ist
+   die exakte Breite, in der 5 Karten nebeneinander + 4 Lücken passen.
+   Wir zentrieren es mit margin: 0 auto, damit es Mitte im blauen Feld sitzt.
+*/
+.cards-container {
+    width: 100%;
+    max-width: calc(5 * 180px + 4 * 1rem);
+    margin: 0 auto;
+}
+
+/* Flex-Container für die blauen Karten (oben) */
+.blue-cards {
+    display: flex;
+    gap: 1rem;
+    justify-content: flex-start;
+}
+
+/* Scrollbar ausblenden, falls mehr als 5 Karten wären */
+.blue-cards::-webkit-scrollbar {
+    display: none;
+}
+.blue-cards {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+}
+
+/* -----------------------------------
+   8) Recommendations‐Label + graue Box
+   (ebenfalls im .events-white-box, eingerückt via .content-inner)
+   ----------------------------------- */
+.recommendations-label {
+    font-size: 1.25rem;
+    color: #002b55;
+    margin: 0 0 0.75rem 0; /* unten 0.75 rem Abstand */
+}
+
+/* Grey Placeholder: exakt wie Blue-Placeholder, aber grau */
+.grey-placeholder {
+    background-color: #f0f0f0;
+    border-radius: 6px;
+    padding: 1rem 0;      /* nur vertikales Padding */
+    margin-bottom: 1.5rem;
+    width: 100%;
+}
+
+/* Flex-Container für die grauen Karten (Recommendations) */
+.grey-cards {
+    display: flex;
+    gap: 1rem;
+    justify-content: flex-start;
+}
+
+/* -----------------------------------
+   9) 5-Karten-Karussell
+   (im .events-white-box, eingerückt via .content-inner)
+   ----------------------------------- */
+.carousel-container {
+    width: 100%;
+    max-width: calc(5 * 180px + 4 * 1rem);
+    margin: 0 auto 2rem; /* unten 2rem, um Abschluss der weißen Box zu markieren */
+}
+
+.carousel-wrapper {
+    position: relative;
+    width: 100%;
+    overflow: hidden;
+}
+
+.carousel-track {
+    display: flex;
+    gap: 1rem;
+    transition: transform 0.3s ease;
+}
+
+.carousel-button {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 44px;
+    height: 44px;
+    border: none;
+    border-radius: 50%;
+    background-color: rgba(255, 255, 255, 0.9);
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.25);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+    color: #002b55;
+    z-index: 10;
+}
+
+.carousel-button.left {
+    left: 4px;   /* komplett sichtbar INSIDE des Karussells */
+}
+
+.carousel-button.right {
+    right: 4px;  /* komplett sichtbar INSIDE des Karussells */
+}
+
+.carousel-button:disabled {
+    opacity: 0.4;
+    cursor: default;
+}
+
+/* -----------------------------------
+   10) SquareTourCard: 180×180px
+   ----------------------------------- */
+.square-tourCard-class {
+    width: 180px;      /* feste Breite */
+    flex-shrink: 0;    /* darf im flex nicht schrumpfen */
+    background-color: #ffffff;
+    border: 1px solid #e0e0e0;
+    border-radius: 4px;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    margin: 0;         /* kein eigener Margin, gap übernimmt Abstand */
+}
+
+.square-tourCard-image-wrapper {
+    width: 100%;
+    height: 180px;     /* Bild-Teil exakt 180px hoch */
+    overflow: hidden;
+    position: relative;
+}
+
+.square-tourCard-image {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.square-tourCard-image-placeholder {
+    width: 100%;
+    height: 100%;
+    background-color: #f5f5f5;
+}
+
+.square-tourCard-info {
+    padding: 0.5rem;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+}
+
+.square-tourCard-title {
+    font-size: 0.95rem;
+    color: #002b55;
+    margin: 0 0 0.25rem 0;
+    line-height: 1.2;
+}
+
+.square-tourCard-price {
+    margin: 0;
+    font-size: 0.9rem;
+}
+
+.square-tourCard-link {
+    color: #007acf;
+    text-decoration: none;
+}
+
+.square-tourCard-link:hover {
+    text-decoration: underline;
+}
+
+/* -----------------------------------
+   11) Help Center / FAQ (im .help-white-box)
+   ----------------------------------- */
+.help-section {
+    padding: 0;       /* vertikales Padding kommt von .content-inner */
+    width: 100%;
+}
+
+.help-section h2 {
+    font-size: 1.25rem;
+    color: #002b55;
+    margin: 0 0 0.25rem 0;
+}
+
+.help-section .subtitle {
+    font-size: 0.9rem;
+    color: #666666;
+    margin: 0 0 1rem 0;
+}
+
+.faq-placeholder {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1rem;
+}
+
+.faq-placeholder > div {
+    background-color: #f9f9f9;
+    border: 1px solid #dddddd;
+    border-radius: 4px;
+    height: 100px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #999999;
+    font-size: 0.95rem;
+}

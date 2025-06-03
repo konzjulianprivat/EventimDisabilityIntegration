@@ -1,5 +1,4 @@
 import { useState } from 'react';
-import NavBar from '../components/nav-bar';
 
 export default function DevTesting() {
     const [id, setId] = useState('');

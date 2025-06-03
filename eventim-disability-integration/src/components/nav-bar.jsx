@@ -1,66 +1,53 @@
 // components/NavBar.jsx
+"use client";
+
 import React, { useState, useRef, useEffect } from 'react';
 import Image from 'next/image';
-
-const eventsMenu = [
-    {
-        label: 'Konzerte',
-        items: [
-            'Übersicht Konzerte',
-            'Rock & Pop (10380)',
-            'HipHop & R’n’B (1608)',
-            'Schlager & Volksmusik (1707)',
-            'Hard & Heavy (2576)',
-            'Clubkonzerte (1128)',
-            'Festivals (2025)',
-            'Electronic & Dance (538)',
-            'Jazz & Blues (1238)',
-            'Country & Folk (377)',
-            'Weitere Konzerte (7862)',
-        ],
-    },
-    {
-        label: 'Kultur',
-        items: [
-            'Ausstellungen (234)',
-            'Lesungen (98)',
-            'Theater (317)',
-            'Oper & Ballett (156)',
-            'Film (485)',
-        ],
-    },
-    {
-        label: 'Musical & Show',
-        items: ['Musicals (412)', 'Shows & Varieté (254)'],
-    },
-    {
-        label: 'Humor',
-        items: ['Stand-up (198)', 'Kabarett (122)'],
-    },
-    {
-        label: 'Sport',
-        items: ['Fußball (512)', 'Basketball (76)', 'Tennis (44)'],
-    },
-    {
-        label: 'Freizeit',
-        items: ['Messen (87)', 'Parks & Freizeit (63)'],
-    },
-    {
-        label: 'VIP & Extras',
-        items: ['VIP-Packages (39)', 'Backstage-Tour (12)'],
-    },
-];
-
-const placesMenu = [
-    { label: 'Deutschland', items: ['Berlin', 'München', 'Hamburg'] },
-    { label: 'Österreich', items: ['Wien', 'Salzburg', 'Graz'] },
-    { label: 'Schweiz', items: ['Zürich', 'Basel', 'Genf'] },
-];
+import { useAuth } from '../hooks/useAuth';
 
 export default function NavBar() {
     const [openDropdown, setOpenDropdown] = useState(null);
+
+    const [genres, setGenres] = useState([]);
+    const [cities, setCities] = useState([]);
+
     const eventsRef = useRef(null);
     const placesRef = useRef(null);
+    const profileRef = useRef(null);
+
+    const { loading, loggedIn, user } = useAuth();
+
+    useEffect(() => {
+        async function fetchGenres() {
+            try {
+                const res = await fetch('http://localhost:4000/genres-with-subgenres', {
+                    credentials: 'include',
+                });
+                if (!res.ok) throw new Error('Fetch fehlgeschlagen');
+                const body = await res.json();
+                setGenres(body.genres);
+            } catch (err) {
+                console.error('Error loading genres:', err);
+            }
+        }
+        fetchGenres();
+    }, []);
+
+    useEffect(() => {
+        async function fetchCities() {
+            try {
+                const res = await fetch('http://localhost:4000/cities-with-venues', {
+                    credentials: 'include',
+                });
+                if (!res.ok) throw new Error('Fetch fehlgeschlagen');
+                const body = await res.json();
+                setCities(body.cities);
+            } catch (err) {
+                console.error('Error loading cities:', err);
+            }
+        }
+        fetchCities();
+    }, []);
 
     useEffect(() => {
         function handleClickOutside(e) {
@@ -68,7 +55,9 @@ export default function NavBar() {
                 eventsRef.current &&
                 !eventsRef.current.contains(e.target) &&
                 placesRef.current &&
-                !placesRef.current.contains(e.target)
+                !placesRef.current.contains(e.target) &&
+                profileRef.current &&
+                !profileRef.current.contains(e.target)
             ) {
                 setOpenDropdown(null);
             }
@@ -93,9 +82,7 @@ export default function NavBar() {
 
                 <nav className="menu">
                     <div
-                        className={`dropdown ${
-                            openDropdown === 'events' ? 'show' : ''
-                        }`}
+                        className={`dropdown ${openDropdown === 'events' ? 'show' : ''}`}
                         ref={eventsRef}
                     >
                         <a
@@ -103,32 +90,19 @@ export default function NavBar() {
                             className="dropdown-toggle"
                             onClick={(e) => {
                                 e.preventDefault();
-                                setOpenDropdown(
-                                    openDropdown === 'events'
-                                        ? null
-                                        : 'events'
-                                );
+                                setOpenDropdown((prev) => (prev === 'events' ? null : 'events'));
                             }}
                         >
                             Alle Events
                         </a>
                         <div className="dropdown-menu">
-                            {eventsMenu.map((cat) => (
-                                <div
-                                    className="dropdown-item"
-                                    key={cat.label}
-                                >
-                                    <span className="label">
-                                        {cat.label}
-                                    </span>
+                            {genres.map((genre) => (
+                                <div className="dropdown-item" key={genre.id}>
+                                    <span className="label">{genre.name}</span>
                                     <div className="sub-menu">
-                                        {cat.items.map((item) => (
-                                            <a
-                                                href="#"
-                                                className="dropdown-item"
-                                                key={item}
-                                            >
-                                                {item}
+                                        {genre.subgenres.map((sub) => (
+                                            <a href="" className="dropdown-item" key={sub.id}>
+                                                {sub.name}
                                             </a>
                                         ))}
                                     </div>
@@ -138,9 +112,7 @@ export default function NavBar() {
                     </div>
 
                     <div
-                        className={`dropdown ${
-                            openDropdown === 'places' ? 'show' : ''
-                        }`}
+                        className={`dropdown ${openDropdown === 'places' ? 'show' : ''}`}
                         ref={placesRef}
                     >
                         <a
@@ -148,32 +120,19 @@ export default function NavBar() {
                             className="dropdown-toggle"
                             onClick={(e) => {
                                 e.preventDefault();
-                                setOpenDropdown(
-                                    openDropdown === 'places'
-                                        ? null
-                                        : 'places'
-                                );
+                                setOpenDropdown((prev) => (prev === 'places' ? null : 'places'));
                             }}
                         >
                             Alle Orte
                         </a>
                         <div className="dropdown-menu">
-                            {placesMenu.map((region) => (
-                                <div
-                                    className="dropdown-item"
-                                    key={region.label}
-                                >
-                                    <span className="label">
-                                        {region.label}
-                                    </span>
+                            {cities.map((city) => (
+                                <div className="dropdown-item" key={city.id}>
+                                    <span className="label">{city.name}</span>
                                     <div className="sub-menu">
-                                        {region.items.map((city) => (
-                                            <a
-                                                href="#"
-                                                className="dropdown-item"
-                                                key={city}
-                                            >
-                                                {city}
+                                        {city.venues.map((venue) => (
+                                            <a href="" className="dropdown-item" key={venue.id}>
+                                                {venue.name}
                                             </a>
                                         ))}
                                     </div>
@@ -184,10 +143,7 @@ export default function NavBar() {
                 </nav>
 
                 <div className="search">
-                    <input
-                        type="search"
-                        placeholder="Suche nach Künstlern und Events"
-                    />
+                    <input type="search" placeholder="Suche nach Künstlern und Events" />
                 </div>
 
                 <div className="icons">
@@ -203,12 +159,84 @@ export default function NavBar() {
                         width={24}
                         height={24}
                     />
-                    <Image
-                        src="/pictures/profile_icon.png"
-                        alt="Profile"
-                        width={24}
-                        height={24}
-                    />
+
+                    {loading ? null : loggedIn ? (
+                        <div
+                            className={`dropdown profile ${
+                                openDropdown === 'profile' ? 'show' : ''
+                            }`}
+                            ref={profileRef}
+                        >
+                            <a
+                                href="#"
+                                className="dropdown-toggle"
+                                onClick={(e) => {
+                                    e.preventDefault();
+                                    setOpenDropdown((prev) =>
+                                        prev === 'profile' ? null : 'profile'
+                                    );
+                                }}
+                            >
+                                <Image
+                                    src="/pictures/profile_icon.png"
+                                    alt="Profile"
+                                    width={24}
+                                    height={24}
+                                />
+                            </a>
+
+                            <div className="dropdown-menu">
+                                <a href="/profile" className="dropdown-item">
+                                    Übersicht
+                                </a>
+                                <a href="" className="dropdown-item">
+                                    Persönliche Daten
+                                </a>
+                                <a href="" className="dropdown-item">
+                                    Meine Bestellungen
+                                </a>
+
+                                <div className="dropdown-divider" />
+
+                                <div className="dropdown-footer">
+                                    <div className="dropdown-footer-name">
+                                        <p>Angemeldet als</p>
+                                        <h3>
+                                            {user.firstName} {user.lastName}
+                                        </h3>
+                                    </div>
+                                </div>
+                                <button
+                                    type="button"
+                                    className="login-button dropdown-logout"
+                                    onClick={async () => {
+                                        try {
+                                            await fetch('http://localhost:4000/logout', {
+                                                method: 'POST',
+                                                credentials: 'include',
+                                            });
+                                            localStorage.removeItem('user');
+                                            window.location.href = '/';
+                                        } catch (err) {
+                                            console.error('Logout fehlgeschlagen:', err);
+                                        }
+                                    }}
+                                >
+                                    Abmelden
+                                </button>
+                            </div>
+                        </div>
+                    ) : (
+                        <button
+                            type="button"
+                            className="login-button"
+                            onClick={() => {
+                                window.location.href = '/login';
+                            }}
+                        >
+                            Anmelden
+                        </button>
+                    )}
                 </div>
             </div>
         </div>
