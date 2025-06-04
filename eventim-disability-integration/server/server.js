@@ -638,15 +638,15 @@ app.get('/disability-marks', async (req, res) => {
 // POST: Venue inkl. Behinderten-Kapazitäten
 // server.js (Express-Backend with venue_disability_area_capacity)
 
-// GET: disability_areas für Dropdown
-app.get('/disability-areas', async (req, res) => {
+// GET: areas für Dropdown
+app.get('/areas', async (req, res) => {
     try {
         const result = await client.query(
-            'SELECT DISTINCT name FROM areas ORDER BY name'
+            'SELECT id, name, description FROM areas ORDER BY name'
         );
         res.json({ areas: result.rows });
     } catch (err) {
-        console.error('Error fetching disability areas:', err);
+        console.error('Error fetching areas:', err);
         res.status(500).json({ message: 'Fehler beim Laden der Bereiche' });
     }
 });
@@ -654,13 +654,16 @@ app.get('/disability-areas', async (req, res) => {
 // POST: Venue erstellen (inkl. area capacities)
 app.post('/create-venue', express.json(), async (req, res) => {
     const {
-        name, address, cityId, website,
-        disabilityCapacities = []
+        name,
+        address,
+        cityId,
+        website,
+        venueAreas = [],
     } = req.body;
 
     if (!name?.trim() || !address?.trim() || !cityId) {
         return res.status(400).json({
-            message: 'Name, Adresse, Stadt und Kapazität sind erforderlich'
+            message: 'Name, Adresse und Stadt sind erforderlich'
         });
     }
 
@@ -676,12 +679,12 @@ app.post('/create-venue', express.json(), async (req, res) => {
             [venueId, name.trim(), address.trim(), cityId, website || null]
         );
 
-        for (const dc of disabilityCapacities) {
+        for (const va of venueAreas) {
             await client.query(
                 `INSERT INTO venue_areas
-                     (venue_id, area_id)
-                 VALUES ($1,$2)`,
-                [venueId, dc.area_name]
+                     (id, venue_id, area_id, max_capacity)
+                 VALUES ($1,$2,$3,$4)`,
+                [uuidv4(), venueId, va.areaId, va.maxCapacity]
             );
         }
 
@@ -702,12 +705,38 @@ app.get('/venues', async (req, res) => {
     const result = await client.query('SELECT id, name FROM venues ORDER BY name');
     res.json({ venues: result.rows });
 });
+
+// GET: Venue areas for a specific venue
+app.get('/venue-areas', async (req, res) => {
+    const { venueId } = req.query;
+    if (!venueId) {
+        return res.status(400).json({ message: 'venueId erforderlich' });
+    }
+    try {
+        const { rows } = await client.query(
+            `SELECT va.id, va.max_capacity, a.name
+             FROM venue_areas va
+             JOIN areas a ON a.id = va.area_id
+             WHERE va.venue_id = $1
+             ORDER BY a.name`,
+            [venueId]
+        );
+        res.json({ venueAreas: rows });
+    } catch (err) {
+        console.error('Error fetching venue areas:', err);
+        res.status(500).json({ message: 'Fehler beim Laden der Venue Areas' });
+    }
+});
 app.post('/create-event', express.json(), async (req, res) => {
     const {
-        tourId, venueId,
-        doorTime, startTime, endTime,
+        tourId,
+        venueId,
+        doorTime,
+        startTime,
+        endTime,
         description,
-        eventArtists = []
+        eventArtists = [],
+        categories = [],
     } = req.body;
     if (!tourId || !venueId || !doorTime || !startTime || !endTime) {
         return res.status(400).json({ message: 'Tour, Venue und alle Zeitangaben sind erforderlich' });
@@ -727,9 +756,30 @@ app.post('/create-event', express.json(), async (req, res) => {
         for (const ea of eventArtists) {
             await client.query(
                 `INSERT INTO event_supporting_acts
-          (event_id, artist_id)
-         VALUES ($1,$2)`,
+                     (event_id, artist_id)
+                 VALUES ($1,$2)`,
                 [eventId, ea.artistId]
+            );
+        }
+
+        const categoryIdMap = [];
+        for (const cat of categories) {
+            const catId = uuidv4();
+            await client.query(
+                `INSERT INTO event_categories
+                     (id, event_id, name, price)
+                 VALUES ($1,$2,$3,$4)`,
+                [catId, eventId, cat.name || null, cat.price]
+            );
+            categoryIdMap.push({ catId, areaId: cat.areaId, capacity: cat.capacity });
+        }
+
+        for (const map of categoryIdMap) {
+            await client.query(
+                `INSERT INTO event_venue_areas
+                     (id, event_id, venue_area_id, capacity, category_id)
+                 VALUES ($1,$2,$3,$4,$5)`,
+                [uuidv4(), eventId, map.areaId, map.capacity, map.catId]
             );
         }
 
