@@ -69,6 +69,12 @@ app.get('/image/:id', async (req, res) => {
     }
 });
 
+// In your server.js (oder ein passendes Router-Modul), stelle sicher, dass:
+// - express, multer, bcrypt, uuid und dein PostgreSQL-Client (client) bereits importiert/configured sind.
+// - `upload` ist der multer-Middleware, z.B.:
+//     const multer = require('multer');
+//     const upload = multer({ storage: multer.memoryStorage() });
+
 app.post('/register-user', upload.single('disabilityCardImage'), async (req, res) => {
     try {
         const {
@@ -88,14 +94,14 @@ app.post('/register-user', upload.single('disabilityCardImage'), async (req, res
             salutation,
         } = req.body;
 
-        // Pflichtfelder prüfen
+        // 1) Pflichtfelder prüfen
         if (!email || !password || !firstName || !lastName) {
             return res
                 .status(400)
                 .json({ message: 'Vorname, Nachname, E-Mail und Passwort sind erforderlich.' });
         }
 
-        // Prüfen, ob E-Mail schon existiert
+        // 2) Prüfen, ob E-Mail schon existiert
         const userCheck = await client.query('SELECT user_id FROM users WHERE email = $1', [
             email.trim(),
         ]);
@@ -103,15 +109,14 @@ app.post('/register-user', upload.single('disabilityCardImage'), async (req, res
             return res.status(400).json({ message: 'E-Mail ist bereits registriert.' });
         }
 
-        // Neues user_id generieren
+        // 3) Neues user_id generieren
         const userId = uuidv4();
 
-        // Hashen des Passworts
+        // 4) Passwort hashen
         const saltRounds = 10;
         const hashedPass = await bcrypt.hash(password, saltRounds);
-        console.log('DEBUG: plain=', password, 'hash=', hashedPass);
 
-        // Datei‐Upload verarbeiten (falls vorhanden)
+        // 5) Behindertenausweis‐Bild verarbeiten (falls vorhanden)
         let imageId = null;
         if (req.file) {
             imageId = uuidv4();
@@ -122,7 +127,7 @@ app.post('/register-user', upload.single('disabilityCardImage'), async (req, res
             );
         }
 
-        // Benutzer in users‐Tabelle einfügen
+        // 6) Benutzer in users‐Tabelle einfügen
         const result = await client.query(
             `
                 INSERT INTO users (
@@ -154,7 +159,7 @@ app.post('/register-user', upload.single('disabilityCardImage'), async (req, res
                 firstName.trim(),
                 lastName.trim(),
                 email.trim(),
-                hashedPass,             // <<< hier auf jeden Fall der Hash, nicht password
+                hashedPass,
                 birthDate || null,
                 phone || null,
                 disabilityCheck === 'true',
@@ -169,10 +174,29 @@ app.post('/register-user', upload.single('disabilityCardImage'), async (req, res
             ]
         );
 
-        // Passwort‐Feld nicht zurücksenden
         const newUser = result.rows[0];
-        delete newUser.password;
+        delete newUser.password; // Passwort nicht zurückgeben
 
+        // 7) NEU: Gewählte Disability‐Marks speichern
+        //    Erwartet: req.body.disabilityMarks ist ein JSON-String-Array der mark_code-Werte
+        if (req.body.disabilityMarks) {
+            try {
+                const marksArray = JSON.parse(req.body.disabilityMarks);
+                if (Array.isArray(marksArray) && marksArray.length > 0) {
+                    for (const markCode of marksArray) {
+                        await client.query(
+                            'INSERT INTO user_disability_marks (user_id, mark_code) VALUES ($1, $2)',
+                            [userId, markCode]
+                        );
+                    }
+                }
+            } catch (parseErr) {
+                console.error('Error parsing disabilityMarks:', parseErr);
+                // Falls Parsing fehlschlägt, ignorieren wir es (Registrierung ist trotzdem erfolgreich)
+            }
+        }
+
+        // 8) Erfolgreiche Antwort
         return res.status(201).json({
             message: 'Registrierung erfolgreich',
             user: newUser,
@@ -598,15 +622,12 @@ app.get('/cities', async (req, res) => {
     }
 });
 
-// POST: Venue erstellen (mit capacity & website)
-// server.js (Express-Backend)
-
-// GET: disability_marks für Dropdown
 app.get('/disability-marks', async (req, res) => {
     try {
         const result = await client.query(
-            'SELECT mark_code, description FROM disability_marks ORDER BY mark_code'
+            'SELECT mark_code, description, area_name FROM disability_marks ORDER BY mark_code'
         );
+        // Jetzt enthält jeder Eintrag zusätzlich area_name, falls Sie in Zukunft danach gruppieren möchten
         res.json({ marks: result.rows });
     } catch (err) {
         console.error('Error fetching disability marks', err);
@@ -715,7 +736,7 @@ app.post('/create-event', express.json(), async (req, res) => {
             await client.query(
                 `INSERT INTO event_supporting_acts
           (event_id, artist_id)
-         VALUES ($1,$2,$3)`,
+         VALUES ($1,$2)`,
                 [eventId, ea.artistId]
             );
         }
