@@ -625,7 +625,7 @@ app.get('/cities', async (req, res) => {
 app.get('/disability-marks', async (req, res) => {
     try {
         const result = await client.query(
-            'SELECT mark_code, description, area_name FROM disability_marks ORDER BY mark_code'
+            'SELECT mark_code, description, area_id FROM disability_marks ORDER BY mark_code'
         );
         // Jetzt enthält jeder Eintrag zusätzlich area_name, falls Sie in Zukunft danach gruppieren möchten
         res.json({ marks: result.rows });
@@ -642,7 +642,7 @@ app.get('/disability-marks', async (req, res) => {
 app.get('/disability-areas', async (req, res) => {
     try {
         const result = await client.query(
-            'SELECT DISTINCT area_name FROM disability_area ORDER BY area_name'
+            'SELECT DISTINCT name FROM areas ORDER BY name'
         );
         res.json({ areas: result.rows });
     } catch (err) {
@@ -654,21 +654,13 @@ app.get('/disability-areas', async (req, res) => {
 // POST: Venue erstellen (inkl. area capacities)
 app.post('/create-venue', express.json(), async (req, res) => {
     const {
-        name, address, cityId, capacity, website,
+        name, address, cityId, website,
         disabilityCapacities = []
     } = req.body;
 
-    if (!name?.trim() || !address?.trim() || !cityId || capacity == null) {
+    if (!name?.trim() || !address?.trim() || !cityId) {
         return res.status(400).json({
             message: 'Name, Adresse, Stadt und Kapazität sind erforderlich'
-        });
-    }
-
-    const sumDis = disabilityCapacities
-        .reduce((s, dc) => s + (parseInt(dc.capacity, 10) || 0), 0);
-    if (sumDis > capacity) {
-        return res.status(400).json({
-            message: 'Summe der Behinderten-Kapazitäten überschreitet Gesamt-Kapazität'
         });
     }
 
@@ -678,18 +670,18 @@ app.post('/create-venue', express.json(), async (req, res) => {
 
         const { rows } = await client.query(
             `INSERT INTO venues
-                 (id, name, address, city_id, capacity, website)
-             VALUES ($1,$2,$3,$4,$5,$6)
+                 (id, name, address, city_id, website)
+             VALUES ($1,$2,$3,$4,$5)
              RETURNING *`,
-            [venueId, name.trim(), address.trim(), cityId, capacity, website || null]
+            [venueId, name.trim(), address.trim(), cityId, website || null]
         );
 
         for (const dc of disabilityCapacities) {
             await client.query(
-                `INSERT INTO venue_disability_area_capacity
-                     (venue_id, area_name, capacity)
-                 VALUES ($1,$2,$3)`,
-                [venueId, dc.area_name, parseInt(dc.capacity, 10)]
+                `INSERT INTO venue_areas
+                     (venue_id, area_id)
+                 VALUES ($1,$2)`,
+                [venueId, dc.area_name]
             );
         }
 
