@@ -736,8 +736,9 @@ app.post('/create-event', express.json(), async (req, res) => {
         endTime,
         description,
         eventArtists = [],
-        categories = [],
+        categories = [],      // now each category is { name, price, venueAreas: [ { areaId, capacity }, … ] }
     } = req.body;
+
     if (!tourId || !venueId || !doorTime || !startTime || !endTime) {
         return res.status(400).json({ message: 'Tour, Venue und alle Zeitangaben sind erforderlich' });
     }
@@ -745,50 +746,58 @@ app.post('/create-event', express.json(), async (req, res) => {
     try {
         await client.query('BEGIN');
         const eventId = uuidv4();
-        const { rows } = await client.query(
+
+        // 1) Insert into `events`
+        const { rows: eventRows } = await client.query(
             `INSERT INTO events
-        (id, tour_id, venue_id, door_time, start_time, end_time, description)
-       VALUES ($1,$2,$3,$4,$5,$6,$7)
-       RETURNING *`,
+                 (id, tour_id, venue_id, door_time, start_time, end_time, description)
+             VALUES ($1,$2,$3,$4,$5,$6,$7)
+             RETURNING *`,
             [eventId, tourId, venueId, doorTime, startTime, endTime, description || null]
         );
 
+        // 2) Insert any supporting acts
         for (const ea of eventArtists) {
             await client.query(
                 `INSERT INTO event_supporting_acts
                      (event_id, artist_id)
-                 VALUES ($1,$2)`,
+                 VALUES ($1, $2)`,
                 [eventId, ea.artistId]
             );
         }
 
-        const categoryIdMap = [];
+        // 3) For each category, insert into `event_categories`, then insert all its venueAreas into `event_venue_areas`
         for (const cat of categories) {
+            // 3a) Create a new category_id
             const catId = uuidv4();
+
+            // 3b) Insert into event_categories
             await client.query(
                 `INSERT INTO event_categories
                      (id, event_id, name, price)
-                 VALUES ($1,$2,$3,$4)`,
+                 VALUES ($1, $2, $3, $4)`,
                 [catId, eventId, cat.name || null, cat.price]
             );
-            categoryIdMap.push({ catId, areaId: cat.areaId, capacity: cat.capacity });
-        }
 
-        for (const map of categoryIdMap) {
-            await client.query(
-                `INSERT INTO event_venue_areas
-                     (id, event_id, venue_area_id, capacity, category_id)
-                 VALUES ($1,$2,$3,$4,$5)`,
-                [uuidv4(), eventId, map.areaId, map.capacity, map.catId]
-            );
+            // 3c) Now iterate over cat.venueAreas[], each one has { areaId, capacity }
+            //     and insert into event_venue_areas, linking to this catId.
+            //     (ID for event_venue_areas is also a new uuid.)
+            for (const entry of cat.venueAreas) {
+                await client.query(
+                    `INSERT INTO event_venue_areas 
+                        (id, event_id, venue_area_id, capacity, category_id) 
+                     VALUES ($1, $2, $3, $4, $5)`,
+                    [uuidv4(), eventId, entry.areaId, entry.capacity, catId]
+                );
+            }
         }
 
         await client.query('COMMIT');
-        res.status(201).json({ message: 'Event erstellt', event: rows[0] });
+        return res.status(201).json({ message: 'Event erstellt', event: eventRows[0] });
     } catch (err) {
         await client.query('ROLLBACK');
         console.error('Create-event error:', err);
-        res.status(500).json({ message: 'Serverfehler beim Erstellen des Events' });
+        return res.status(500).json({ message: 'Serverfehler beim Erstellen des Events' });
     }
 });
 
@@ -943,6 +952,30 @@ app.get("/artists-with-images", async (req, res) => {
     } catch (err) {
         console.error("Error fetching artists:", err);
         res.status(500).json({ message: "Fehler beim Laden der Künstler" });
+    }
+});
+
+app.post('/create-area', async (req, res) => {
+    try {
+        const { name, description } = req.body;
+
+        if (!name || !name.trim()) {
+            return res.status(400).json({ message: 'Name ist erforderlich' });
+        }
+
+        const areaId = uuidv4();
+        await client.query(
+            'INSERT INTO areas (id, name, description) VALUES ($1, $2, $3)',
+            [areaId, name.trim(), description || null]
+        );
+
+        return res.status(201).json({
+            message: 'Bereich erstellt',
+            area: { id: areaId, name: name.trim(), description: description || null }
+        });
+    } catch (error) {
+        console.error('Create-area error:', error);
+        return res.status(500).json({ message: 'Serverfehler beim Erstellen des Bereichs' });
     }
 });
 
