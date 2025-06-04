@@ -16,7 +16,7 @@ export default function EventCreation() {
     const [artists, setArtists] = useState([]);
     const [eventArtists, setEventArtists] = useState([]); // [{ artistId, role }]
     const [venueAreas, setVenueAreas] = useState([]); // fetched based on venue
-    const [categories, setCategories] = useState([]); // [{ name, price, areaId, capacity }]
+    const [categories, setCategories] = useState([]); // [{ name, price, areas:[{ venueAreaId, capacity }] }]
     const [message, setMessage] = useState('');
     const [loading, setLoading] = useState(false);
 
@@ -60,13 +60,48 @@ export default function EventCreation() {
 
     const addCategory = () => {
         const idx = categories.length + 1;
-        setCategories(c => [...c, { name: `Kategorie ${idx}`, price: '', areaId: '', capacity: '' }]);
+        setCategories(c => [
+            ...c,
+            { name: `Kategorie ${idx}`, price: '', areas: [{ venueAreaId: '', capacity: '' }] },
+        ]);
     };
     const updateCategory = (i, field, val) => {
-        setCategories(c => c.map((it, idx) => idx===i ? { ...it, [field]: val } : it));
+        setCategories(c => c.map((it, idx) => (idx === i ? { ...it, [field]: val } : it)));
     };
     const removeCategory = i => {
         setCategories(c => c.filter((_,idx)=>idx!==i));
+    };
+
+    const addAreaToCategory = (catIdx) => {
+        setCategories(c =>
+            c.map((cat, idx) =>
+                idx === catIdx
+                    ? { ...cat, areas: [...cat.areas, { venueAreaId: '', capacity: '' }] }
+                    : cat
+            )
+        );
+    };
+
+    const updateAreaInCategory = (catIdx, areaIdx, field, val) => {
+        setCategories(c =>
+            c.map((cat, idx) => {
+                if (idx !== catIdx) return cat;
+                const newAreas = cat.areas.map((a, i) =>
+                    i === areaIdx ? { ...a, [field]: val } : a
+                );
+                return { ...cat, areas: newAreas };
+            })
+        );
+    };
+
+    const removeAreaFromCategory = (catIdx, areaIdx) => {
+        setCategories(c =>
+            c.map((cat, idx) => {
+                if (idx !== catIdx) return cat;
+                const newAreas = cat.areas.filter((_, i) => i !== areaIdx);
+                return { ...cat, areas: newAreas };
+            })
+        );
     };
 
     const handleSubmit = async e => {
@@ -80,10 +115,22 @@ export default function EventCreation() {
             return;
         }
         for (const cat of categories) {
-            if (!cat.areaId || !cat.capacity || !cat.price) {
-                setMessage('Alle Kategorien benötigen Bereich, Kapazität und Preis');
+            if (!cat.price || !cat.name.trim()) {
+                setMessage('Alle Kategorien benötigen einen Namen und Preis');
                 setLoading(false);
                 return;
+            }
+            if (!Array.isArray(cat.areas) || cat.areas.length === 0) {
+                setMessage('Jede Kategorie benötigt mindestens einen Bereich');
+                setLoading(false);
+                return;
+            }
+            for (const a of cat.areas) {
+                if (!a.venueAreaId || !a.capacity) {
+                    setMessage('Alle Bereichseinträge benötigen Kapazität und Auswahl');
+                    setLoading(false);
+                    return;
+                }
             }
         }
         try {
@@ -204,16 +251,23 @@ export default function EventCreation() {
                             <input type="number" min="0" placeholder="Preis" value={c.price}
                                    onChange={e=>updateCategory(i,'price',e.target.value)}
                                    style={{ width:'100%', padding:'.5rem', border:'1px solid #ccc', borderRadius:'4px', marginBottom:'0.5rem' }}/>
-                            <select value={c.areaId} onChange={e=>updateCategory(i,'areaId',e.target.value)}
-                                    required style={{ width:'100%', padding:'.5rem', border:'1px solid #ccc', borderRadius:'4px', marginBottom:'0.5rem' }}>
-                                <option value="">Bereich wählen</option>
-                                {venueAreas.map(va=> (
-                                    <option key={va.id} value={va.id}>{va.name} (max {va.max_capacity})</option>
-                                ))}
-                            </select>
-                            <input type="number" min="0" placeholder="Kapazität" value={c.capacity}
-                                   onChange={e=>updateCategory(i,'capacity',e.target.value)}
-                                   style={{ width:'100%', padding:'.5rem', border:'1px solid #ccc', borderRadius:'4px' }}/>
+                            <label style={{ display:'block', fontWeight:'bold', marginBottom:'.5rem' }}>Bereiche</label>
+                            {c.areas.map((a,ai)=>(
+                                <div key={ai} style={{ display:'flex', gap:'1rem', marginBottom:'.5rem' }}>
+                                    <select value={a.venueAreaId} onChange={e=>updateAreaInCategory(i,ai,'venueAreaId',e.target.value)}
+                                            required style={{ flex:2, padding:'.5rem', border:'1px solid #ccc', borderRadius:'4px' }}>
+                                        <option value="">Bereich wählen</option>
+                                        {venueAreas.map(va=> (
+                                            <option key={va.id} value={va.id}>{va.name} (max {va.max_capacity})</option>
+                                        ))}
+                                    </select>
+                                    <input type="number" min="0" placeholder="Kapazität" value={a.capacity}
+                                           onChange={e=>updateAreaInCategory(i,ai,'capacity',e.target.value)}
+                                           required style={{ flex:1, padding:'.5rem', border:'1px solid #ccc', borderRadius:'4px' }} />
+                                    <button type="button" onClick={()=>removeAreaFromCategory(i,ai)} style={{ background:'transparent', border:'none', color:'#c00', fontSize:'1.25rem' }}>✕</button>
+                                </div>
+                            ))}
+                            <button type="button" onClick={()=>addAreaToCategory(i)} style={{ background:'#eee', border:'1px solid #ccc', padding:'.5rem', borderRadius:'4px', marginBottom:'0.5rem' }}>+ Bereich hinzufügen</button>
                         </div>
                     ))}
                     <button type="button" onClick={addCategory} style={{ background:'#eee',border:'1px solid #ccc',padding:'.5rem',borderRadius:'4px' }}>+ Kategorie hinzufügen</button>

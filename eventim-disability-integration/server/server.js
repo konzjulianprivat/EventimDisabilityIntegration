@@ -741,6 +741,16 @@ app.post('/create-event', express.json(), async (req, res) => {
     if (!tourId || !venueId || !doorTime || !startTime || !endTime) {
         return res.status(400).json({ message: 'Tour, Venue und alle Zeitangaben sind erforderlich' });
     }
+    for (const cat of categories) {
+        if (!cat.price || !Array.isArray(cat.areas) || cat.areas.length === 0) {
+            return res.status(400).json({ message: 'Ungültige Kategorie-Daten' });
+        }
+        for (const ar of cat.areas) {
+            if (!ar.venueAreaId || !ar.capacity) {
+                return res.status(400).json({ message: 'Alle Bereiche benötigen Kapazität und Auswahl' });
+            }
+        }
+    }
 
     try {
         await client.query('BEGIN');
@@ -762,7 +772,6 @@ app.post('/create-event', express.json(), async (req, res) => {
             );
         }
 
-        const categoryIdMap = [];
         for (const cat of categories) {
             const catId = uuidv4();
             await client.query(
@@ -771,16 +780,15 @@ app.post('/create-event', express.json(), async (req, res) => {
                  VALUES ($1,$2,$3,$4)`,
                 [catId, eventId, cat.name || null, cat.price]
             );
-            categoryIdMap.push({ catId, areaId: cat.areaId, capacity: cat.capacity });
-        }
 
-        for (const map of categoryIdMap) {
-            await client.query(
-                `INSERT INTO event_venue_areas
-                     (id, event_id, venue_area_id, capacity, category_id)
-                 VALUES ($1,$2,$3,$4,$5)`,
-                [uuidv4(), eventId, map.areaId, map.capacity, map.catId]
-            );
+            for (const area of cat.areas || []) {
+                await client.query(
+                    `INSERT INTO event_venue_areas
+                         (id, event_id, venue_area_id, capacity, category_id)
+                     VALUES ($1,$2,$3,$4,$5)`,
+                    [uuidv4(), eventId, area.venueAreaId, area.capacity, catId]
+                );
+            }
         }
 
         await client.query('COMMIT');
