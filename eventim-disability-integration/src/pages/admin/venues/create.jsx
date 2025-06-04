@@ -8,19 +8,18 @@ export default function VenueCreation() {
         name: '',
         address: '',
         cityId: '',
-        capacity: '',
         website: ''
     });
     const [cities, setCities] = useState([]);
-    const [areas, setAreas] = useState([]);            // disability_areas
-    const [disCaps, setDisCaps] = useState([]);        // [{ area_name, capacity }]
+    const [areas, setAreas] = useState([]);
+    const [venueAreas, setVenueAreas] = useState([]); // [{ areaId, maxCapacity }]
     const [message, setMessage] = useState('');
     const [loading, setLoading] = useState(false);
 
     useEffect(() => {
         fetch('http://localhost:4000/cities')
             .then(r => r.json()).then(d => setCities(d.cities));
-        fetch('http://localhost:4000/disability-areas')
+        fetch('http://localhost:4000/areas')
             .then(r => r.json()).then(d => setAreas(d.areas));
     }, []);
 
@@ -29,41 +28,37 @@ export default function VenueCreation() {
         setFormData(f => ({ ...f, [name]: value }));
     };
 
-    const addDisCap = () => {
-        setDisCaps(d => [...d, { area_name: '', capacity: '' }]);
+    const addArea = () => {
+        setVenueAreas(v => [...v, { areaId: '', maxCapacity: '' }]);
     };
-    const updateDisCap = (i, field, val) => {
-        setDisCaps(d => d.map((it, idx) => idx === i ? { ...it, [field]: val } : it));
+    const updateArea = (i, field, val) => {
+        setVenueAreas(v => v.map((it, idx) => idx === i ? { ...it, [field]: val } : it));
     };
-    const removeDisCap = i => {
-        setDisCaps(d => d.filter((_, idx) => idx !== i));
+    const removeArea = i => {
+        setVenueAreas(v => v.filter((_, idx) => idx !== i));
     };
 
     const handleSubmit = async e => {
         e.preventDefault();
         setLoading(true);
         setMessage('');
-        const total = parseInt(formData.capacity, 10);
-        if (!formData.name.trim() ||
-            !formData.address.trim() ||
-            !formData.cityId ||
-            isNaN(total)) {
-            setMessage('Name, Adresse, Stadt und Gesamt-Kapazität sind erforderlich');
+        if (!formData.name.trim() || !formData.address.trim() || !formData.cityId) {
+            setMessage('Name, Adresse und Stadt sind erforderlich');
             setLoading(false);
             return;
         }
-        const sumDis = disCaps.reduce((s, dc) => s + (parseInt(dc.capacity,10) || 0), 0);
-        if (sumDis > total) {
-            setMessage('Summe der Behinderten-Kapazitäten überschreitet Gesamt-Kapazität');
-            setLoading(false);
-            return;
+        for (const va of venueAreas) {
+            if (!va.areaId || !va.maxCapacity) {
+                setMessage('Alle Bereiche benötigen eine Kapazität und Auswahl');
+                setLoading(false);
+                return;
+            }
         }
 
         try {
             const payload = {
                 ...formData,
-                capacity: total,
-                disabilityCapacities: disCaps
+                venueAreas
             };
             const res = await fetch('http://localhost:4000/create-venue', {
                 method:'POST',
@@ -73,8 +68,8 @@ export default function VenueCreation() {
             const data = await res.json();
             if (res.ok) {
                 setMessage(`Venue „${data.venue.name}“ erstellt`);
-                setFormData({ name:'', address:'', cityId:'', capacity:'', website:'' });
-                setDisCaps([]);
+                setFormData({ name:'', address:'', cityId:'', website:'' });
+                setVenueAreas([]);
             } else {
                 setMessage(data.message || 'Fehler beim Erstellen');
             }
@@ -125,14 +120,6 @@ export default function VenueCreation() {
                         {cities.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
                     </select>
                 </div>
-                {/* Capacity */}
-                <div style={{ marginBottom:'1rem' }}>
-                    <label htmlFor="capacity" style={{ display:'block', fontWeight:'bold', marginBottom:'.5rem' }}>Gesamt-Kapazität *</label>
-                    <input id="capacity" name="capacity" type="number" min="0"
-                           value={formData.capacity} onChange={handleChange} required
-                           style={{ width:'100%', padding:'.5rem', borderRadius:'4px', border:'1px solid #ccc' }}
-                    />
-                </div>
                 {/* Website */}
                 <div style={{ marginBottom:'1rem' }}>
                     <label htmlFor="website" style={{ display:'block', fontWeight:'bold', marginBottom:'.5rem' }}>Website</label>
@@ -141,34 +128,32 @@ export default function VenueCreation() {
                            style={{ width:'100%', padding:'.5rem', borderRadius:'4px', border:'1px solid #ccc' }}
                     />
                 </div>
-                {/* Disability capacities */}
+                {/* Areas */}
                 <div style={{ marginBottom:'1rem' }}>
-                    <label style={{ display:'block', fontWeight:'bold', marginBottom:'.5rem' }}>Behinderten-Kapazität hinzufügen</label>
-                    {disCaps.map((dc,i) => (
+                    <label style={{ display:'block', fontWeight:'bold', marginBottom:'.5rem' }}>Bereiche hinzufügen</label>
+                    {venueAreas.map((va,i) => (
                         <div key={i} style={{ display:'flex', gap:'1rem', marginBottom:'.5rem' }}>
-                            <select value={dc.area_name}
-                                    onChange={e=>updateDisCap(i,'area_name',e.target.value)}
+                            <select value={va.areaId}
+                                    onChange={e=>updateArea(i,'areaId',e.target.value)}
                                     required
                                     style={{ flex:2, padding:'.5rem', border:'1px solid #ccc', borderRadius:'4px' }}
                             >
                                 <option value="">Bereich wählen</option>
                                 {areas.map(a=>(
-                                    <option key={a.area_name} value={a.area_name}>
-                                        {a.area_name}
-                                    </option>
+                                    <option key={a.id} value={a.id}>{a.name}</option>
                                 ))}
                             </select>
                             <input type="number" min="0" placeholder="Kapazität"
-                                   value={dc.capacity}
-                                   onChange={e=>updateDisCap(i,'capacity',e.target.value)}
+                                   value={va.maxCapacity}
+                                   onChange={e=>updateArea(i,'maxCapacity',e.target.value)}
                                    required
                                    style={{ flex:1, padding:'.5rem', border:'1px solid #ccc', borderRadius:'4px' }}
                             />
-                            <button type="button" onClick={()=>removeDisCap(i)}
+                            <button type="button" onClick={()=>removeArea(i)}
                                     style={{ background:'transparent', border:'none', color:'#c00', fontSize:'1.25rem' }}>✕</button>
                         </div>
                     ))}
-                    <button type="button" onClick={addDisCap}
+                    <button type="button" onClick={addArea}
                             style={{ background:'#eee', border:'1px solid #ccc', padding:'.5rem', borderRadius:'4px' }}>
                         + Bereich hinzufügen
                     </button>
