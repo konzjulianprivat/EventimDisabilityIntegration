@@ -1,7 +1,10 @@
 import React, { useEffect, useState } from 'react';
+import FilterBar from '../../../components/filter-bar';
+import { useRouter } from 'next/router';
 
-export default function ArtistsTooling() {
+export default function ArtistsContent() {
     const [artists, setArtists] = useState([]);
+    const [filteredArtists, setFilteredArtists] = useState([]);
     const [editingId, setEditingId] = useState(null);
     const [editedData, setEditedData] = useState({
         id: '',
@@ -9,11 +12,19 @@ export default function ArtistsTooling() {
         biography: '',
         website: '',
         artist_image: null,
-        existingImageId: null, // to keep track of the old image ID
+        existingImageId: null,
     });
     const [confirmDeleteId, setConfirmDeleteId] = useState(null);
+    const [expandedIds, setExpandedIds] = useState(new Set());
 
-    // 1) Alle Artists laden
+    const router = useRouter();
+
+    const filterFields = [
+        { key: 'name', label: 'Name', match: 'startsWith' },
+        { key: 'biography', label: 'Biografie', match: 'contains' },
+        { key: 'website', label: 'Website', match: 'contains' },
+    ];
+
     useEffect(() => {
         fetchArtists();
     }, []);
@@ -22,20 +33,21 @@ export default function ArtistsTooling() {
         try {
             const res = await fetch('http://localhost:4000/artists');
             const json = await res.json();
-            // Beispiel: json = { artists: [ { id, name, biography, website, artist_image }, … ] }
             const dataArray = Array.isArray(json)
                 ? json
                 : Array.isArray(json.artists)
                     ? json.artists
                     : [];
+
             setArtists(dataArray);
+            setFilteredArtists(dataArray);
         } catch (err) {
             console.error('Fehler beim Laden der Künstler:', err);
             setArtists([]);
+            setFilteredArtists([]);
         }
     };
 
-    // 2) Bearbeiten-Modus ein- und ausschalten
     const handleEditToggle = (artist) => {
         setEditingId(artist.id);
         setEditedData({
@@ -43,22 +55,23 @@ export default function ArtistsTooling() {
             name: artist.name || '',
             biography: artist.biography || '',
             website: artist.website || '',
-            artist_image: null,              // wenn der User ein neues File auswählt, überschreibt das
+            artist_image: null,
             existingImageId: artist.artist_image || null,
         });
     };
 
-    // 3) Eingabefelder updaten
     const handleInputChange = (e) => {
         const { name, value, files } = e.target;
         if (files) {
             setEditedData((prev) => ({ ...prev, [name]: files[0] }));
+        } else if (name === 'biography') {
+            // Autoresize‐Logik kann hier ergänzt werden (wie vorher gezeigt)
+            setEditedData((prev) => ({ ...prev, [name]: value }));
         } else {
             setEditedData((prev) => ({ ...prev, [name]: value }));
         }
     };
 
-    // 4) Änderungen speichern (PUT /artists/:id)
     const handleSave = async () => {
         try {
             const formData = new FormData();
@@ -66,7 +79,6 @@ export default function ArtistsTooling() {
             formData.append('biography', editedData.biography);
             formData.append('website', editedData.website);
 
-            // Wenn ein neues Bild gewählt wurde, hänge es an
             if (editedData.artist_image instanceof File) {
                 formData.append('artist_image', editedData.artist_image);
             }
@@ -79,7 +91,7 @@ export default function ArtistsTooling() {
                 }
             );
             if (!response.ok) {
-                throw new Error('Server‐Fehler beim Speichern');
+                throw new Error('Server-Fehler beim Speichern');
             }
 
             setEditingId(null);
@@ -89,14 +101,13 @@ export default function ArtistsTooling() {
         }
     };
 
-    // 5) Löschen (DELETE /artists/:id)
     const handleDelete = async (id) => {
         try {
             const response = await fetch(`http://localhost:4000/artists/${id}`, {
                 method: 'DELETE',
             });
             if (!response.ok) {
-                throw new Error('Server‐Fehler beim Löschen');
+                throw new Error('Server-Fehler beim Löschen');
             }
             setConfirmDeleteId(null);
             fetchArtists();
@@ -105,108 +116,152 @@ export default function ArtistsTooling() {
         }
     };
 
+    const toggleExpand = (id) => {
+        setExpandedIds((prev) => {
+            const copy = new Set(prev);
+            if (copy.has(id)) copy.delete(id);
+            else copy.add(id);
+            return copy;
+        });
+    };
+
     return (
-        <div className="admin-container">
-            <div className="header-with-button">
-                <h1 className="admin-heading">Admin-Artists-Tooling</h1>
-                <a
-                    href="/artists/create"
-                    className="create-button"
-                    target="_blank"
-                    rel="noopener noreferrer"
+        <div className="artists-wrapper">
+            <div className="artists-header">
+                <h2 className="artists-title">Übersicht – Künstler</h2>
+                <button
+                    className="btn-create-entity"
+                    onClick={() => router.push(`/admin/artists/create`)}
                 >
-                    Create
-                </a>
+                    + Künstler erstellen
+                </button>
+            </div>
+            {/* Hier binden wir die generische FilterBar ein */}
+            <div className="filter-container">
+                <FilterBar
+                    items={artists}
+                    onFiltered={(arr) => setFilteredArtists(arr)}
+                    entityName="Künstler"
+                    entityRoute="artists"
+                    filterFields={filterFields}
+                />
             </div>
 
-            {Array.isArray(artists) &&
-                artists.map((artist) => (
-                    <div className="artist-card-full" key={artist.id}>
-                        <div className="artist-actions">
+            <div className="artists-grid">
+                {filteredArtists.length === 0 && (
+                    <div className="no-artists">Keine Künstler vorhanden.</div>
+                )}
+                {filteredArtists.map((artist) => (
+                    <div className="artist-card" key={artist.id}>
+                        <div className="card-header">
                             {editingId === artist.id ? (
-                                <button
-                                    className="circle-button green"
-                                    onClick={handleSave}
-                                    aria-label="Speichern"
+                                <input
+                                    type="text"
+                                    name="name"
+                                    value={editedData.name}
+                                    onChange={handleInputChange}
+                                    className="input-name"
                                 />
                             ) : (
-                                <button
-                                    className="circle-button gray"
-                                    onClick={() => handleEditToggle(artist)}
-                                    aria-label="Bearbeiten"
-                                />
+                                <h3 className="artist-name">{artist.name}</h3>
                             )}
-                            <button
-                                className="circle-button red"
-                                onClick={() => setConfirmDeleteId(artist.id)}
-                                aria-label="Löschen"
-                            />
+
+                            {editingId === artist.id ? (
+                                <button
+                                    className="btn-save"
+                                    onClick={handleSave}
+                                    title="Speichern"
+                                >
+                                    💾
+                                </button>
+                            ) : (
+                                <button
+                                    className="btn-edit"
+                                    onClick={() => handleEditToggle(artist)}
+                                    title="Bearbeiten"
+                                >
+                                    ✎
+                                </button>
+                            )}
                         </div>
 
-                        <div className="artist-content">
-                            {/* 6) Bild‐URL anzeigen: über /image/:id-Endpunkt */}
-                            <img
-                                src={
-                                    editingId === artist.id &&
-                                    editedData.artist_image instanceof File
-                                        ? URL.createObjectURL(editedData.artist_image)
-                                        : artist.artist_image
-                                            ? `http://localhost:4000/image/${artist.artist_image}`
-                                            : 'https://via.placeholder.com/150'
-                                }
-                                alt={artist.name || 'Unbekannter Künstler'}
-                                className="artist-image"
-                            />
+                        <div className="card-body">
+                            <div className="image-wrapper">
+                                <img
+                                    className="artist-image"
+                                    src={
+                                        editingId === artist.id &&
+                                        editedData.artist_image instanceof File
+                                            ? URL.createObjectURL(editedData.artist_image)
+                                            : artist.artist_image
+                                                ? `http://localhost:4000/image/${artist.artist_image}`
+                                                : '/placeholder-artist.png'
+                                    }
+                                    alt={artist.name || 'Unbekannter Künstler'}
+                                />
+                            </div>
 
-                            <div className="artist-info">
+                            <div className="details-wrapper">
                                 {editingId === artist.id ? (
                                     <>
-                                        <input
-                                            type="text"
-                                            name="name"
-                                            value={editedData.name}
-                                            onChange={handleInputChange}
-                                            placeholder="Name"
-                                        />
-                                        <textarea
-                                            name="biography"
-                                            value={editedData.biography}
-                                            onChange={handleInputChange}
-                                            placeholder="Biografie"
-                                        />
+                    <textarea
+                        name="biography"
+                        value={editedData.biography}
+                        onChange={handleInputChange}
+                        placeholder="Biografie"
+                        className="input-bio"
+                    />
+
                                         <input
                                             type="url"
                                             name="website"
                                             value={editedData.website}
                                             onChange={handleInputChange}
                                             placeholder="Website"
+                                            className="input-website"
                                         />
                                         <input
                                             type="file"
                                             name="artist_image"
                                             onChange={handleInputChange}
                                             accept="image/*"
+                                            className="input-file"
                                         />
                                     </>
                                 ) : (
                                     <>
-                                        <h2>{artist.name}</h2>
-                                        <p>
-                                            {artist.biography && artist.biography.trim() !== ''
-                                                ? artist.biography
-                                                : '— keine Biografie hinterlegt —'}
+                                        <p
+                                            className={`artist-bio ${
+                                                expandedIds.has(artist.id) ? 'expanded' : ''
+                                            }`}
+                                        >
+                                            {artist.biography || '— keine Biografie —'}
                                         </p>
-                                        {artist.website && artist.website.trim() !== '' ? (
-                                            <a
-                                                href={artist.website}
-                                                target="_blank"
-                                                rel="noopener noreferrer"
-                                            >
-                                                {artist.website}
-                                            </a>
-                                        ) : (
-                                            <span>— keine Website hinterlegt —</span>
-                                        )}
+                                        {artist.biography &&
+                                            artist.biography.length > 160 && (
+                                                <button
+                                                    className="read-more"
+                                                    onClick={() => toggleExpand(artist.id)}
+                                                >
+                                                    {expandedIds.has(artist.id)
+                                                        ? 'Weniger'
+                                                        : 'Mehr Lesen'}
+                                                </button>
+                                            )}
+                                        <div className="website-wrapper">
+                                            {artist.website && artist.website.trim() !== '' ? (
+                                                <a
+                                                    href={artist.website}
+                                                    target="_blank"
+                                                    rel="noopener noreferrer"
+                                                    className="artist-link"
+                                                >
+                                                    {artist.website}
+                                                </a>
+                                            ) : (
+                                                <span className="no-link">— keine Website —</span>
+                                            )}
+                                        </div>
                                     </>
                                 )}
                             </div>
@@ -214,13 +269,19 @@ export default function ArtistsTooling() {
 
                         {confirmDeleteId === artist.id && (
                             <div className="modal-overlay">
-                                <div className="modal">
+                                <div className="modal-box">
                                     <p>Möchtest du diesen Künstler wirklich löschen?</p>
                                     <div className="modal-actions">
-                                        <button onClick={() => handleDelete(artist.id)}>
+                                        <button
+                                            className="btn btn-confirm"
+                                            onClick={() => handleDelete(artist.id)}
+                                        >
                                             Ja, löschen
                                         </button>
-                                        <button onClick={() => setConfirmDeleteId(null)}>
+                                        <button
+                                            className="btn btn-cancel"
+                                            onClick={() => setConfirmDeleteId(null)}
+                                        >
                                             Abbrechen
                                         </button>
                                     </div>
@@ -229,6 +290,7 @@ export default function ArtistsTooling() {
                         )}
                     </div>
                 ))}
+            </div>
         </div>
     );
 }
