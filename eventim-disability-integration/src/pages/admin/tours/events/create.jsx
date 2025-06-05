@@ -1,3 +1,5 @@
+// pages/events.jsx
+
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
 
@@ -15,14 +17,22 @@ export default function EventCreation() {
     const [venues, setVenues] = useState([]);
     const [artists, setArtists] = useState([]);
     const [eventArtists, setEventArtists] = useState([]); // [{ artistId }]
-    const [venueAreas, setVenueAreas] = useState([]); // fetched based on venue
+    const [venueAreas, setVenueAreas] = useState([]);      // each: { id, name, max_capacity, is_disability_category }
 
-    // Now each category has: { name, price, venueAreas: [ { areaId, capacity } ] }
+    // “Normale” Kategorien
     const [categories, setCategories] = useState([]);
+
+    // Disability‐Kategorie
+    const [disabilityCategory, setDisabilityCategory] = useState({
+        name: 'Kategorie für Menschen mit Behinderung',
+        price: '',
+        venueAreas: [] // gefüllt mit allen venueAreas, deren is_disability_category===true
+    });
+
     const [message, setMessage] = useState('');
     const [loading, setLoading] = useState(false);
 
-    // Load tours, venues, artists on mount
+    // 1) Load tours, venues, artists
     useEffect(() => {
         fetch('http://localhost:4000/tours')
             .then(r => r.json())
@@ -37,18 +47,33 @@ export default function EventCreation() {
             .then(d => setArtists(d.artists));
     }, []);
 
-    // When venueId changes, load venueAreas for that venue
+    // 2) When venueId changes, load all venueAreas (incl. is_disability_category)
     useEffect(() => {
         if (!formData.venueId) {
             setVenueAreas([]);
+            setDisabilityCategory(dc => ({ ...dc, venueAreas: [] }));
             return;
         }
         fetch(`http://localhost:4000/venue-areas?venueId=${formData.venueId}`)
             .then(r => r.json())
-            .then(d => setVenueAreas(d.venueAreas || []))
+            .then(d => {
+                const allAreas = d.venueAreas || [];
+                setVenueAreas(allAreas);
+
+                // Filtere auf is_disability_category===true
+                const onlyDisability = allAreas
+                    .filter(va => va.is_disability_category)
+                    .map(va => ({ areaId: va.id, capacity: '' }));
+
+                setDisabilityCategory(dc => ({
+                    ...dc,
+                    venueAreas: onlyDisability
+                }));
+            })
             .catch(err => {
                 console.error('Error loading venue areas', err);
                 setVenueAreas([]);
+                setDisabilityCategory(dc => ({ ...dc, venueAreas: [] }));
             });
     }, [formData.venueId]);
 
@@ -57,7 +82,7 @@ export default function EventCreation() {
         setFormData(f => ({ ...f, [name]: value }));
     };
 
-    // --- Artist handlers (unchanged) ---
+    // 3) Artist‐Handler
     const addArtist = () => {
         setEventArtists(ea => [...ea, { artistId: '' }]);
     };
@@ -70,7 +95,7 @@ export default function EventCreation() {
         setEventArtists(ea => ea.filter((_, idx) => idx !== i));
     };
 
-    // --- Category handlers, updated to allow multiple venueAreas per category ---
+    // 4) “Normale” Category‐Handler
     const addCategory = () => {
         const idx = categories.length + 1;
         setCategories(c => [
@@ -78,7 +103,7 @@ export default function EventCreation() {
             {
                 name: `Kategorie ${idx}`,
                 price: '',
-                venueAreas: [] // start with no selected areas
+                venueAreas: []
             }
         ]);
     };
@@ -95,7 +120,6 @@ export default function EventCreation() {
         setCategories(c => c.filter((_, idx) => idx !== catIndex));
     };
 
-    // Add a new (areaId, capacity) pair to a given category
     const addAreaToCategory = catIndex => {
         setCategories(c =>
             c.map((cat, idx) => {
@@ -111,7 +135,6 @@ export default function EventCreation() {
         );
     };
 
-    // Update a specific area entry inside a category
     const updateAreaInCategory = (catIndex, areaIndex, field, val) => {
         setCategories(c =>
             c.map((cat, idx) => {
@@ -125,7 +148,6 @@ export default function EventCreation() {
         );
     };
 
-    // Remove a specific area entry from a category
     const removeAreaFromCategory = (catIndex, areaIndex) => {
         setCategories(c =>
             c.map((cat, idx) => {
@@ -136,7 +158,22 @@ export default function EventCreation() {
         );
     };
 
-    // Helper to compute total capacity for a given category (sum of all its venueAreas’ capacities)
+    // 5) Disability‐Kategorie: Preis und Kapazitäten editieren
+    const updateDisabilityField = (field, val) => {
+        setDisabilityCategory(dc => ({ ...dc, [field]: val }));
+    };
+
+    const updateDisabilityAreaCapacity = (areaIndex, val) => {
+        setDisabilityCategory(dc => {
+            const newVenueAreas = dc.venueAreas.map((entry, idx) => {
+                if (idx !== areaIndex) return entry;
+                return { ...entry, capacity: val };
+            });
+            return { ...dc, venueAreas: newVenueAreas };
+        });
+    };
+
+    // 6) Hilfsfunktion: Gesamtkapazität summieren
     const getTotalCapacityForCategory = cat => {
         return cat.venueAreas.reduce((sum, entry) => {
             const cap = parseInt(entry.capacity, 10);
@@ -148,13 +185,15 @@ export default function EventCreation() {
         e.preventDefault();
         setLoading(true);
         setMessage('');
+
         const { tourId, venueId, doorTime, startTime, endTime } = formData;
         if (!tourId || !venueId || !doorTime || !startTime || !endTime) {
             setMessage('Tour, Venue und alle Zeiten sind erforderlich');
             setLoading(false);
             return;
         }
-        // Validate each category: must have name, price, and at least one area entry, and each entry needs areaId+capacity
+
+        // 7) Validierung normale Kategorien
         for (const cat of categories) {
             if (!cat.name || !cat.price) {
                 setMessage('Alle Kategorien benötigen Namen und Preis');
@@ -174,8 +213,33 @@ export default function EventCreation() {
                 }
             }
         }
+
+        // 8) Validierung Disability‐Kategorie (wenn überhaupt disabilityAreas)
+        if (disabilityCategory.venueAreas.length > 0) {
+            if (!disabilityCategory.price) {
+                setMessage('Preis für “Kategorie für Menschen mit Behinderung” ist erforderlich');
+                setLoading(false);
+                return;
+            }
+            for (const entry of disabilityCategory.venueAreas) {
+                if (!entry.capacity) {
+                    setMessage('Kapazität in der Behinderten-Kategorie darf nicht leer sein');
+                    setLoading(false);
+                    return;
+                }
+            }
+        }
+
         try {
-            const payload = { ...formData, eventArtists, categories };
+            // Baue komplettes categories‐Array inkl. disabilityCategory, falls vorhanden
+            const allCats = [
+                ...categories,
+                ...(disabilityCategory.venueAreas.length > 0
+                    ? [disabilityCategory]
+                    : [])
+            ];
+
+            const payload = { ...formData, eventArtists, categories: allCats };
             const res = await fetch('http://localhost:4000/create-event', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -184,9 +248,17 @@ export default function EventCreation() {
             const data = await res.json();
             if (res.ok) {
                 setMessage(`Event erstellt`);
-                setFormData({ tourId: '', venueId: '', doorTime: '', startTime: '', endTime: '', description: '' });
+                setFormData({
+                    tourId: '',
+                    venueId: '',
+                    doorTime: '',
+                    startTime: '',
+                    endTime: '',
+                    description: ''
+                });
                 setEventArtists([]);
                 setCategories([]);
+                setDisabilityCategory(dc => ({ ...dc, price: '', venueAreas: [] }));
             } else {
                 setMessage(data.message || 'Fehler beim Erstellen');
             }
@@ -343,10 +415,11 @@ export default function EventCreation() {
                     </button>
                 </div>
 
-                {/* ---------------- Kategorien (mit mehreren venueAreas pro Kategorie) ---------------- */}
+                {/* -------------------------------------------------- */}
+                {/* Normale Kategorien */}
+                {/* -------------------------------------------------- */}
                 <div style={{ marginBottom: '1rem' }}>
                     <label style={{ display: 'block', fontWeight: 'bold', marginBottom: '.5rem' }}>Kategorien</label>
-
                     {categories.map((cat, i) => {
                         const totalCapacity = getTotalCapacityForCategory(cat);
                         return (
@@ -386,7 +459,7 @@ export default function EventCreation() {
                                     </button>
                                 </div>
 
-                                {/* Name der Kategorie */}
+                                {/* Name */}
                                 <input
                                     type="text"
                                     placeholder="Name der Kategorie"
@@ -401,7 +474,7 @@ export default function EventCreation() {
                                     }}
                                 />
 
-                                {/* Preis der Kategorie */}
+                                {/* Preis */}
                                 <input
                                     type="number"
                                     min="0"
@@ -413,11 +486,11 @@ export default function EventCreation() {
                                         padding: '.5rem',
                                         border: '1px solid #ccc',
                                         borderRadius: '4px',
-                                        marginBottom: '.75rem'
+                                        marginBottom: '0.75rem'
                                     }}
                                 />
 
-                                {/* Für jede ausgewählte venueArea in dieser Kategorie: Bereich + Kapazität */}
+                                {/* venueAreas‐Einträge */}
                                 {cat.venueAreas.map((entry, aIdx) => (
                                     <div
                                         key={aIdx}
@@ -428,7 +501,6 @@ export default function EventCreation() {
                                             alignItems: 'center'
                                         }}
                                     >
-                                        {/* Bereich wählen */}
                                         <select
                                             value={entry.areaId}
                                             onChange={e =>
@@ -443,14 +515,15 @@ export default function EventCreation() {
                                             }}
                                         >
                                             <option value="">Bereich wählen</option>
-                                            {venueAreas.map(va => (
+                                            {venueAreas
+                                                .filter(va => !va.is_disability_category) // nur normale Bereiche
+                                                .map(va => (
                                                 <option key={va.id} value={va.id}>
                                                     {va.name} (max {va.max_capacity})
                                                 </option>
                                             ))}
                                         </select>
 
-                                        {/* Kapazität für diesen Bereich innerhalb der Kategorie */}
                                         <input
                                             type="number"
                                             min="0"
@@ -467,7 +540,6 @@ export default function EventCreation() {
                                             }}
                                         />
 
-                                        {/* Entfernen-Button für diese Bereichs-Eintragung */}
                                         <button
                                             type="button"
                                             onClick={() => removeAreaFromCategory(i, aIdx)}
@@ -485,7 +557,6 @@ export default function EventCreation() {
                                     </div>
                                 ))}
 
-                                {/* Button: + Bereich hinzufügen */}
                                 <button
                                     type="button"
                                     onClick={() => addAreaToCategory(i)}
@@ -504,7 +575,6 @@ export default function EventCreation() {
                         );
                     })}
 
-                    {/* Button: + Kategorie hinzufügen */}
                     <button
                         type="button"
                         onClick={addCategory}
@@ -519,6 +589,100 @@ export default function EventCreation() {
                         + Kategorie hinzufügen
                     </button>
                 </div>
+
+                {/* -------------------------------------------------- */}
+                {/* Kategorien für Menschen mit besonderen Bedürfnissen */}
+                {/* -------------------------------------------------- */}
+                {disabilityCategory.venueAreas.length > 0 && (
+                    <div style={{ marginBottom: '1.5rem' }}>
+                        <label style={{ display: 'block', fontWeight: 'bold', marginBottom: '.5rem' }}>
+                            Kategorien für Menschen mit besonderen Bedürfnissen
+                        </label>
+
+                        <div
+                            style={{
+                                marginBottom: '1rem',
+                                padding: '1rem',
+                                border: '1px solid #ddd',
+                                borderRadius: '4px'
+                            }}
+                        >
+                            {/* Name (readonly) */}
+                            <input
+                                type="text"
+                                value={disabilityCategory.name}
+                                disabled
+                                style={{
+                                    width: '100%',
+                                    padding: '.5rem',
+                                    border: '1px solid #ccc',
+                                    backgroundColor: '#f5f5f5',
+                                    borderRadius: '4px',
+                                    marginBottom: '.5rem'
+                                }}
+                            />
+
+                            {/* Preis */}
+                            <input
+                                type="number"
+                                min="0"
+                                placeholder="Preis"
+                                value={disabilityCategory.price}
+                                onChange={e => updateDisabilityField('price', e.target.value)}
+                                style={{
+                                    width: '100%',
+                                    padding: '.5rem',
+                                    border: '1px solid #ccc',
+                                    borderRadius: '4px',
+                                    marginBottom: '0.75rem'
+                                }}
+                            />
+
+                            {/* Für jede behinderten‐Area */}
+                            {disabilityCategory.venueAreas.map((entry, idx) => {
+                                const va = venueAreas.find(v => v.id === entry.areaId);
+                                const areaName = va ? va.name : '';
+                                return (
+                                    <div
+                                        key={idx}
+                                        style={{
+                                            display: 'flex',
+                                            gap: '1rem',
+                                            marginBottom: '.5rem',
+                                            alignItems: 'center'
+                                        }}
+                                    >
+                                        <input
+                                            type="text"
+                                            value={areaName}
+                                            disabled
+                                            style={{
+                                                flex: 1,
+                                                padding: '.5rem',
+                                                border: '1px solid #ccc',
+                                                backgroundColor: '#f0f0f0',
+                                                borderRadius: '4px'
+                                            }}
+                                        />
+                                        <input
+                                            type="number"
+                                            min="0"
+                                            placeholder="Kapazität"
+                                            value={entry.capacity}
+                                            onChange={e => updateDisabilityAreaCapacity(idx, e.target.value)}
+                                            style={{
+                                                width: '25%',
+                                                padding: '.5rem',
+                                                border: '1px solid #ccc',
+                                                borderRadius: '4px'
+                                            }}
+                                        />
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    </div>
+                )}
 
                 {/* ---------------- Submit ---------------- */}
                 <button

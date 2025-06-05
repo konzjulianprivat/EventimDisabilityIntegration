@@ -714,9 +714,13 @@ app.get('/venue-areas', async (req, res) => {
     }
     try {
         const { rows } = await client.query(
-            `SELECT va.id, va.max_capacity, a.name
+            `SELECT
+                 va.id,
+                 va.max_capacity,
+                 a.name,
+                 a.is_disability_category
              FROM venue_areas va
-             JOIN areas a ON a.id = va.area_id
+                      JOIN areas a ON a.id = va.area_id
              WHERE va.venue_id = $1
              ORDER BY a.name`,
             [venueId]
@@ -965,8 +969,8 @@ app.post('/create-area', async (req, res) => {
 
         const areaId = uuidv4();
         await client.query(
-            'INSERT INTO areas (id, name, description) VALUES ($1, $2, $3)',
-            [areaId, name.trim(), description || null]
+            'INSERT INTO areas (id, name, description, is_disability_category) VALUES ($1, $2, $3, $4)',
+            [areaId, name.trim(), description || null, false]
         );
 
         return res.status(201).json({
