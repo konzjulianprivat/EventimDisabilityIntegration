@@ -9,10 +9,11 @@ export default function ArtistsTooling() {
         biography: '',
         website: '',
         artist_image: null,
+        existingImageId: null, // to keep track of the old image ID
     });
     const [confirmDeleteId, setConfirmDeleteId] = useState(null);
 
-    // 1) Alle Artists laden – Logging, um zu sehen, wie das JSON wirklich aussieht
+    // 1) Alle Artists laden
     useEffect(() => {
         fetchArtists();
     }, []);
@@ -21,9 +22,7 @@ export default function ArtistsTooling() {
         try {
             const res = await fetch('http://localhost:4000/artists');
             const json = await res.json();
-            console.log('API-Response:', json);
-            // Beispiel A: json = { artists: [ { id, name, biography, website, artist_image }, … ] }
-            // Beispiel B: json = [ { id, name, biography, website, artist_image }, … ]
+            // Beispiel: json = { artists: [ { id, name, biography, website, artist_image }, … ] }
             const dataArray = Array.isArray(json)
                 ? json
                 : Array.isArray(json.artists)
@@ -44,15 +43,15 @@ export default function ArtistsTooling() {
             name: artist.name || '',
             biography: artist.biography || '',
             website: artist.website || '',
-            artist_image: artist.artist_image || null,
+            artist_image: null,              // wenn der User ein neues File auswählt, überschreibt das
+            existingImageId: artist.artist_image || null,
         });
     };
 
-    // 3) Eingabefelder im Bearbeiten-Modus updaten
+    // 3) Eingabefelder updaten
     const handleInputChange = (e) => {
         const { name, value, files } = e.target;
         if (files) {
-            // Bei <input type="file">
             setEditedData((prev) => ({ ...prev, [name]: files[0] }));
         } else {
             setEditedData((prev) => ({ ...prev, [name]: value }));
@@ -63,12 +62,11 @@ export default function ArtistsTooling() {
     const handleSave = async () => {
         try {
             const formData = new FormData();
-            formData.append('id', editedData.id);
             formData.append('name', editedData.name);
             formData.append('biography', editedData.biography);
             formData.append('website', editedData.website);
-            // Falls ein File gewählt wurde, schicke es unter "artist_image"
-            // (Stelle sicher, dass dein Server genau diesen Key erwartet)
+
+            // Wenn ein neues Bild gewählt wurde, hänge es an
             if (editedData.artist_image instanceof File) {
                 formData.append('artist_image', editedData.artist_image);
             }
@@ -85,7 +83,7 @@ export default function ArtistsTooling() {
             }
 
             setEditingId(null);
-            fetchArtists(); // Daten neu laden
+            fetchArtists();
         } catch (err) {
             console.error('Fehler beim Speichern:', err);
         }
@@ -130,32 +128,30 @@ export default function ArtistsTooling() {
                                     className="circle-button green"
                                     onClick={handleSave}
                                     aria-label="Speichern"
-                                ></button>
+                                />
                             ) : (
                                 <button
                                     className="circle-button gray"
                                     onClick={() => handleEditToggle(artist)}
                                     aria-label="Bearbeiten"
-                                ></button>
+                                />
                             )}
                             <button
                                 className="circle-button red"
                                 onClick={() => setConfirmDeleteId(artist.id)}
                                 aria-label="Löschen"
-                            ></button>
+                            />
                         </div>
 
                         <div className="artist-content">
-                            {/* 6) Bild‐URL darstellen: entweder File‐Vorschau oder das in der DB gespeicherte Bild */}
+                            {/* 6) Bild‐URL anzeigen: über /image/:id-Endpunkt */}
                             <img
                                 src={
-                                    // Wenn wir gerade editieren und ein neues File gewählt wurde, zeige Vorschaubild
                                     editingId === artist.id &&
                                     editedData.artist_image instanceof File
                                         ? URL.createObjectURL(editedData.artist_image)
-                                        : // Ansonsten: Wenn der DB‐Wert ein String ist, nutze ihn, sonst Platzhalter
-                                        artist.artist_image
-                                            ? artist.artist_image
+                                        : artist.artist_image
+                                            ? `http://localhost:4000/image/${artist.artist_image}`
                                             : 'https://via.placeholder.com/150'
                                 }
                                 alt={artist.name || 'Unbekannter Künstler'}
@@ -189,12 +185,12 @@ export default function ArtistsTooling() {
                                             type="file"
                                             name="artist_image"
                                             onChange={handleInputChange}
+                                            accept="image/*"
                                         />
                                     </>
                                 ) : (
                                     <>
                                         <h2>{artist.name}</h2>
-                                        {/* Zeige Biografie oder Platzhalter, wenn leer */}
                                         <p>
                                             {artist.biography && artist.biography.trim() !== ''
                                                 ? artist.biography

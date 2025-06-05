@@ -983,6 +983,95 @@ app.post('/create-area', async (req, res) => {
     }
 });
 
+app.put('/artists/:id', upload.single('artist_image'), async (req, res) => {
+    const artistId = req.params.id;
+
+    try {
+        // 1) Zunächst aktuelle artist_image auslesen
+        const { rows } = await client.query(
+            'SELECT artist_image FROM artists WHERE id = $1',
+            [artistId]
+        );
+        if (rows.length === 0) {
+            return res.status(404).json({ message: 'Artist nicht gefunden' });
+        }
+        const oldImageId = rows[0].artist_image;
+
+        // 2) Neue Felder (name/biography/website) updaten
+        //    (artist_image aktualisieren wir weiter unten)
+        const { name, biography, website } = req.body;
+        await client.query(
+            `UPDATE artists
+               SET name = $1,
+                   biography = $2,
+                   website = $3
+             WHERE id = $4`,
+            [name || null, biography || null, website || null, artistId]
+        );
+
+        // 3) Falls ein neues Bild hochgeladen wurde:
+        if (req.file) {
+            // a) Neues image-Record anlegen
+            const newImageId = uuidv4();
+            await client.query(
+                `INSERT INTO images
+                    (id, image_data, image_type, entity_type, entity_id)
+                 VALUES ($1, $2, $3, $4, $5)`,
+                [newImageId, req.file.buffer, req.file.mimetype, 'artist', artistId]
+            );
+
+            // b) artists.artist_image auf newImageId setzen
+            await client.query(
+                `UPDATE artists
+                   SET artist_image = $1
+                 WHERE id = $2`,
+                [newImageId, artistId]
+            );
+
+            // c) altes Bild löschen (nur wenn existiert)
+            if (oldImageId) {
+                await client.query(
+                    'DELETE FROM images WHERE id = $1',
+                    [oldImageId]
+                );
+            }
+        }
+
+        return res.status(200).json({ message: 'Artist aktualisiert' });
+    } catch (err) {
+        console.error('Update-Artist error:', err);
+        return res.status(500).json({ message: 'Serverfehler beim Aktualisieren des Künstlers' });
+    }
+});
+app.delete('/artists/:id', async (req, res) => {
+    const artistId = req.params.id;
+    try {
+        // 1) hole artist_image id
+        const { rows } = await client.query(
+            'SELECT artist_image FROM artists WHERE id = $1',
+            [artistId]
+        );
+        if (rows.length === 0) {
+            return res.status(404).json({ message: 'Artist nicht gefunden' });
+        }
+        const imageId = rows[0].artist_image;
+
+        // 2) lösche Künstler
+        await client.query('DELETE FROM artists WHERE id = $1', [artistId]);
+
+        // 3) lösche zugehöriges Bild, falls vorhanden
+        if (imageId) {
+            await client.query('DELETE FROM images WHERE id = $1', [imageId]);
+        }
+
+        return res.status(200).json({ message: 'Artist gelöscht' });
+    } catch (err) {
+        console.error('Delete-Artist error:', err);
+        return res.status(500).json({ message: 'Serverfehler beim Löschen des Künstlers' });
+    }
+});
+
+
 const client = new Client(credentials);
 client.connect();
 
