@@ -593,42 +593,100 @@ export default function EventCreation() {
                 {/* -------------------------------------------------- */}
                 {/* Kategorien für Menschen mit besonderen Bedürfnissen */}
                 {/* -------------------------------------------------- */}
-                {disabilityCategory.venueAreas.length > 0 && (
-                    <div style={{ marginBottom: '1.5rem' }}>
-                        <label style={{ display: 'block', fontWeight: 'bold', marginBottom: '.5rem' }}>
-                            Kategorien für Menschen mit besonderen Bedürfnissen
-                        </label>
+                {/* Label „NEW“ über der Überschrift */}
+                <span className="new-label">NEW</span>
+                <label style={{ display: 'block', fontWeight: 'bold', marginBottom: '.5rem' }}>
+                    Kategorien für Menschen mit Einschränkungen
+                </label>
 
+                {/* Box anzeigen, falls kein Veranstaltungsort */}
+                {!formData.venueId && (
+                    <div
+                        className="disability-category"
+                        style={{
+                            marginBottom: '1rem',
+                            padding: '1rem',
+                            border: '1px solid #6a0dad',
+                            height: '5rem',
+                            borderRadius: '4px',
+                            color: '#555',
+                            backgroundColor: '#eee',
+                            display: 'flex',
+                            justifyContent: 'center',
+                            alignItems: 'center',
+                            textAlign: 'center'
+                        }}
+                    >
+                        Kein Veranstaltungsort ausgewählt
+                    </div>
+                )}
+
+                {/* Box anzeigen, falls Venue gewählt aber keine disability‐Areas */}
+                {formData.venueId &&
+                    venueAreas.filter(va => va.is_disability_category).length === 0 && (
                         <div
+                            className="disability-category"
                             style={{
                                 marginBottom: '1rem',
                                 padding: '1rem',
-                                border: '1px solid #ddd',
+                                border: '1px solid #6a0dad',
+                                height: '5rem',
+                                borderRadius: '4px',
+                                color: '#555',
+                                backgroundColor: '#eee',
+                                display: 'flex',
+                                justifyContent: 'center',
+                                alignItems: 'center',
+                                textAlign: 'center'
+                            }}
+                        >
+                            Der Veranstaltungsort hat keine Bereiche für Menschen mit Einschränkungen
+                        </div>
+                    )}
+
+                {/* Pro Behinderten‐Bereich eine eigene Kategorie‐Box */}
+                {venueAreas
+                    .filter(va => va.is_disability_category)
+                    .map((va, idx) => (
+                        <div
+                            key={va.id}
+                            className="disability-category"
+                            style={{
+                                marginBottom: '1rem',
+                                padding: '1rem',
+                                border: '1px solid #6a0dad',
                                 borderRadius: '4px'
                             }}
                         >
-                            {/* Name (readonly) */}
-                            <input
-                                type="text"
-                                value={disabilityCategory.name}
-                                disabled
+                            <div
                                 style={{
-                                    width: '100%',
-                                    padding: '.5rem',
-                                    border: '1px solid #ccc',
-                                    backgroundColor: '#f5f5f5',
-                                    borderRadius: '4px',
-                                    marginBottom: '.5rem'
+                                    display: 'flex',
+                                    justifyContent: 'space-between',
+                                    alignItems: 'center',
+                                    marginBottom: '0.5rem'
                                 }}
-                            />
+                            >
+                                <strong>
+                                    {va.name} (max: {va.max_capacity})
+                                </strong>
+                            </div>
 
-                            {/* Preis */}
+                            {/* Preis‐Eingabe */}
                             <input
                                 type="number"
                                 min="0"
                                 placeholder="Preis"
-                                value={disabilityCategory.price}
-                                onChange={e => updateDisabilityField('price', e.target.value)}
+                                value={disabilityCategory.priceMap?.[va.id] || ''}
+                                onChange={e => {
+                                    const val = e.target.value;
+                                    setDisabilityCategory(dc => ({
+                                        ...dc,
+                                        priceMap: {
+                                            ...dc.priceMap,
+                                            [va.id]: val
+                                        }
+                                    }));
+                                }}
                                 style={{
                                     width: '100%',
                                     padding: '.5rem',
@@ -638,51 +696,31 @@ export default function EventCreation() {
                                 }}
                             />
 
-                            {/* Für jede behinderten‐Area */}
-                            {disabilityCategory.venueAreas.map((entry, idx) => {
-                                const va = venueAreas.find(v => v.id === entry.areaId);
-                                const areaName = va ? va.name : '';
-                                return (
-                                    <div
-                                        key={idx}
-                                        style={{
-                                            display: 'flex',
-                                            gap: '1rem',
-                                            marginBottom: '.5rem',
-                                            alignItems: 'center'
-                                        }}
-                                    >
-                                        <input
-                                            type="text"
-                                            value={areaName}
-                                            disabled
-                                            style={{
-                                                flex: 1,
-                                                padding: '.5rem',
-                                                border: '1px solid #ccc',
-                                                backgroundColor: '#f0f0f0',
-                                                borderRadius: '4px'
-                                            }}
-                                        />
-                                        <input
-                                            type="number"
-                                            min="0"
-                                            placeholder="Kapazität"
-                                            value={entry.capacity}
-                                            onChange={e => updateDisabilityAreaCapacity(idx, e.target.value)}
-                                            style={{
-                                                width: '25%',
-                                                padding: '.5rem',
-                                                border: '1px solid #ccc',
-                                                borderRadius: '4px'
-                                            }}
-                                        />
-                                    </div>
-                                );
-                            })}
+                            {/* Kapazität für diesen Behinderten‐Bereich */}
+                            <input
+                                type="number"
+                                min="0"
+                                placeholder="Kapazität"
+                                value={disabilityCategory.capacityMap?.[va.id] || ''}
+                                onChange={e => {
+                                    const val = e.target.value;
+                                    setDisabilityCategory(dc => ({
+                                        ...dc,
+                                        capacityMap: {
+                                            ...dc.capacityMap,
+                                            [va.id]: val
+                                        }
+                                    }));
+                                }}
+                                style={{
+                                    width: '100%',
+                                    padding: '.5rem',
+                                    border: '1px solid #ccc',
+                                    borderRadius: '4px'
+                                }}
+                            />
                         </div>
-                    </div>
-                )}
+                    ))}
 
                 {/* ---------------- Submit ---------------- */}
                 <button
