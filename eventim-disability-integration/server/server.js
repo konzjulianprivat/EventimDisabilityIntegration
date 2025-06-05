@@ -716,6 +716,7 @@ app.get('/venue-areas', async (req, res) => {
         const { rows } = await client.query(
             `SELECT
                  va.id,
+                 va.area_id AS area_id,
                  va.max_capacity,
                  a.name,
                  a.is_disability_category
@@ -729,6 +730,108 @@ app.get('/venue-areas', async (req, res) => {
     } catch (err) {
         console.error('Error fetching venue areas:', err);
         res.status(500).json({ message: 'Fehler beim Laden der Venue Areas' });
+    }
+});
+
+// GET: Detailed venues with city information
+app.get('/venues-detailed', async (req, res) => {
+    try {
+        const { rows } = await client.query(
+            `SELECT v.id,
+                    v.name,
+                    v.address,
+                    v.city_id    AS "cityId",
+                    v.website,
+                    c.name       AS city_name
+             FROM venues v
+                      LEFT JOIN cities c ON c.id = v.city_id
+             ORDER BY v.name`
+        );
+        res.json({ venues: rows });
+    } catch (err) {
+        console.error('Error fetching detailed venues:', err);
+        res.status(500).json({ message: 'Fehler beim Laden der Venues' });
+    }
+});
+
+// PUT: Update a venue and its areas
+app.put('/venues/:id', async (req, res) => {
+    const venueId = req.params.id;
+    const { name, address, cityId, website, venueAreas = [] } = req.body;
+
+    if (!name?.trim() || !address?.trim() || !cityId) {
+        return res
+            .status(400)
+            .json({ message: 'Name, Adresse und Stadt sind erforderlich' });
+    }
+
+    try {
+        await client.query('BEGIN');
+
+        await client.query(
+            `UPDATE venues
+                 SET name = $1,
+                     address = $2,
+                     city_id = $3,
+                     website = $4,
+                     updated_at = NOW()
+               WHERE id = $5`,
+            [name.trim(), address.trim(), cityId, website || null, venueId]
+        );
+
+        // Bestehende Areas laden
+        const { rows: existing } = await client.query(
+            'SELECT id FROM venue_areas WHERE venue_id = $1',
+            [venueId]
+        );
+        const remaining = new Set(existing.map((r) => r.id));
+
+        for (const va of venueAreas) {
+            if (va.id && remaining.has(va.id)) {
+                await client.query(
+                    `UPDATE venue_areas
+                         SET area_id = $1,
+                             max_capacity = $2
+                       WHERE id = $3`,
+                    [va.areaId, va.maxCapacity, va.id]
+                );
+                remaining.delete(va.id);
+            } else if (!va.id) {
+                await client.query(
+                    `INSERT INTO venue_areas (id, venue_id, area_id, max_capacity)
+                     VALUES ($1, $2, $3, $4)`,
+                    [uuidv4(), venueId, va.areaId, va.maxCapacity]
+                );
+            }
+        }
+
+        // Übrig gebliebene löschen
+        for (const delId of remaining) {
+            await client.query('DELETE FROM venue_areas WHERE id = $1', [delId]);
+        }
+
+        await client.query('COMMIT');
+        res.status(200).json({ message: 'Venue aktualisiert' });
+    } catch (err) {
+        await client.query('ROLLBACK');
+        console.error('Update-venue error:', err);
+        res.status(500).json({ message: 'Serverfehler beim Aktualisieren des Venues' });
+    }
+});
+
+// DELETE: remove a venue completely
+app.delete('/venues/:id', async (req, res) => {
+    const venueId = req.params.id;
+    try {
+        await client.query('BEGIN');
+        await client.query('DELETE FROM venue_areas WHERE venue_id = $1', [venueId]);
+        await client.query('DELETE FROM venues WHERE id = $1', [venueId]);
+        await client.query('COMMIT');
+        res.status(200).json({ message: 'Venue gelöscht' });
+    } catch (err) {
+        await client.query('ROLLBACK');
+        console.error('Delete-venue error:', err);
+        res.status(500).json({ message: 'Serverfehler beim Löschen des Venues' });
     }
 });
 app.post('/create-event', express.json(), async (req, res) => {
