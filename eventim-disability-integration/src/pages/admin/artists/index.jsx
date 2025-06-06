@@ -38,6 +38,7 @@ export default function ArtistsContent() {
                 : Array.isArray(json.artists)
                     ? json.artists
                     : [];
+
             setArtists(dataArray);
             setFilteredArtists(dataArray);
         } catch (err) {
@@ -149,7 +150,6 @@ export default function ArtistsContent() {
                 {filteredArtists.length === 0 && (
                     <div className="no-artists">Keine Künstler vorhanden.</div>
                 )}
-
                 {filteredArtists.map((artist) => (
                     <div className="artist-card" key={artist.id}>
                         <div className="card-header">
@@ -219,7 +219,6 @@ export default function ArtistsContent() {
                                             placeholder="Website"
                                             className="input-website"
                                         />
-
                                         <input
                                             type="file"
                                             name="artist_image"
@@ -266,20 +265,6 @@ export default function ArtistsContent() {
                                 )}
                             </div>
                         </div>
-
-                        {/*
-                          Lösch-Button nur anzeigen, wenn nicht gerade bearbeitet wird
-                        */}
-                        {editingId !== artist.id && (
-                            <button
-                                className="btn-edit"
-                                style={{ marginLeft: 'auto', marginRight: '0.5rem' }}
-                                onClick={() => setConfirmDeleteId(artist.id)}
-                                title="Löschen"
-                            >
-                                🗑
-                            </button>
-                        )}
 
                         {confirmDeleteId === artist.id && (
                             <div className="modal-overlay">

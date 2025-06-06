@@ -5,6 +5,8 @@ import '../styles/AdminTooling.css';
 import '../styles/profile.css';
 import '../styles/squareTourCard.css';
 import '../styles/filter-bar.css';
+import '../styles/artists.css';
+import '../styles/tours.css';
 import NavBar from '../components/nav-bar.jsx';
 import Footer from '../components/footer.jsx';
 import Head from 'next/head';

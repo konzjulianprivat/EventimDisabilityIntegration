@@ -1,60 +1,43 @@
 /*-----------------------------------------------
-  Eventim Look: Blau (#005EA5), Grau/ Weiß, dichter
+  CSS für Tours-Übersicht:
+  • Subtitle, Genres/Subgenres, Künstler
+  • "+ Event hinzufügen" im Edit-Mode
+  • Arena-Name + Disability-Badge in jeder Event-Zeile
+  • Box + Shadow im Eventim-Stil
+  • Farben Eventim: #005EA5, Grau/Weiß
 -----------------------------------------------*/
 
-/* ──────────────────────────────────────────────
-   1) Reset / globale Box‐Sizing‐Regel
-────────────────────────────────────────────── */
+/* 1) Reset / globale Box-Sizing-Regel */
 * {
     box-sizing: border-box;
     margin: 0;
     padding: 0;
 }
 
-/* ──────────────────────────────────────────────
-   2) Wrapper um Filter‐Bar + Raster:
-      Stellt sicher, dass beides vertikal angeordnet ist
-────────────────────────────────────────────── */
+/* 2) Wrapper um Filter-Bar + Raster */
 .artists-wrapper {
     display: flex;
     flex-direction: column;
-    gap: 1rem;       /* Abstand zwischen Filter‐Bar und Grid */
-    margin: 1rem;    /* Außenabstand zum Viewport */
+    gap: 1rem;
+    margin: 1rem;
     width: 100%;
 }
 
-/* ──────────────────────────────────────────────
-   3) Filter‐Bar Container (volle Breite)
-────────────────────────────────────────────── */
+/* 3) Filter-Bar Container (volle Breite) */
 .filter-container {
     width: 100%;
 }
 
-/* ──────────────────────────────────────────────
-   4) Grid‐Container für Karten
-      3 Spalten auf Desktop, responsiv
-────────────────────────────────────────────── */
-.artists-grid {
+/* 4) tours-grid: Eine Spalte pro Tour-Karte */
+.tours-grid {
     display: grid;
-    grid-template-columns: repeat(3, 1fr);
+    grid-template-columns: 1fr;
     gap: 1rem;
 }
-@media (max-width: 900px) {
-    .artists-grid {
-        grid-template-columns: repeat(2, 1fr);
-    }
-}
-@media (max-width: 600px) {
-    .artists-grid {
-        grid-template-columns: 1fr;
-    }
-}
 
-/* ──────────────────────────────────────────────
-   5) „Keine Künstler“-Hinweis / Touren‐Fallback
-────────────────────────────────────────────── */
+/* 5) „Keine Touren“-Hinweis */
 .no-artists {
-    grid-column: 1 / -1;  /* volle Breite im Grid */
+    grid-column: 1 / -1;
     text-align: center;
     color: #666;
     font-style: italic;
@@ -62,38 +45,51 @@
 }
 
 /* ------------------------------------------------
-   6) Card‐Container: Einheitliches Layout
+   6) Tour-Card: Box + Shadow
 ------------------------------------------------ */
 .artist-card {
     background-color: #fff;
     border: 1px solid #ddd;
-    border-radius: 6px;
+    border-radius: 8px;
     overflow: hidden;
     display: flex;
     flex-direction: column;
     transition: box-shadow 0.2s ease, transform 0.1s ease;
 }
 .artist-card:hover {
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.15);
     transform: translateY(-2px);
 }
 
 /* ------------------------------------------------
-   7) Card Header: Dunkle Blautöne nach Eventim
+   7) Card Header: Dunkelblau + Weißer Titel/Subtitel
 ------------------------------------------------ */
 .card-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    background: #005EA5;    /* Eventim‐Blau */
+    background: #005EA5;
     padding: 0.75rem 1rem;
 }
+/* Container für Titel + Subtitle */
+.title-subtitle {
+    display: flex;
+    flex-direction: column;
+}
 .artist-name {
-    font-size: 1.1rem;
+    font-size: 1.25rem;
     color: #fff;
     margin: 0;
     font-weight: 600;
 }
+/* Subtitle direkt unter dem Titel */
+.subtitle {
+    font-size: 0.95rem;
+    color: #e0e0e0;
+    margin-top: 0.25rem;
+}
+
+/* Bearbeitungs-Header: Input-Feld für Titel */
 .input-name {
     flex: 1;
     padding: 0.4rem 0.6rem;
@@ -103,7 +99,7 @@
     color: #000;
 }
 
-/* Edit/Save‐Buttons, angepasst */
+/* Buttons im Header (Edit / Save) */
 .btn-edit,
 .btn-save {
     background: transparent;
@@ -119,7 +115,7 @@
     color: #cce0f5;
 }
 
-/* Löschen‐Icon in der Card‐Footer‐Ecke */
+/* Delete-Icon an der unteren Ecke der Karte */
 .delete-icon {
     align-self: flex-end;
     margin: 0.5rem 1rem;
@@ -135,7 +131,7 @@
 }
 
 /* ------------------------------------------------
-   8) Card Body: Bild + Details nebeneinander
+   8) Card Body: Bild + Infos
 ------------------------------------------------ */
 .card-body {
     display: flex;
@@ -143,17 +139,17 @@
     gap: 1rem;
 }
 
-/* Bild‐Wrapper (150×150 px) – angepasst */
+/* Bild-Wrapper (150×150 px) */
 .tour-image-large {
-    flex: 0 0 150px;   /* Breite 150px */
-    height: 150px;     /* Höhe 150px */
+    flex: 0 0 150px;
+    height: 150px;
     background: #eee;
     display: flex;
     align-items: center;
     justify-content: center;
     border-radius: 4px;
     overflow: hidden;
-    margin-right: 1rem; /* Abstand zum Details‐Teil */
+    margin-right: 1rem;
 }
 .tour-image-large .artist-image {
     width: 100%;
@@ -162,34 +158,17 @@
 }
 
 /* ------------------------------------------------
-   9) Details‐Container: Inhalt untereinander
+   9) Details-Container
 ------------------------------------------------ */
 .details-wrapper {
     flex: 1;
     display: flex;
     flex-direction: column;
-    justify-content: space-between;
+    justify-content: flex-start;
 }
 
 /* ------------------------------------------------
-   10) Anzeigemodus: Einspaltige Detail‐Liste
------------------------------------------------- */
-.details-list {
-    display: flex;
-    flex-direction: column;
-    gap: 0.5rem;
-    margin-bottom: 1rem;
-}
-.detail-label {
-    font-weight: 600;
-    color: #333;
-}
-.detail-value {
-    color: #555;
-}
-
-/* ------------------------------------------------
-   11) Bearbeitungsmodus: Eingabe‐Felder
+   10) Bearbeitungsmodus: Input-Felder
 ------------------------------------------------ */
 .input-website,
 .input-file {
@@ -209,7 +188,6 @@
     border-radius: 4px;
 }
 
-/* Zeile, in der Start und Ende nebeneinander stehen */
 .date-row {
     display: flex;
     gap: 1rem;
@@ -224,7 +202,7 @@
 }
 
 /* ------------------------------------------------
-   12) Sektionen: Künstler und Genres
+   11) Sektionen im Bearbeitungsmodus (Künstler, Genres)
 ------------------------------------------------ */
 .section-block {
     margin-top: 1rem;
@@ -238,7 +216,6 @@
     margin-bottom: 0.5rem;
 }
 
-/* Kleine Buttons für „+“ */
 .btn-small {
     padding: 0.3rem 0.6rem;
     font-size: 0.8rem;
@@ -254,7 +231,6 @@
     background-color: #003f7f;
 }
 
-/* Inline‐Flex für Select + Entfernen‐Button */
 .inline-flex {
     display: flex;
     align-items: center;
@@ -266,7 +242,6 @@
     gap: 0.5rem;
 }
 
-/* Entfernen‐Button in Feldern */
 .btn-remove-field {
     background: transparent;
     border: none;
@@ -279,7 +254,6 @@
     color: #900;
 }
 
-/* Genre‐Block, abgesetzt durch hellen Hintergrund */
 .genre-block {
     background-color: #f9f9f9;
     border: 1px solid #ddd;
@@ -288,7 +262,6 @@
     margin-bottom: 0.75rem;
 }
 
-/* Subgenre‐Checkboxen */
 .subgenre-checkboxes {
     margin-top: 0.5rem;
     display: flex;
@@ -307,31 +280,184 @@
 }
 
 /* ------------------------------------------------
-   13) Listen in Anzeigemodus
+   12) Anzeigemodus: Subtitle, Details & Künstler
 ------------------------------------------------ */
-.plain-list {
-    list-style: none;
-    padding-left: 1rem;
-    margin: 0.25rem 0;
+
+/* Zeile: Start — Ende  | X Events  + Genre/Subgenre in gleicher Zeile */
+.tour-info-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 1rem;
+    margin-bottom: 0.5rem;
 }
-.list-item {
+.tour-dates {
+    font-size: 0.95rem;
+    color: #333;
+}
+.tour-genres {
+    font-size: 0.95rem;
+    color: #333;
+    font-style: italic;
+    flex: 1;
+}
+
+/* Künstlerliste */
+.artists-list-row {
     font-size: 0.9rem;
     color: #333;
-    margin-bottom: 0.25rem;
+    margin-bottom: 0.5rem;
 }
-.nested-list {
-    list-style: none;
-    padding-left: 1rem;
-    margin: 0.25rem 0;
+.detail-label {
+    font-weight: 600;
+    color: #333;
 }
-.sub-list-item {
-    font-size: 0.85rem;
+.detail-value {
     color: #555;
-    margin-bottom: 0.2rem;
 }
 
 /* ------------------------------------------------
-   14) Modal (Löschen‐Bestätigung)
+   13) Accessibility-Labels (Rollstuhl, etc.)
+------------------------------------------------ */
+.accessibility-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-bottom: 0.5rem;
+}
+.access-label {
+    background-color: #f0f0f0;
+    color: #333;
+    font-size: 0.85rem;
+    padding: 0.3rem 0.6rem;
+    border-radius: 12px;
+    border: 1px solid #ddd;
+}
+
+/* ------------------------------------------------
+   14) Preis + Button (Alle X Events anzeigen)
+------------------------------------------------ */
+.price-button-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 0.5rem;
+    flex-wrap: wrap;
+}
+.cheapest-price {
+    font-size: 1rem;
+    font-weight: 600;
+    color: #005EA5;
+}
+.btn-view-events {
+    background-color: #005EA5;
+    color: #fff;
+    font-size: 0.9rem;
+    padding: 0.5rem 1rem;
+    border-radius: 4px;
+    border: none;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+    margin-top: 0.3rem;
+}
+.btn-view-events:hover {
+    background-color: #003f7f;
+}
+
+/* ------------------------------------------------
+   15) Trennlinie
+------------------------------------------------ */
+.divider {
+    border: none;
+    border-top: 1px solid #eee;
+    margin: 0.75rem 0;
+}
+
+/* ------------------------------------------------
+   16) Event-Liste
+   – Jeder Eintrag: City, Datum, Zeit + Arena-Name + Tour-Name + Disability-Badge + Ticket-Button
+------------------------------------------------ */
+.events-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    margin-top: 0.5rem;
+}
+
+/* Event-Row als Grid (5 Spalten):
+   1) event-info (City, Datum, Zeit)
+   2) event-arena
+   3) event-title (Tour-Name)
+   4) event-accessibility (Badges)
+   5) btn-tickets */
+.event-row {
+    display: grid;
+    grid-template-columns: 2fr 1.5fr 2fr 1fr auto;
+    align-items: center;
+    padding: 0.5rem;
+    border-radius: 4px;
+    transition: background-color 0.1s ease;
+}
+
+.event-row:hover {
+    background-color: #f9f9f9;
+}
+
+/* 1) City, Datum, Zeit */
+.event-info {
+    font-size: 0.9rem;
+    color: #555;
+    padding-right: 0.5rem;
+}
+
+/* 2) Arena-Name */
+.event-arena {
+    font-size: 0.9rem;
+    color: #555;
+    padding-right: 0.5rem;
+}
+
+/* 3) Tour-Name */
+.event-title {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: #333;
+    text-align: left;
+    padding-left: 1rem;
+}
+
+/* 4) Kleine Disability-Badges direkt rechts neben Tour-Name */
+.event-accessibility {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.25rem;
+    justify-content: flex-start;
+}
+.access-label-small {
+    background-color: #f0f0f0;
+    color: #333;
+    font-size: 0.75rem;
+    padding: 0.2rem 0.4rem;
+    border-radius: 8px;
+    border: 1px solid #ddd;
+}
+
+/* 5) Tickets-Button rechts außen */
+.btn-tickets {
+    background: none;
+    border: none;
+    color: #005EA5;
+    font-size: 0.95rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: color 0.2s ease;
+}
+.btn-tickets:hover {
+    color: #003f7f;
+}
+
+/* ------------------------------------------------
+   17) Modal (Löschen-Bestätigung)
 ------------------------------------------------ */
 .modal-overlay {
     position: fixed;
@@ -389,13 +515,8 @@
 }
 
 /* ------------------------------------------------
-   15) Header‐Bereich der Listenseite
+   18) Header-Bereich (Titel + Button)
 ------------------------------------------------ */
-.artists-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-}
 .artists-title {
     font-size: 1.6rem;
     color: #005EA5;
@@ -418,10 +539,51 @@
 }
 
 /* ------------------------------------------------
-   16) tours-grid: eine Spalte pro Zeile
+   19) Responsive Anpassungen
 ------------------------------------------------ */
-.tours-grid {
-    display: grid;
-    grid-template-columns: 1fr;
-    gap: 1rem;
+@media (max-width: 900px) {
+    .card-body {
+        flex-direction: column;
+    }
+    .tour-image-large {
+        margin-right: 0;
+        margin-bottom: 1rem;
+    }
+    .tour-info-row {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.25rem;
+    }
+    .artists-list-row {
+        flex-wrap: wrap;
+    }
+    .price-button-row {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.5rem;
+    }
+    .price-button-row .btn-view-events {
+        margin-top: 0;
+    }
+    .events-list {
+        gap: 0.75rem;
+    }
+
+    /* Damit die Event-Spalten nicht zu klein werden */
+    .event-row {
+        grid-template-columns: 1.5fr 1fr 2fr 1fr auto;
+        gap: 0.5rem;
+    }
+    .event-info,
+    .event-arena,
+    .event-title {
+        font-size: 0.85rem;
+    }
+    .access-label-small {
+        font-size: 0.7rem;
+        padding: 0.2rem 0.3rem;
+    }
+    .btn-tickets {
+        font-size: 0.85rem;
+    }
 }
