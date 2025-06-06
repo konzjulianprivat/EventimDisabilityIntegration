@@ -394,7 +394,7 @@
    5) btn-tickets */
 .event-row {
     display: grid;
-    grid-template-columns: 2fr 1.5fr 2fr 1fr auto;
+    grid-template-columns: 2fr 1.5fr 1.5fr 1.5fr auto;
     align-items: center;
     padding: 0.5rem;
     border-radius: 4px;
@@ -444,6 +444,9 @@
     border-radius: 12px;
     border: none;
     box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.05);
+    max-width: 15rem;           /* maximale Breite vor Umbruch */
+    white-space: normal;       /* erlaubt Mehrzeilen */
+    overflow-wrap: normal; /* bricht lange Wörter um */
 }
 
 /* 5) Tickets-Button rechts außen */
@@ -575,7 +578,7 @@
 
     /* Damit die Event-Spalten nicht zu klein werden */
     .event-row {
-        grid-template-columns: 1.5fr 1fr 2fr 1fr auto;
+        grid-template-columns: 1.5fr 1fr 1.5fr 1.5fr auto;
         gap: 0.5rem;
     }
     .event-info,
