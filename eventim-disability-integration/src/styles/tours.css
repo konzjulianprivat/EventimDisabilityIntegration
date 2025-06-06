@@ -326,12 +326,14 @@
     margin-bottom: 0.5rem;
 }
 .access-label {
-    background-color: #f0f0f0;
-    color: #333;
+    background-color: #005EA5;
+    color: #fff;
     font-size: 0.85rem;
-    padding: 0.3rem 0.6rem;
-    border-radius: 12px;
-    border: 1px solid #ddd;
+    font-weight: 600;
+    padding: 0.25rem 0.6rem;
+    border-radius: 16px;
+    border: none;
+    box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.05);
 }
 
 /* ------------------------------------------------
@@ -434,12 +436,14 @@
     justify-content: flex-start;
 }
 .access-label-small {
-    background-color: #f0f0f0;
-    color: #333;
+    background-color: #005EA5;
+    color: #fff;
     font-size: 0.75rem;
-    padding: 0.2rem 0.4rem;
-    border-radius: 8px;
-    border: 1px solid #ddd;
+    font-weight: 600;
+    padding: 0.15rem 0.45rem;
+    border-radius: 12px;
+    border: none;
+    box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.05);
 }
 
 /* 5) Tickets-Button rechts außen */
@@ -580,8 +584,8 @@
         font-size: 0.85rem;
     }
     .access-label-small {
-        font-size: 0.7rem;
-        padding: 0.2rem 0.3rem;
+        font-size: 0.65rem;
+        padding: 0.15rem 0.3rem;
     }
     .btn-tickets {
         font-size: 0.85rem;

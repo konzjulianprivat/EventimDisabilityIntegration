@@ -648,7 +648,7 @@ export default function ToursContent() {
                                                             {/* 4) Kleine Disability-Badges */}
                                                             <div className="event-accessibility">
                                                                 {Array.isArray(ev.accessibility) &&
-                                                                    ev.accessibility.map((lbl) => (
+                                                                    [...new Set(ev.accessibility)].map((lbl) => (
                                                                         <span
                                                                             key={lbl}
                                                                             className="access-label-small"
