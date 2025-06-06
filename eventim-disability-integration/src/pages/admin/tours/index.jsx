@@ -6,7 +6,6 @@ import { useRouter } from 'next/router';
 
 export default function ToursContent() {
     const [tours, setTours] = useState([]);
-    const [basicFilteredTours, setBasicFilteredTours] = useState([]);
     const [filteredTours, setFilteredTours] = useState([]);
     const [editingId, setEditingId] = useState(null);
     const [editedData, setEditedData] = useState({
@@ -27,14 +26,6 @@ export default function ToursContent() {
 
     const [confirmDeleteId, setConfirmDeleteId] = useState(null);
 
-    // Erweiterte Filter-States
-    const [filterStartDate, setFilterStartDate] = useState('');
-    const [filterEndDate, setFilterEndDate] = useState('');
-    const [filterCategories, setFilterCategories] = useState([]);
-    const [filterVenue, setFilterVenue] = useState('');
-    const [filterCity, setFilterCity] = useState('');
-    const [filterArtists, setFilterArtists] = useState([]);
-
     const router = useRouter();
 
     const filterFields = [
@@ -44,44 +35,6 @@ export default function ToursContent() {
         { key: 'end_date', label: 'Enddatum', match: 'equals' },
     ];
 
-    // Optionen für erweiterte Filter aus geladenen Tours ableiten
-    const categoryOptions = React.useMemo(() => {
-        const set = new Set();
-        tours.forEach((t) => {
-            if (Array.isArray(t.events)) {
-                t.events.forEach((ev) => {
-                    if (Array.isArray(ev.accessibility)) {
-                        ev.accessibility.forEach((lbl) => set.add(lbl));
-                    }
-                });
-            }
-        });
-        return Array.from(set);
-    }, [tours]);
-
-    const venueOptions = React.useMemo(() => {
-        const set = new Set();
-        tours.forEach((t) => {
-            if (Array.isArray(t.events)) {
-                t.events.forEach((ev) => {
-                    if (ev.venueName) set.add(ev.venueName);
-                });
-            }
-        });
-        return Array.from(set);
-    }, [tours]);
-
-    const cityOptions = React.useMemo(() => {
-        const set = new Set();
-        tours.forEach((t) => {
-            if (Array.isArray(t.events)) {
-                t.events.forEach((ev) => {
-                    if (ev.cityName) set.add(ev.cityName);
-                });
-            }
-        });
-        return Array.from(set);
-    }, [tours]);
 
     useEffect(() => {
         fetchTours();
@@ -103,12 +56,10 @@ export default function ToursContent() {
             const arr = Array.isArray(json.tours) ? json.tours : [];
             console.log('Gefundene Tours (fetched):', arr);
             setTours(arr);
-            setBasicFilteredTours(arr);
             setFilteredTours(arr);
         } catch (err) {
             console.error('Fehler beim Laden der Touren:', err);
             setTours([]);
-            setBasicFilteredTours([]);
             setFilteredTours([]);
         }
     };
@@ -154,47 +105,6 @@ export default function ToursContent() {
         }
     };
 
-    // ────────────────────────────────────────────────────────────────────────
-    // 4) Erweiterte Filter anwenden
-    // ────────────────────────────────────────────────────────────────────────
-    useEffect(() => {
-        let result = basicFilteredTours;
-        if (filterStartDate) {
-            const s = new Date(filterStartDate);
-            result = result.filter((t) => new Date(t.start_date) >= s);
-        }
-        if (filterEndDate) {
-            const e = new Date(filterEndDate);
-            result = result.filter((t) => new Date(t.end_date) <= e);
-        }
-        if (filterVenue) {
-            result = result.filter(
-                (t) => Array.isArray(t.events) && t.events.some((ev) => ev.venueName === filterVenue)
-            );
-        }
-        if (filterCity) {
-            result = result.filter(
-                (t) => Array.isArray(t.events) && t.events.some((ev) => ev.cityName === filterCity)
-            );
-        }
-        if (filterArtists.length > 0) {
-            result = result.filter(
-                (t) => Array.isArray(t.artistsList) && t.artistsList.some((a) => filterArtists.includes(a))
-            );
-        }
-        if (filterCategories.length > 0) {
-            result = result.filter((t) =>
-                Array.isArray(t.events) &&
-                t.events.some(
-                    (ev) =>
-                        Array.isArray(ev.accessibility) &&
-                        ev.accessibility.some((lbl) => filterCategories.includes(lbl))
-                )
-            );
-        }
-        setFilteredTours(result);
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [basicFilteredTours, filterStartDate, filterEndDate, filterVenue, filterCity, filterArtists, filterCategories]);
 
     // ──────────────────────────────────────────────────────────────────────────
     // 4) Wenn man auf „Bearbeiten“ klickt: Tour-Daten (inkl. Künstler + Genres) holen
@@ -367,93 +277,11 @@ export default function ToursContent() {
             <div className="filter-container">
                 <FilterBar
                     items={tours}
-                    onFiltered={(arr) => setBasicFilteredTours(arr)}
+                    onFiltered={(arr) => setFilteredTours(arr)}
                     entityName="Tour"
                     entityRoute="tours"
                     filterFields={filterFields}
                 />
-                <div className="tour-advanced-filters">
-                    <label>
-                        Start:
-                        <input
-                            type="date"
-                            value={filterStartDate}
-                            onChange={(e) => setFilterStartDate(e.target.value)}
-                        />
-                    </label>
-                    <label>
-                        Ende:
-                        <input
-                            type="date"
-                            value={filterEndDate}
-                            onChange={(e) => setFilterEndDate(e.target.value)}
-                        />
-                    </label>
-                    <label>
-                        Kategorien:
-                        <select
-                            multiple
-                            value={filterCategories}
-                            onChange={(e) =>
-                                setFilterCategories(
-                                    Array.from(e.target.selectedOptions, (o) => o.value)
-                                )
-                            }
-                        >
-                            {categoryOptions.map((opt) => (
-                                <option key={opt} value={opt}>
-                                    {opt}
-                                </option>
-                            ))}
-                        </select>
-                    </label>
-                    <label>
-                        Venue:
-                        <select
-                            value={filterVenue}
-                            onChange={(e) => setFilterVenue(e.target.value)}
-                        >
-                            <option value="">— Venue wählen —</option>
-                            {venueOptions.map((opt) => (
-                                <option key={opt} value={opt}>
-                                    {opt}
-                                </option>
-                            ))}
-                        </select>
-                    </label>
-                    <label>
-                        Stadt:
-                        <select
-                            value={filterCity}
-                            onChange={(e) => setFilterCity(e.target.value)}
-                        >
-                            <option value="">— Stadt wählen —</option>
-                            {cityOptions.map((opt) => (
-                                <option key={opt} value={opt}>
-                                    {opt}
-                                </option>
-                            ))}
-                        </select>
-                    </label>
-                    <label>
-                        Künstler:
-                        <select
-                            multiple
-                            value={filterArtists}
-                            onChange={(e) =>
-                                setFilterArtists(
-                                    Array.from(e.target.selectedOptions, (o) => o.value)
-                                )
-                            }
-                        >
-                            {allArtists.map((a) => (
-                                <option key={a.id} value={a.name}>
-                                    {a.name}
-                                </option>
-                            ))}
-                        </select>
-                    </label>
-                </div>
             </div>
 
             <div className="tours-grid">

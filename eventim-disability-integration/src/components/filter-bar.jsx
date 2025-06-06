@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import PropTypes from 'prop-types';
 import { useRouter } from 'next/router';
 
@@ -36,9 +36,69 @@ export default function FilterBar({
         }, {})
     );
 
+    // Erweiterte Filter nur für Touren
+    const [filterStartDate, setFilterStartDate] = useState('');
+    const [filterEndDate, setFilterEndDate] = useState('');
+    const [filterCategories, setFilterCategories] = useState([]);
+    const [filterVenue, setFilterVenue] = useState('');
+    const [filterCity, setFilterCity] = useState('');
+    const [filterArtists, setFilterArtists] = useState([]);
+
+    const categoryOptions = useMemo(() => {
+        if (entityRoute !== 'tours') return [];
+        const set = new Set();
+        items.forEach((t) => {
+            if (Array.isArray(t.events)) {
+                t.events.forEach((ev) => {
+                    if (Array.isArray(ev.accessibility)) {
+                        ev.accessibility.forEach((lbl) => set.add(lbl));
+                    }
+                });
+            }
+        });
+        return Array.from(set);
+    }, [items, entityRoute]);
+
+    const venueOptions = useMemo(() => {
+        if (entityRoute !== 'tours') return [];
+        const set = new Set();
+        items.forEach((t) => {
+            if (Array.isArray(t.events)) {
+                t.events.forEach((ev) => {
+                    if (ev.venueName) set.add(ev.venueName);
+                });
+            }
+        });
+        return Array.from(set);
+    }, [items, entityRoute]);
+
+    const cityOptions = useMemo(() => {
+        if (entityRoute !== 'tours') return [];
+        const set = new Set();
+        items.forEach((t) => {
+            if (Array.isArray(t.events)) {
+                t.events.forEach((ev) => {
+                    if (ev.cityName) set.add(ev.cityName);
+                });
+            }
+        });
+        return Array.from(set);
+    }, [items, entityRoute]);
+
+    const artistOptions = useMemo(() => {
+        if (entityRoute !== 'tours') return [];
+        const set = new Set();
+        items.forEach((t) => {
+            if (Array.isArray(t.artistsList)) {
+                t.artistsList.forEach((a) => set.add(a));
+            }
+        });
+        return Array.from(set);
+    }, [items, entityRoute]);
+
     // Hilfsfunktion: Filter anwenden, sobald sich queries oder items ändern
     const applyFilters = () => {
-        const normalized = items.filter((item) => {
+        let result = items.filter((item) => {
             return filterFields.every(({ key, match }) => {
                 const q = (queries[key] || '').trim().toLowerCase();
                 if (!q) return true;
@@ -52,14 +112,69 @@ export default function FilterBar({
                 return true;
             });
         });
-        onFiltered(normalized);
+
+        if (entityRoute === 'tours') {
+            if (filterStartDate) {
+                const start = new Date(filterStartDate);
+                result = result.filter((t) => new Date(t.start_date) >= start);
+            }
+            if (filterEndDate) {
+                const end = new Date(filterEndDate);
+                result = result.filter((t) => new Date(t.end_date) <= end);
+            }
+            if (filterVenue) {
+                result = result.filter(
+                    (t) =>
+                        Array.isArray(t.events) &&
+                        t.events.some((ev) => ev.venueName === filterVenue)
+                );
+            }
+            if (filterCity) {
+                result = result.filter(
+                    (t) =>
+                        Array.isArray(t.events) &&
+                        t.events.some((ev) => ev.cityName === filterCity)
+                );
+            }
+            if (filterArtists.length > 0) {
+                result = result.filter(
+                    (t) =>
+                        Array.isArray(t.artistsList) &&
+                        t.artistsList.some((a) => filterArtists.includes(a))
+                );
+            }
+            if (filterCategories.length > 0) {
+                result = result.filter(
+                    (t) =>
+                        Array.isArray(t.events) &&
+                        t.events.some(
+                            (ev) =>
+                                Array.isArray(ev.accessibility) &&
+                                ev.accessibility.some((lbl) =>
+                                    filterCategories.includes(lbl)
+                                )
+                        )
+                );
+            }
+        }
+
+        onFiltered(result);
     };
 
     // Jeden Query‐Änderungsauslöser oder Items‐Update neu filtern
     useEffect(() => {
         applyFilters();
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [queries, items]);
+    }, [
+        queries,
+        items,
+        filterStartDate,
+        filterEndDate,
+        filterCategories,
+        filterVenue,
+        filterCity,
+        filterArtists,
+    ]);
 
     // Bei Änderung eines Input‐Felds queries updaten
     const handleFieldChange = (key, value) => {
@@ -114,6 +229,91 @@ export default function FilterBar({
                                 />
                             </div>
                         ))}
+
+                    {entityRoute === 'tours' && (
+                        <div className="tour-advanced-filters">
+                            <label>
+                                Start:
+                                <input
+                                    type="date"
+                                    value={filterStartDate}
+                                    onChange={(e) => setFilterStartDate(e.target.value)}
+                                />
+                            </label>
+                            <label>
+                                Ende:
+                                <input
+                                    type="date"
+                                    value={filterEndDate}
+                                    onChange={(e) => setFilterEndDate(e.target.value)}
+                                />
+                            </label>
+                            <label>
+                                Kategorien:
+                                <select
+                                    multiple
+                                    value={filterCategories}
+                                    onChange={(e) =>
+                                        setFilterCategories(
+                                            Array.from(e.target.selectedOptions, (o) => o.value)
+                                        )
+                                    }
+                                >
+                                    {categoryOptions.map((opt) => (
+                                        <option key={opt} value={opt}>
+                                            {opt}
+                                        </option>
+                                    ))}
+                                </select>
+                            </label>
+                            <label>
+                                Venue:
+                                <select
+                                    value={filterVenue}
+                                    onChange={(e) => setFilterVenue(e.target.value)}
+                                >
+                                    <option value="">— Venue wählen —</option>
+                                    {venueOptions.map((opt) => (
+                                        <option key={opt} value={opt}>
+                                            {opt}
+                                        </option>
+                                    ))}
+                                </select>
+                            </label>
+                            <label>
+                                Stadt:
+                                <select
+                                    value={filterCity}
+                                    onChange={(e) => setFilterCity(e.target.value)}
+                                >
+                                    <option value="">— Stadt wählen —</option>
+                                    {cityOptions.map((opt) => (
+                                        <option key={opt} value={opt}>
+                                            {opt}
+                                        </option>
+                                    ))}
+                                </select>
+                            </label>
+                            <label>
+                                Künstler:
+                                <select
+                                    multiple
+                                    value={filterArtists}
+                                    onChange={(e) =>
+                                        setFilterArtists(
+                                            Array.from(e.target.selectedOptions, (o) => o.value)
+                                        )
+                                    }
+                                >
+                                    {artistOptions.map((a) => (
+                                        <option key={a} value={a}>
+                                            {a}
+                                        </option>
+                                    ))}
+                                </select>
+                            </label>
+                        </div>
+                    )}
                 </div>
             )}
         </div>
