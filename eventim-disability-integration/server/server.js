@@ -1204,8 +1204,30 @@ app.delete('/artists/:id', async (req, res) => {
 
 // … ganz oben: express, client etc. importieren …
 
+// server.js (vollständiger Endpoint)
+
 app.get('/tours-detailed', async (req, res) => {
     try {
+        // 0) Vorab: Alle disability_marks abfragen (area_id → mark_code), aber trim() auf mark_code
+        const { rows: allMarks } = await client.query(`
+            SELECT area_id, mark_code
+            FROM disability_marks
+            WHERE area_id IS NOT NULL;
+        `);
+
+        // Baue eine Map: area_id → [mark_code1, mark_code2, ...] (mark_code getrimmt)
+        const marksMap = {};
+        allMarks.forEach((row) => {
+            const aid = row.area_id;
+            const code = row.mark_code.trim(); // hier trimmen
+            if (!marksMap[aid]) marksMap[aid] = [];
+            if (!marksMap[aid].includes(code)) {
+                marksMap[aid].push(code);
+            }
+        });
+
+        console.log('marksMap (disability_marks):', marksMap);
+
         // 1) Alle Tours holen
         const { rows: tourRows } = await client.query(`
             SELECT
@@ -1218,6 +1240,8 @@ app.get('/tours-detailed', async (req, res) => {
             FROM tours t
             ORDER BY t.start_date;
         `);
+
+        console.log('Gefundene Tours (raw):', tourRows);
 
         // 2) Pro Tour alle Detail-Informationen zusammensetzen
         const detailedTours = await Promise.all(
@@ -1260,33 +1284,75 @@ app.get('/tours-detailed', async (req, res) => {
                     [tour.id]
                 );
 
+                console.log(`Tour ${tour.id} – baseEvents:`, baseEvents);
+
                 // 2d) Pro Event: Disability-Labels berechnen
                 const eventsWithAccess = await Promise.all(
                     baseEvents.map(async (ev) => {
-                        const { rows: markRows } = await client.query(
+                        // 2d.1) Alle zugehörigen venue_area_id aus event_venue_areas holen
+                        const { rows: evaRows } = await client.query(
                             `
-                                SELECT DISTINCT dm.mark_code
-                                FROM event_venue_areas eva
-                                         JOIN venue_areas va ON va.id = eva.venue_area_id
-                                         JOIN disability_marks dm ON dm.area_id = va.area_id
-                                WHERE eva.event_id = $1
+                                SELECT venue_area_id
+                                FROM event_venue_areas
+                                WHERE event_id = $1
                             `,
                             [ev.id]
                         );
 
-                        const labels = markRows
-                            .map((r) => mapMarkCodeToLabel(r.mark_code))
-                            .filter((lbl) => lbl !== null);
+                        // 2d.2) Für jeden venue_area_id das area_id aus venue_areas holen
+                        const areaIds = [];
+                        for (const eva of evaRows) {
+                            const { rows: vaRows } = await client.query(
+                                `
+                                    SELECT area_id
+                                    FROM venue_areas
+                                    WHERE id = $1
+                                `,
+                                [eva.venue_area_id]
+                            );
+                            if (vaRows[0] && vaRows[0].area_id) {
+                                areaIds.push(vaRows[0].area_id);
+                            }
+                        }
+
+                        console.log(`Event ${ev.id} – areaIds in venue_areas:`, areaIds);
+
+                        // 2d.3) Prüfe nun, welche dieser area_id in marksMap existieren, und sammele alle mark_code
+                        const collectedCodes = new Set();
+                        areaIds.forEach((aid) => {
+                            if (marksMap[aid]) {
+                                marksMap[aid].forEach((code) => {
+                                    collectedCodes.add(code);
+                                });
+                            }
+                        });
+
+                        // 2d.4) Mappe jeden mark_code (bereits getrimmt) zu seinem Label‐Text
+                        const labels = Array.from(collectedCodes).map((code) => {
+                            switch (code) {
+                                case 'G':
+                                case 'aG':
+                                    return 'Rollstuhlplätze verfügbar';
+                                case 'Gl':
+                                    return 'Gehörlosenplätze verfügbar';
+                                case 'Bl':
+                                    return 'Blindenplätze verfügbar';
+                                default:
+                                    return null;
+                            }
+                        }).filter((lbl) => lbl !== null);
 
                         return {
                             id: ev.id,
                             cityName: ev.cityName,
                             venueName: ev.venueName,
                             start_time: ev.start_time,
-                            accessibility: Array.from(new Set(labels)),
+                            accessibility: labels, // dedupliziert durch Set
                         };
                     })
                 );
+
+                console.log(`Tour ${tour.id} – eventsWithAccess:`, eventsWithAccess);
 
                 // 2e) Künstler-Liste für diese Tour
                 const { rows: artistRows } = await client.query(
@@ -1302,8 +1368,6 @@ app.get('/tours-detailed', async (req, res) => {
                 const artistsList = artistRows.map((r) => r.name);
 
                 // 2f) Genres mit Subgenres:
-                //     • tour_genres → genre_id → genre-name
-                //     • subgenres, bei denen subgenre.genre_id = tg.genre_id und ts.tour_id = tour.id
                 const { rows: genreRows } = await client.query(
                     `
                         SELECT
@@ -1312,7 +1376,7 @@ app.get('/tours-detailed', async (req, res) => {
                             COALESCE(
                                             json_agg(s.name) FILTER (WHERE s.id IS NOT NULL),
                                             '[]'
-                            )                    AS "subgenreNames"
+                            ) AS "subgenreNames"
                         FROM tour_genres tg
                                  JOIN genres g ON g.id = tg.genre_id
                                  LEFT JOIN tour_subgenres ts
@@ -1348,6 +1412,7 @@ app.get('/tours-detailed', async (req, res) => {
             })
         );
 
+        console.log('detailedTours insgesamt:', detailedTours);
         return res.status(200).json({ tours: detailedTours });
     } catch (err) {
         console.error('Error in /tours-detailed:', err);
@@ -1654,6 +1719,44 @@ app.get('/events-with-accessibility', async (req, res) => {
     } catch (error) {
         console.error('Error in /events-with-accessibility:', error);
         return res.status(500).json({ message: 'Serverfehler beim Laden der Events' });
+    }
+});
+
+app.get('/event-accessibility', async (req, res) => {
+    const eventId = req.query.eventId;
+    if (!eventId) {
+        return res.status(400).json({ message: 'eventId als Query-Parameter ist erforderlich.' });
+    }
+
+    try {
+        // 1) Aus event_venue_areas alle venue_area_id des Events holen
+        // 2) JOIN auf venue_areas → um an area_id zu gelangen
+        // 3) JOIN auf disability_marks, um alle mark_code zu erhalten
+        const { rows } = await client.query(
+            `
+      SELECT DISTINCT dm.mark_code
+      FROM event_venue_areas eva
+        JOIN venue_areas va
+          ON va.id = eva.venue_area_id
+        JOIN disability_marks dm
+          ON dm.area_id = va.area_id
+      WHERE eva.event_id = $1
+      `,
+            [eventId]
+        );
+
+        // 4) Aus jedem mark_code das Label machen und Duplikate entfernen
+        const labels = rows
+            .map(r => mapMarkCodeToLabel(r.mark_code))
+            .filter(lbl => lbl !== null); // null herausfiltern, falls ein unbekannter mark_code
+
+        // Mit Set doppelte Einträge entfernen
+        const uniqueLabels = Array.from(new Set(labels));
+
+        return res.status(200).json({ accessibilityLabels: uniqueLabels });
+    } catch (err) {
+        console.error('Error in /event-accessibility:', err);
+        return res.status(500).json({ message: 'Fehler beim Abrufen der Accessibility-Labels' });
     }
 });
 

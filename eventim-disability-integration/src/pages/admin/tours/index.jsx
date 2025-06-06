@@ -41,11 +41,19 @@ export default function ToursContent() {
         fetchAllGenresWithSub();
     }, []);
 
+    // ──────────────────────────────────────────────────────────────────────────
+    // 1) Tours laden
+    // ──────────────────────────────────────────────────────────────────────────
     const fetchTours = async () => {
         try {
             const res = await fetch('http://localhost:4000/tours-detailed');
+            if (!res.ok) {
+                console.error('fetchTours → status:', res.status);
+                throw new Error('Fehler beim Abrufen von /tours-detailed');
+            }
             const json = await res.json();
             const arr = Array.isArray(json.tours) ? json.tours : [];
+            console.log('Gefundene Tours (fetched):', arr);
             setTours(arr);
             setFilteredTours(arr);
         } catch (err) {
@@ -55,9 +63,16 @@ export default function ToursContent() {
         }
     };
 
+    // ──────────────────────────────────────────────────────────────────────────
+    // 2) Alle Künstler laden
+    // ──────────────────────────────────────────────────────────────────────────
     const fetchAllArtists = async () => {
         try {
             const res = await fetch('http://localhost:4000/artists');
+            if (!res.ok) {
+                console.error('fetchArtists → status:', res.status);
+                throw new Error('Fehler beim Abrufen von /artists');
+            }
             const json = await res.json();
             const dataArray = Array.isArray(json)
                 ? json
@@ -71,9 +86,16 @@ export default function ToursContent() {
         }
     };
 
+    // ──────────────────────────────────────────────────────────────────────────
+    // 3) Alle Genres mit Subgenres laden
+    // ──────────────────────────────────────────────────────────────────────────
     const fetchAllGenresWithSub = async () => {
         try {
             const res = await fetch('http://localhost:4000/genres-with-subgenres');
+            if (!res.ok) {
+                console.error('fetchGenres → status:', res.status);
+                throw new Error('Fehler beim Abrufen von /genres-with-subgenres');
+            }
             const json = await res.json();
             setAllGenres(json.genres || []);
         } catch (err) {
@@ -82,6 +104,9 @@ export default function ToursContent() {
         }
     };
 
+    // ──────────────────────────────────────────────────────────────────────────
+    // 4) Wenn man auf „Bearbeiten“ klickt: Tour-Daten (inkl. Künstler + Genres) holen
+    // ──────────────────────────────────────────────────────────────────────────
     const handleEditToggle = async (tour) => {
         setEditingId(tour.id);
         setEditedData({
@@ -94,8 +119,10 @@ export default function ToursContent() {
             existingImageId: tour.tour_image || null,
         });
 
+        // Tour-Künstler laden
         try {
             const resA = await fetch(`http://localhost:4000/tour-artists?tourId=${tour.id}`);
+            if (!resA.ok) throw new Error('fetchTourArtists failed: ' + resA.status);
             const jsonA = await resA.json();
             setTourArtists(jsonA.artists || []);
         } catch (err) {
@@ -103,8 +130,10 @@ export default function ToursContent() {
             setTourArtists([]);
         }
 
+        // Tour-Genres laden
         try {
             const resG = await fetch(`http://localhost:4000/tour-genres?tourId=${tour.id}`);
+            if (!resG.ok) throw new Error('fetchTourGenres failed: ' + resG.status);
             const jsonG = await resG.json();
             setTourGenres(jsonG.tourGenres || []);
         } catch (err) {
@@ -113,6 +142,9 @@ export default function ToursContent() {
         }
     };
 
+    // ──────────────────────────────────────────────────────────────────────────
+    // 5) Eingabefelder (Titel, Subtitle, Datum, Bild, Künstler, Genres) verwalten
+    // ──────────────────────────────────────────────────────────────────────────
     const handleInputChange = (e) => {
         const { name, value, files } = e.target;
         if (files) {
@@ -164,6 +196,9 @@ export default function ToursContent() {
         setTourGenres((prev) => prev.filter((_, i) => i !== index));
     };
 
+    // ──────────────────────────────────────────────────────────────────────────
+    // 6) Speichern (PUT /tours/:id)
+    // ──────────────────────────────────────────────────────────────────────────
     const handleSave = async () => {
         try {
             const formData = new FormData();
@@ -192,6 +227,7 @@ export default function ToursContent() {
                 body: formData,
             });
             if (!response.ok) {
+                console.error('PUT /tours/:id → status:', response.status);
                 throw new Error('Server-Fehler beim Speichern');
             }
 
@@ -202,12 +238,16 @@ export default function ToursContent() {
         }
     };
 
+    // ──────────────────────────────────────────────────────────────────────────
+    // 7) Löschen (DELETE /tours/:id)
+    // ──────────────────────────────────────────────────────────────────────────
     const handleDelete = async (id) => {
         try {
             const response = await fetch(`http://localhost:4000/tours/${id}`, {
                 method: 'DELETE',
             });
             if (!response.ok) {
+                console.error('DELETE /tours/:id → status:', response.status);
                 throw new Error('Server-Fehler beim Löschen');
             }
             setConfirmDeleteId(null);
@@ -217,6 +257,9 @@ export default function ToursContent() {
         }
     };
 
+    // ──────────────────────────────────────────────────────────────────────────
+    // 8) JSX: Karte pro Tour
+    // ──────────────────────────────────────────────────────────────────────────
     return (
         <div className="artists-wrapper">
             <div className="artists-header">
@@ -246,9 +289,9 @@ export default function ToursContent() {
 
                 {filteredTours.map((tour) => (
                     <div className="artist-card" key={tour.id}>
-                        {/* --------------------------------
-                          Card-Header: Titel + Edit/Save
-                        -------------------------------- */}
+                        {/* -------------------------------
+                           Card-Header: Titel + Bearbeiten/Speichern
+                        ------------------------------- */}
                         <div className="card-header">
                             {editingId === tour.id ? (
                                 <input
@@ -262,7 +305,6 @@ export default function ToursContent() {
                             ) : (
                                 <div className="title-subtitle">
                                     <h3 className="artist-name">{tour.title}</h3>
-                                    {/* Subtitle angezeigt, wenn vorhanden */}
                                     {tour.subtitle && (
                                         <div className="subtitle">{tour.subtitle}</div>
                                     )}
@@ -312,7 +354,7 @@ export default function ToursContent() {
                             <div className="details-wrapper">
                                 {editingId === tour.id ? (
                                     <>
-                                        {/* 1) Bearbeitungs‐Modus: Subtitle */}
+                                        {/* 1) Bearbeitungsmodus: Subtitle */}
                                         <input
                                             type="text"
                                             name="subtitle"
@@ -322,7 +364,7 @@ export default function ToursContent() {
                                             className="input-website"
                                         />
 
-                                        {/* 2) Bearbeitungs‐Modus: Start + Ende nebeneinander */}
+                                        {/* 2) Bearbeitungsmodus: Start + Ende nebeneinander */}
                                         <div className="date-row">
                                             <label className="date-label">
                                                 Start:
@@ -346,7 +388,7 @@ export default function ToursContent() {
                                             </label>
                                         </div>
 
-                                        {/* 3) Bearbeitungs‐Modus: Neues Tour‐Bild */}
+                                        {/* 3) Bearbeitungsmodus: Neues Tour-Bild */}
                                         <input
                                             type="file"
                                             name="tour_image"
@@ -355,7 +397,7 @@ export default function ToursContent() {
                                             className="input-file"
                                         />
 
-                                        {/* 4) Bearbeitungs‐Modus: Künstler‐Sektion */}
+                                        {/* 4) Bearbeitungsmodus: Künstler-Sektion */}
                                         <div className="section-block">
                                             <span className="section-label">
                                                 Zugeordnete Künstler
@@ -399,7 +441,7 @@ export default function ToursContent() {
                                             </button>
                                         </div>
 
-                                        {/* 5) Bearbeitungs‐Modus: Genres/Subgenres‐Sektion */}
+                                        {/* 5) Bearbeitungsmodus: Genres/Subgenres-Sektion */}
                                         <div className="section-block">
                                             <span className="section-label">
                                                 Genres & Subgenres
@@ -478,7 +520,7 @@ export default function ToursContent() {
                                             </button>
                                         </div>
 
-                                        {/* 6) Bearbeitungs‐Modus: "+ Event hinzufügen"-Button */}
+                                        {/* 6) Bearbeitungsmodus: "+ Event hinzufügen"-Button */}
                                         <div className="section-block">
                                             <button
                                                 className="btn-create-entity btn-small"
@@ -498,11 +540,17 @@ export default function ToursContent() {
                                           ANZEIGEMODUS (nicht editieren)
                                         ================================ */}
 
-                                        {/* 1) Zeile: Datum — Ende  |  X Events  +  Genres/Subgenres */}
+                                        {/* 1) Zeile: Datum — Ende | X Events + Genres/Subgenres */}
                                         <div className="tour-info-row">
                                             <div className="tour-dates">
-                                                {tour.start_date} — {tour.end_date} |{' '}
-                                                {tour.eventCount} Events
+                                                {new Date(tour.start_date).toLocaleDateString(
+                                                    'de-DE'
+                                                )}{' '}
+                                                —{' '}
+                                                {new Date(tour.end_date).toLocaleDateString(
+                                                    'de-DE'
+                                                )}{' '}
+                                                | {tour.eventCount} Events
                                             </div>
                                             <div className="tour-genres">
                                                 {tour.genresWithSubs
@@ -535,19 +583,7 @@ export default function ToursContent() {
                                                 </div>
                                             )}
 
-                                        {/* 3) Accessibility-Labels, falls vorhanden */}
-                                        {Array.isArray(tour.accessibility) &&
-                                            tour.accessibility.length > 0 && (
-                                                <div className="accessibility-row">
-                                                    {tour.accessibility.map((label) => (
-                                                        <span key={label} className="access-label">
-                                                            {label}
-                                                        </span>
-                                                    ))}
-                                                </div>
-                                            )}
-
-                                        {/* 4) Preis + Button (Alle X Events anzeigen) */}
+                                        {/* 3) Preis + Button (Alle X Events anzeigen) */}
                                         <div className="price-button-row">
                                             {tour.cheapestPrice !== null ? (
                                                 <div className="cheapest-price">
@@ -566,10 +602,10 @@ export default function ToursContent() {
                                             </button>
                                         </div>
 
-                                        {/* 5) Trennlinie */}
+                                        {/* 4) Trennlinie */}
                                         <hr className="divider" />
 
-                                        {/* 6) Event‐Liste */}
+                                        {/* 5) Event-Liste */}
                                         <div className="events-list">
                                             {Array.isArray(tour.events) &&
                                                 tour.events.map((ev) => {
@@ -594,22 +630,22 @@ export default function ToursContent() {
 
                                                     return (
                                                         <div className="event-row" key={ev.id}>
-                                                            {/* Linke Spalte: City, Datum, Zeit */}
+                                                            {/* 1) City, Datum, Zeit */}
                                                             <div className="event-info">
                                                                 {ev.cityName}, {dateStr}, {timeStr}
                                                             </div>
 
-                                                            {/* Arena-Name */}
+                                                            {/* 2) Arena-Name */}
                                                             <div className="event-arena">
                                                                 {ev.venueName}
                                                             </div>
 
-                                                            {/* Tour-Name */}
+                                                            {/* 3) Tour-Name */}
                                                             <div className="event-title">
                                                                 {tour.title}
                                                             </div>
 
-                                                            {/* Disability-Badges für dieses Event */}
+                                                            {/* 4) Kleine Disability-Badges */}
                                                             <div className="event-accessibility">
                                                                 {Array.isArray(ev.accessibility) &&
                                                                     ev.accessibility.map((lbl) => (
@@ -622,7 +658,7 @@ export default function ToursContent() {
                                                                     ))}
                                                             </div>
 
-                                                            {/* Tickets-Button */}
+                                                            {/* 5) Tickets-Button */}
                                                             <button
                                                                 className="btn-tickets"
                                                                 onClick={() =>
@@ -640,7 +676,7 @@ export default function ToursContent() {
                             </div>
                         </div>
 
-                        {/* 7) Delete‐Icon (nur, wenn nicht im Bearbeiten‐Modus) */}
+                        {/* 7) Delete-Icon (nur, wenn nicht im Bearbeitungs-Modus) */}
                         {editingId !== tour.id && (
                             <button
                                 className="btn-edit delete-icon"
