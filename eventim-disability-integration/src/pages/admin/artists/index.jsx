@@ -38,7 +38,6 @@ export default function ArtistsContent() {
                 : Array.isArray(json.artists)
                     ? json.artists
                     : [];
-
             setArtists(dataArray);
             setFilteredArtists(dataArray);
         } catch (err) {
@@ -65,7 +64,6 @@ export default function ArtistsContent() {
         if (files) {
             setEditedData((prev) => ({ ...prev, [name]: files[0] }));
         } else if (name === 'biography') {
-            // Autoresize‐Logik kann hier ergänzt werden (wie vorher gezeigt)
             setEditedData((prev) => ({ ...prev, [name]: value }));
         } else {
             setEditedData((prev) => ({ ...prev, [name]: value }));
@@ -136,7 +134,7 @@ export default function ArtistsContent() {
                     + Künstler erstellen
                 </button>
             </div>
-            {/* Hier binden wir die generische FilterBar ein */}
+
             <div className="filter-container">
                 <FilterBar
                     items={artists}
@@ -151,6 +149,7 @@ export default function ArtistsContent() {
                 {filteredArtists.length === 0 && (
                     <div className="no-artists">Keine Künstler vorhanden.</div>
                 )}
+
                 {filteredArtists.map((artist) => (
                     <div className="artist-card" key={artist.id}>
                         <div className="card-header">
@@ -204,13 +203,13 @@ export default function ArtistsContent() {
                             <div className="details-wrapper">
                                 {editingId === artist.id ? (
                                     <>
-                    <textarea
-                        name="biography"
-                        value={editedData.biography}
-                        onChange={handleInputChange}
-                        placeholder="Biografie"
-                        className="input-bio"
-                    />
+                                        <textarea
+                                            name="biography"
+                                            value={editedData.biography}
+                                            onChange={handleInputChange}
+                                            placeholder="Biografie"
+                                            className="input-bio"
+                                        />
 
                                         <input
                                             type="url"
@@ -220,6 +219,7 @@ export default function ArtistsContent() {
                                             placeholder="Website"
                                             className="input-website"
                                         />
+
                                         <input
                                             type="file"
                                             name="artist_image"
@@ -266,6 +266,20 @@ export default function ArtistsContent() {
                                 )}
                             </div>
                         </div>
+
+                        {/*
+                          Lösch-Button nur anzeigen, wenn nicht gerade bearbeitet wird
+                        */}
+                        {editingId !== artist.id && (
+                            <button
+                                className="btn-edit"
+                                style={{ marginLeft: 'auto', marginRight: '0.5rem' }}
+                                onClick={() => setConfirmDeleteId(artist.id)}
+                                title="Löschen"
+                            >
+                                🗑
+                            </button>
+                        )}
 
                         {confirmDeleteId === artist.id && (
                             <div className="modal-overlay">

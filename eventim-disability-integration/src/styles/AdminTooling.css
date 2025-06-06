@@ -336,3 +336,28 @@
 .btn-new-artist:hover {
     background-color: #003f7f;
 }
+
+/* ──────────────────────────────────────────────
+   13) Details‐Grid für Adresse / Stadt / Website
+       (clean, ohne sichtbare Linien, dichter Look)
+────────────────────────────────────────────── */
+.details-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    /* Je größer die Werte, desto weiter auseinander: */
+    row-gap: 1.5rem;       /* Abstand zwischen den Zeilen (vertikal) */
+    column-gap: 1.5rem;  /* Abstand zwischen den Spalten (horizontal) */
+    /* Optional: etwas Innenabstand ober-/unterhalb */
+    padding: 0.25rem 0;
+}
+
+/* Label fett hervorheben, Wert normal dahinter */
+.detail-label {
+    font-weight: 600;
+    color: #333;
+}
+
+/* Website‐Zeile soll beide Spalten befüllen */
+.website-field {
+    grid-column: 1 / -1;
+}
