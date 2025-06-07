@@ -1,11 +1,16 @@
-// pages/_app.js
 import '../styles/global.css';
 import '../styles/login.css';
 import '../styles/AdminTooling.css';
 import '../styles/profile.css';
 import '../styles/squareTourCard.css';
 import '../styles/filter-bar.css';
-import '../styles/artists.css';
+import '../styles/devtesting.css';
+import '../styles/footer.css';
+import '../styles/imageScroler.css';
+import '../styles/login.css';
+import '../styles/nav-bar.css';
+import '../styles/smallTourCard.css';
+import '../styles/squareTourCard.css';
 import '../styles/tours.css';
 import NavBar from '../components/nav-bar.jsx';
 import Footer from '../components/footer.jsx';

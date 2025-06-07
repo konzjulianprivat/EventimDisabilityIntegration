@@ -1,7 +1,5 @@
-import React, { useEffect, useState } from 'react';
 import FilterBar from '../../../components/filter-bar';
 import { useRouter } from 'next/router';
-
 export default function ArtistsContent() {
     const [artists, setArtists] = useState([]);
     const [filteredArtists, setFilteredArtists] = useState([]);
@@ -293,3 +291,5 @@ export default function ArtistsContent() {
         </div>
     );
 }
+
+import React, { useEffect, useState } from 'react';

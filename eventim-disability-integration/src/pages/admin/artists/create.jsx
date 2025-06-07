@@ -56,7 +56,7 @@ export default function ArtistCreation() {
 
             if (response.ok) {
                 setMessage('Künstler erfolgreich erstellt! Weiterleitung...');
-                setTimeout(() => router.push('/admin/artists'), 2000);
+                // optional: router.push('/artists');
             } else {
                 setMessage(data.message || 'Erstellung fehlgeschlagen');
             }

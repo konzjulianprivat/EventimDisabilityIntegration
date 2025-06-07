@@ -1,5 +1,6 @@
-/* styles/global.css */
+/*global.css*/
 
+/* Basis-Stile */
 body, html {
     margin: 0;
     padding: 0;
@@ -9,15 +10,16 @@ body, html {
     font-family: Helvetica, Arial, sans-serif;
 }
 
-.highlights-section{
+/* Sections */
+.highlights-section {
     margin: 40px 0 0 0;
 }
 
-.artists-section{
+.artists-section {
     margin: 40px 0 0 0;
 }
 
-
+/* Page Layout */
 .page {
     margin: 1% 1% 0 1%;
     background-color: white;
@@ -32,16 +34,17 @@ body, html {
     flex: 1;
 }
 
-.homepage{
+.homepage {
     margin: 20px;
 }
 
-.link-clean{
+/* Link-Stile */
+.link-clean {
     text-decoration: none;
     color: inherit;
 }
 
-.picture-link-clean{
+.picture-link-clean {
     text-decoration: none;
     color: inherit;
     line-height: 0;
@@ -53,471 +56,7 @@ body, html {
     border-radius: 4px;
 }
 
-.nav-bar {
-    display: block;
-    font-family: sans-serif;
-    background-color: #002b55;
-    color: white;
-    width: 98%; /* Match the content width (100% - 2*1% margins) */
-    position: fixed;
-    top: 0;
-    left: 1%;
-    right: 1%;
-    z-index: 1000;
-    box-sizing: border-box;
-    margin: 0;
-}
-
-/* inner wrapper */
-.nav-bar .nav-wrapper {
-    width: 100%;
-    padding: 0 3rem;
-    display: flex;
-    align-items: center;
-    height: 80px;
-    justify-content: space-between;
-    box-sizing: border-box;
-}
-
-.nav-bar .logo {
-    display: flex;
-    align-items: center;
-    height: 100%;
-    flex: 0 0 auto;
-}
-
-.nav-bar .logo img {
-    height: 60px;
-    width: auto;
-    max-width: 200px;
-}
-
-.nav-bar .menu {
-    display: flex;
-    gap: 1rem;
-    margin-left: 1rem;
-    justify-content: center;
-}
-
-.nav-bar .login-button {
-    background-color: #007bff;
-    color: #ffffff;
-    font-size: 1rem;
-    font-weight: 600;
-    padding: 0.75rem 1.5rem;
-    border: none;
-    border-radius: 4px;
-    cursor: pointer;     /* Etwas mehr Abstand über dem Button */
-    transition: background 0.2s;
-}
-
-.nav-bar .menu a {
-    color: white;
-    text-decoration: none;
-    font-size: 0.9rem;
-    white-space: nowrap;
-}
-
-.nav-bar .dropdown {
-    position: relative;
-    display: inline-block;
-}
-
-.nav-bar .dropdown-toggle {
-    cursor: pointer;
-    padding: 0.5rem 0;
-    display: inline-block;
-}
-
-.nav-bar .dropdown-toggle::after {
-    content: '';
-    display: inline-block;
-    margin-left: 0.3em;
-    vertical-align: middle;
-    border-top: 0.3em solid;
-    border-right: 0.3em solid transparent;
-    border-left: 0.3em solid transparent;
-}
-
-.nav-bar .dropdown-menu {
-    position: absolute;
-    top: 100%;
-    left: 0;
-    background-color: white;
-    border-radius: 4px;
-    box-shadow: 0 2px 10px rgba(0,0,0,0.2);
-    min-width: 150px;
-    display: none;
-    z-index: 1100;
-}
-
-.nav-bar .dropdown.show .dropdown-menu,
-.nav-bar .dropdown:hover > .dropdown-menu {
-    display: block;
-}
-
-.nav-bar .dropdown-item {
-    display: block;
-    padding: 0.5rem 1rem;
-    color: #333 !important;
-    text-decoration: none;
-    white-space: nowrap;
-    position: relative; /* for sub-menu positioning */
-}
-
-.nav-bar .dropdown-item:hover {
-    background-color: #f5f5f5;
-}
-
-.nav-bar .sub-menu {
-    display: none;
-    position: absolute;
-    top: 0;
-    left: 100%;
-    background-color: white;
-    border-radius: 4px;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.15);
-    min-width: 200px;
-    z-index: 1100;
-}
-
-.nav-bar .dropdown-menu .dropdown-item:hover > .sub-menu {
-    display: block;
-}
-
-.nav-bar .search {
-    flex: 1;
-    margin-left: 1rem;
-}
-
-.nav-bar .search input[type="search"] {
-    padding: 8px 12px;
-    border-radius: 4px;
-    border: none;
-    font-size: 1rem;
-    width: 100%;
-    height: 36px;
-}
-
-.nav-bar .icons {
-    display: flex;
-    gap: 0.8rem;
-    height: 100%;
-    margin-left: 1rem;
-    justify-content: flex-end;
-    align-items: center;
-}
-
-.nav-bar .icons img {
-    height: 30px;
-    width: auto;
-    cursor: pointer;
-}
-
-
-/* ——— New hover‐activated sub‐menu rules ——— */
-
-/* Show top‐level dropdown on hover */
-nav-bar .dropdown:hover > .dropdown-menu {
-    display: block;
-}
-
-/* Ensure each dropdown‐item can hold a sub‐menu */
-nav-bar .dropdown-menu .dropdown-item {
-    position: relative;
-}
-
-/* Sub‐menu styling */
-nav-bar .sub-menu {
-    display: none;
-    position: absolute;
-    top: 0;
-    left: 100%;
-    background-color: white;
-    border-radius: 4px;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.15);
-    min-width: 200px;
-    z-index: 1100;
-}
-
-/* Show sub‐menu when hovering its parent */
-nav-bar .dropdown-menu .dropdown-item:hover > .sub-menu {
-    display: block;
-}
-
-.nav-bar .dropdown.profile .dropdown-menu {
-    left: auto;
-    right: 1%;
-    min-width: 200px;
-    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
-    background-color: #fff;
-    z-index: 2000;
-}
-
-.nav-bar .dropdown.profile .dropdown-toggle::after {
-    content: none;
-}
-
-.nav-bar .dropdown-menu .dropdown-footer {
-    color: #333;
-    font-size: 0.9rem;
-    text-align: center;
-    border-top: 1px solid #e0e0e0;
-    margin-top: 0.5rem;
-}
-
-.nav-bar .dropdown-menu .dropdown-footer-name {
-    margin: 1rem 1rem;
-}
-
-.nav-bar .dropdown-menu .dropdown-footer-name p {
-    margin: 0.5rem 0;
-    line-height: 1;
-}
-
-.nav-bar .dropdown-menu .dropdown-footer-name h3 {
-    margin: 0.25rem 0;
-    line-height: 1;
-    margin-bottom: 0.5rem;
-}
-
-.nav-bar .dropdown-logout {
-    display: block;
-    width: calc(100% - 2rem);
-    margin: 0.5rem 1rem 1rem;
-    text-align: center;
-    font-size: 1rem;
-    font-weight: 600;
-    background-color: #007bff;
-    color: #ffffff;
-    padding: 0.5rem 0;
-    border: none;
-    border-radius: 4px;
-    cursor: pointer;
-    transition: background 0.2s;
-}
-
-.nav-bar .dropdown-logout:hover,
-.nav-bar .dropdown-logout:focus {
-    background-color: #0056b3;
-}
-
-.nav-bar .dropdown.profile .dropdown-menu .dropdown-item {
-    color: #333 !important;
-}
-/*FOOTER*/
-.footer {
-    background-color: #EDF0EF;
-    color: #4B5563;
-    padding: 10px 32px 10px 32px;
-    margin-top: auto;
-    font-size: 14px;
-    border-top: 1px solid #D1D5DB;
-}
-
-.footer-grid {
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: 1.5rem;
-    margin-bottom: 2.5rem;
-}
-
-@media (min-width: 768px) {
-    .footer-grid {
-        grid-template-columns: repeat(6, 1fr);
-    }
-}
-
-.footer-heading {
-    font-weight: 600;
-    margin-bottom: 0.5rem;
-    font-size: 15px;
-}
-
-.footer-links {
-    list-style: none;
-    padding: 0;
-    margin: 0;
-    text-decoration: none;
-    color: inherit;
-}
-
-.footer-links li {
-    color: #3B82F6;
-    margin-bottom: 0.25rem;
-}
-
-.link-clean:hover {
-    color: #1e40af;
-}
-
-.footer-bottom {
-    border-top: 1px solid #D1D5DB;
-    padding-top: 1.5rem;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    font-size: 12px;
-}
-
-@media (min-width: 768px) {
-    .footer-bottom {
-        flex-direction: row;
-        justify-content: space-between;
-    }
-}
-
-.footer-social,
-.footer-apps {
-    display: flex;
-    flex-direction: column;
-    margin-bottom: 1rem;
-}
-
-.footer-icons-logo {
-    display: flex;
-    gap: 1rem;
-    margin-top: 0.5rem;
-    width: 40px;
-    height: 40px;
-    object-fit: cover;
-}
-
-.footer-icons-badges {
-    display: flex;
-    gap: 1rem;
-    margin-top: 0.5rem;
-}
-
-.footer-label {
-    font-weight: 500;
-    font-size: 13px;
-}
-
-.footer-img {
-    width: 125px;
-    height: 45px;
-    object-fit: contain;
-}
-
-.footer-hotline {
-}
-
-.footer-hotline-title {
-    font-size: 15px;
-    margin-bottom: 1px;
-    margin-top: 1px;
-}
-
-.footer-hotline-number {
-    font-size: 25px;
-    color: #3B82F6;
-    text-decoration: none;
-    margin-bottom: 1px;
-    margin-top: 1px;
-}
-
-.footer-hotline-number:hover {
-    color: #1e40af;
-}
-
-.footer-hotline-subtext {
-    font-size: 10px;
-    margin-top: 0;
-}
-
-
-/*SmallTourCard*/
-.small-tourCard-grid {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 16px;
-    justify-content: flex-start;
-}
-
-.small-tourCard-class {
-    width: 170px;
-    height: auto;
-    background-color: white;
-    border-radius: 8px;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-    overflow: hidden;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    text-align: center;
-}
-
-.small-tourCard-image {
-    width: 170px;
-    height: 200px;
-    object-fit: cover;
-    object-position: center;
-}
-
-.small-tourCard-info {
-    padding: 8px;
-    text-align: center;
-    width: 100%;
-}
-
-.small-tourCard-title {
-    font-size: 14px;
-    font-weight: 600;
-    margin-top: 5px;
-}
-
-.small-tourCard-link {
-    font-size: 14px;
-    color: #2563eb;
-    cursor: pointer;
-    margin-top: auto;
-    margin-bottom: 10px;
-    text-decoration: none;
-    text-align: center;
-}
-
-.small-tourCard-link:hover {
-    color: #1e40af;
-}
-
-/*Scoller*/
-.homepage-scroller-container {
-    width: 100%;
-    overflow: hidden;
-    position: relative;
-    margin-top: 50px;
-}
-
-.homepage-scroller {
-    display: flex;
-    animation: scroll 40s linear infinite;
-}
-
-.homepage-scroller-img {
-    width: 200px;
-    height: auto;
-    margin-right: 10px;
-    border-radius: 12px;
-    transition: transform 0.3s ease-in-out;
-}
-
-.homepage-scroller-img:hover {
-    transform: scale(1.05);
-}
-
-@keyframes scroll {
-    0% {
-        transform: translateX(0);
-    }
-    100% {
-        transform: translateX(-50%);
-    }
-}
-
-
-/*TourPage-CSS*/
-
+/* TourPage */
 .tour-page-header-flex {
     display: flex;
     justify-content: space-between;
@@ -528,12 +67,10 @@ nav-bar .dropdown-menu .dropdown-item:hover > .sub-menu {
     margin-top: 10px;
 }
 
-/* Textbox im Header */
 .tour-header-text {
     flex: 1;
     min-width: 300px;
     margin: 0 0 0 10px;
-
 }
 
 .tour-header-text h1 {
@@ -590,7 +127,7 @@ nav-bar .dropdown-menu .dropdown-item:hover > .sub-menu {
     color: #333;
 }
 
-/* Haupt-Eventbereich */
+/* TourPage Container */
 .tour-page-container {
     max-width: 900px;
     margin: 0 auto;
@@ -598,14 +135,12 @@ nav-bar .dropdown-menu .dropdown-item:hover > .sub-menu {
     color: #333;
 }
 
-/* Liste der Events */
 .events-list {
     display: flex;
     flex-direction: column;
     gap: 20px;
 }
 
-/* Einzelne Event-Karte */
 .tourPage-event-card {
     display: flex;
     justify-content: space-between;
@@ -617,7 +152,6 @@ nav-bar .dropdown-menu .dropdown-item:hover > .sub-menu {
     box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
 }
 
-/* Datumsspalte */
 .tourPage-event-date {
     flex: 1;
     text-align: center;
@@ -637,7 +171,6 @@ nav-bar .dropdown-menu .dropdown-item:hover > .sub-menu {
     display: block;
 }
 
-/* Eventdetails */
 .tourPage-event-details {
     flex: 2;
     padding: 0 20px;
@@ -654,7 +187,6 @@ nav-bar .dropdown-menu .dropdown-item:hover > .sub-menu {
     color: #555;
 }
 
-/* Aktionen */
 .tourPage-event-actions {
     flex: 1;
     text-align: right;
@@ -675,8 +207,7 @@ nav-bar .dropdown-menu .dropdown-item:hover > .sub-menu {
     font-weight: bold;
 }
 
-/*eventDetailPage*/
-
+/* EventDetailPage */
 .event-header {
     display: flex;
     justify-content: space-between;
@@ -791,68 +322,49 @@ nav-bar .dropdown-menu .dropdown-item:hover > .sub-menu {
     color: #666;
 }
 
-.small-tourCard-image-placeholder,
-.homepage-scroller-img-placeholder {
-    width: 200px;   /* oder feste Breite eures Bildes */
-    height: 120px;  /* oder feste Höhe */
-    background-color: #e0e0e0;
-}
-
-/* ------------------------------------------------------------------
-   1) Das Grid für die disability marks (2 Spalten, 3 Reihen)
------------------------------------------------------------------- */
+/* Disability Marks */
 .marks-grid {
     display: grid;
-    grid-template-columns: repeat(2, 1fr); /* genau 2 Spalten, jede 1fr */
-    gap: 0.75rem; /* Abstand zwischen den Zellen */
-    margin-bottom: 1rem; /* optional, damit unter dem Grid noch Platz bleibt */
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.75rem;
+    margin-bottom: 1rem;
 }
 
-/* ------------------------------------------------------------------
-   2) Jedes Kästchen (mark-item) */
 .mark-item {
     border: 1px solid #ccc;
     border-radius: 4px;
     padding: 0.75rem;
-
     display: flex;
     align-items: center;
-
-    min-height: 30px; /* sorgt dafür, dass alle Zellen in der Höhe gleich sind */
-    background-color: #fff; /* optional, wenn du weißen Hintergrund erzwingen willst */
-    transition: border-color 0.2s; /* kleiner Hover-Effekt */
+    min-height: 30px;
+    background-color: #fff;
+    transition: border-color 0.2s;
 }
 
-/* Wenn du möchtest, dass beim Hover das Kästchen etwas farbiger wird: */
 .mark-item:hover {
     border-color: #888;
 }
 
-/* ------------------------------------------------------------------
-   3) Checkbox selbst */
 .mark-checkbox {
     margin-right: 0.5rem;
-    /* width/height der Checkbox kannst du hier noch anpassen, falls nötig */
 }
 
-/* ------------------------------------------------------------------
-   4) Label innerhalb des Kästchens */
 .mark-label {
     font-size: 0.9rem;
-    line-height: 1.2rem;      /* damit mehrzeiliger Text kompakt bleibt */
-    word-break: break-word;   /* Zeilenumbruch, falls Beschreibung länger ist */
+    line-height: 1.2rem;
+    word-break: break-word;
 }
 
 .new-label {
-    color: #6a0dad;          /* purple tone */
+    color: #6a0dad;
     font-weight: bold;
     font-style: italic;
-    font-size: 0.875rem;     /* slightly smaller than normal text */
-    margin-bottom: 0.5rem;     /* space before it */
+    font-size: 0.875rem;
+    margin-bottom: 0.5rem;
 }
 
 .disability-category {
-    border: 2px solid #6a0dad;   /* same purple tone */
-    border-radius: 4px;          /* if you like rounded corners */
-    padding: 1rem;               /* whatever spacing you already had */
+    border: 2px solid #6a0dad;
+    border-radius: 4px;
+    padding: 1rem;
 }

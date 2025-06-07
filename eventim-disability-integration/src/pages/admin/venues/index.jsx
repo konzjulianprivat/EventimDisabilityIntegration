@@ -145,14 +145,10 @@ export default function VenuesContent() {
         <div className="artists-wrapper">
             <div className="artists-header">
                 <h2 className="artists-title">Übersicht – Venues</h2>
-                <button
-                    className="btn-create-entity"
-                    onClick={() => router.push('/admin/venues/create')}
-                >
+                <button className="btn-create-entity" onClick={() => router.push('/admin/venues/create')}>
                     + Venue erstellen
                 </button>
             </div>
-
             <div className="filter-container">
                 <FilterBar
                     items={venues}
@@ -162,12 +158,10 @@ export default function VenuesContent() {
                     filterFields={filterFields}
                 />
             </div>
-
             <div className="artists-grid">
                 {filteredVenues.length === 0 && (
                     <div className="no-artists">Keine Venues vorhanden.</div>
                 )}
-
                 {filteredVenues.map((venue) => (
                     <div className="artist-card" key={venue.id}>
                         <div className="card-header">
@@ -182,28 +176,18 @@ export default function VenuesContent() {
                             ) : (
                                 <h3 className="artist-name">{venue.name}</h3>
                             )}
-
                             {editingId === venue.id ? (
-                                <button
-                                    className="btn-save"
-                                    onClick={handleSave}
-                                    title="Speichern"
-                                >
+                                <button className="btn-save" onClick={handleSave} title="Speichern">
                                     💾
                                 </button>
                             ) : (
-                                <button
-                                    className="btn-edit"
-                                    onClick={() => handleEditToggle(venue)}
-                                    title="Bearbeiten"
-                                >
+                                <button className="btn-edit" onClick={() => handleEditToggle(venue)} title="Bearbeiten">
                                     ✎
                                 </button>
                             )}
                         </div>
-
                         <div className="card-body">
-                            <div className="details-wrapper">
+                            <div className="details-wrapper" style={{ flex: 1 }}>
                                 {editingId === venue.id ? (
                                     <>
                                         <input
@@ -235,22 +219,12 @@ export default function VenuesContent() {
                                             placeholder="Website"
                                             className="input-website"
                                         />
-
                                         <div style={{ marginBottom: '0.5rem' }}>
                                             {venueAreas.map((va, i) => (
-                                                <div
-                                                    key={i}
-                                                    style={{
-                                                        display: 'flex',
-                                                        gap: '0.5rem',
-                                                        marginBottom: '0.25rem',
-                                                    }}
-                                                >
+                                                <div key={i} style={{ display: 'flex', gap: '0.5rem', marginBottom: '0.25rem' }}>
                                                     <select
                                                         value={va.areaId}
-                                                        onChange={(e) =>
-                                                            updateArea(i, 'areaId', e.target.value)
-                                                        }
+                                                        onChange={(e) => updateArea(i, 'areaId', e.target.value)}
                                                         className="input-website"
                                                         style={{ flex: 2 }}
                                                     >
@@ -265,65 +239,38 @@ export default function VenuesContent() {
                                                         type="number"
                                                         min="0"
                                                         value={va.maxCapacity}
-                                                        onChange={(e) =>
-                                                            updateArea(i, 'maxCapacity', e.target.value)
-                                                        }
+                                                        onChange={(e) => updateArea(i, 'maxCapacity', e.target.value)}
                                                         placeholder="Kapazität"
                                                         className="input-website"
                                                         style={{ flex: 1 }}
                                                     />
-                                                    <button
-                                                        type="button"
-                                                        onClick={() => removeArea(i)}
-                                                        style={{
-                                                            background: 'transparent',
-                                                            border: 'none',
-                                                            color: '#c00',
-                                                        }}
-                                                    >
+                                                    <button type="button" onClick={() => removeArea(i)} style={{ background: 'transparent', border: 'none', color: '#c00' }}>
                                                         ✕
                                                     </button>
                                                 </div>
                                             ))}
-                                            <button
-                                                type="button"
-                                                onClick={addArea}
-                                                className="btn-create-entity"
-                                            >
+                                            <button type="button" onClick={addArea} className="btn-create-entity">
                                                 + Bereich hinzufügen
                                             </button>
                                         </div>
                                     </>
                                 ) : (
-                                    <div className="details-grid">
-                                        <div>
-                                            <span className="detail-label">Adresse:</span>{' '}
-                                            <span className="detail-value">{venue.address}</span>
-                                        </div>
-                                        <div>
-                                            <span className="detail-label">Stadt:</span>{' '}
-                                            <span className="detail-value">{venue.city_name}</span>
-                                        </div>
-                                        <div className="website-field">
-                                            <span className="detail-label">Website:</span>{' '}
+                                    <>
+                                        <p className="artist-bio">{venue.address}</p>
+                                        <p className="artist-bio">{venue.city_name}</p>
+                                        <div className="website-wrapper">
                                             {venue.website && venue.website.trim() !== '' ? (
-                                                <a
-                                                    href={venue.website}
-                                                    target="_blank"
-                                                    rel="noopener noreferrer"
-                                                    className="artist-link"
-                                                >
+                                                <a href={venue.website} target="_blank" rel="noopener noreferrer" className="artist-link">
                                                     {venue.website}
                                                 </a>
                                             ) : (
                                                 <span className="no-link">— keine Website —</span>
                                             )}
                                         </div>
-                                    </div>
+                                    </>
                                 )}
                             </div>
                         </div>
-
                         {editingId !== venue.id && (
                             <button
                                 className="btn-edit"
@@ -334,22 +281,15 @@ export default function VenuesContent() {
                                 🗑
                             </button>
                         )}
-
                         {confirmDeleteId === venue.id && (
                             <div className="modal-overlay">
                                 <div className="modal-box">
                                     <p>Möchtest du dieses Venue wirklich löschen?</p>
                                     <div className="modal-actions">
-                                        <button
-                                            className="btn btn-confirm"
-                                            onClick={() => handleDelete(venue.id)}
-                                        >
+                                        <button className="btn btn-confirm" onClick={() => handleDelete(venue.id)}>
                                             Ja, löschen
                                         </button>
-                                        <button
-                                            className="btn btn-cancel"
-                                            onClick={() => setConfirmDeleteId(null)}
-                                        >
+                                        <button className="btn btn-cancel" onClick={() => setConfirmDeleteId(null)}>
                                             Abbrechen
                                         </button>
                                     </div>

@@ -60,7 +60,7 @@ export default function GenreCreation() {
             const data = await res.json();
 
             if (res.ok) {
-                setMessage(`Genre "${data.genre.name}" erstellt`);
+                setMessage(`Genre "${data.genre.name}" erstellt (ID: ${data.genre.id})`);
                 setFormData({ name: '' });
                 setSubgenres([]);
             } else {
