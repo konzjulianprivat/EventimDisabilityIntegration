@@ -1,4 +1,5 @@
 const express = require('express');
+const session = require('express-session');
 const cors = require('cors');
 const path = require('path');
 const { Client } = require('pg');
@@ -8,9 +9,29 @@ const crypto = require('crypto');
 const { v4: uuidv4 } = require('uuid');
 
 const app = express();
-app.use(cors());
+app.use(cors({
+    origin: 'http://localhost:3000',    // your Next.js dev origin
+    credentials: true,
+}));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+
+const credentials = require('./credentials.json')
+
+app.use(
+    session({
+        name: 'sid',                        // the name of the cookie (optional)
+        secret: 'credentials.sessionSecret',    // replace with an env var in production
+        resave: false,
+        saveUninitialized: false,
+        cookie: {
+            httpOnly: true,
+            secure: false,                    // in prod, set to true if using HTTPS
+            sameSite: 'lax',                  // or 'none' if your front & back are on different domains with HTTPS
+            maxAge: 1000 * 60 * 60
+        },
+    })
+);
 
 // Serve /uploads as static
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
@@ -166,71 +187,108 @@ app.post('/login-user', async (req, res) => {
     try {
         const { email, password } = req.body;
 
-        // 1) Pflichtfeld‐Prüfung
         if (!email || !password) {
             return res
                 .status(400)
                 .json({ message: 'E-Mail und Passwort sind erforderlich.' });
         }
 
-        // 2) Nutzer mit gegebener E-Mail abrufen
         const result = await client.query(
             `
-      SELECT
-        user_id,
-        email,
-        password,            -- bcrypt-Hash
-        first_name,
-        last_name,
-        salutation,
-        company,
-        street_address,
-        postal_code,
-        city,
-        country,
-        phone,
-        birth_date,
-        disability_check,
-        disability_degree,
-        disability_card_image,
-        created_at,
-        updated_at
-      FROM users
-      WHERE email = $1
-      LIMIT 1
-      `,
+                SELECT
+                    user_id,
+                    email,
+                    password,
+                    first_name,
+                    last_name,
+                    created_at,
+                    updated_at
+                FROM users
+                WHERE email = $1
+                LIMIT 1
+            `,
             [email.trim()]
         );
 
         if (result.rows.length === 0) {
-            // Kein Nutzer mit dieser E-Mail gefunden
             return res.status(401).json({ message: 'Ungültige Anmeldedaten.' });
         }
 
         const user = result.rows[0];
-
-        // 3) Passwort vergleichen (bcrypt.compare)
         const match = await bcrypt.compare(password, user.password);
         if (!match) {
             return res.status(401).json({ message: 'Ungültige Anmeldedaten.' });
         }
 
-        // 4) Login erfolgreich → sichere Nutzerdaten zurückgeben (ohne password)
-        const safeUser = { ...user };
-        delete safeUser.password;
+        req.session.userId = user.user_id;
+        req.session.email = user.email;
 
         return res.status(200).json({
             message: 'Login erfolgreich',
-            user: safeUser,
-            // OPTIONAL: hier könntest du direkt ein JWT signen und mit zurückschicken
-            // token: '…'
+            user: {
+                userId: user.user_id,
+                email: user.email,
+                firstName: user.first_name,
+                lastName: user.last_name,
+            },
         });
     } catch (err) {
-        console.error('Login‐Fehler:', err);
+        console.error('Login-Fehler:', err);
         return res
             .status(500)
             .json({ message: 'Serverfehler beim Einloggen.' });
     }
+});
+
+// 4) GET /session-status – prüft, ob req.session.userId existiert
+app.get('/session-status', async (req, res) => {
+    if (!req.session.userId) {
+        // Keine gültige Session → nicht eingeloggt
+        return res.status(200).json({ loggedIn: false });
+    }
+
+    try {
+        // Hole first_name + last_name + email aus der DB via userId
+        const { rows } = await client.query(
+            `SELECT first_name, last_name, email
+       FROM users
+       WHERE user_id = $1
+       LIMIT 1`,
+            [req.session.userId]
+        );
+
+        if (rows.length === 0) {
+            // Sollte eigentlich nicht vorkommen, aber fallback
+            return res.status(200).json({ loggedIn: false });
+        }
+
+        const { first_name, last_name, email } = rows[0];
+        return res.status(200).json({
+            loggedIn: true,
+            user: {
+                userId:    req.session.userId,
+                email:     email,
+                firstName: first_name,
+                lastName:  last_name,
+            },
+        });
+    } catch (err) {
+        console.error('Error in /session-status:', err);
+        return res.status(500).json({ loggedIn: false });
+    }
+});
+
+// 5) GET /logout – um die Session zu zerstören
+app.post('/logout', (req, res) => {
+    req.session.destroy((err) => {
+        if (err) {
+            console.error('Session destroy error:', err);
+            return res.status(500).json({ message: 'Logout fehlgeschlagen.' });
+        }
+        // Cookie löschen
+        res.clearCookie('sid');
+        return res.status(200).json({ message: 'Erfolgreich ausgeloggt.' });
+    });
 });
 app.post('/create-country', async (req, res) => {
     try {
@@ -295,9 +353,12 @@ app.post('/create-artist', upload.single('artistImage'), async (req, res) => {
         res.status(500).json({ message: 'Server error during artist creation' });
     }
 });
+
 app.get('/artists', async (req, res) => {
     try {
-        const result = await client.query('SELECT id, name FROM artists ORDER BY name');
+
+        const result = await client.query(`SELECT id, name, biography, website, artist_image FROM artists ORDER BY name
+    `);
         res.json({ artists: result.rows });
     } catch (err) {
         console.error('Error fetching artists:', err);
@@ -343,93 +404,120 @@ app.get('/subgenres', async (req, res) => {
     }
 });
 app.post('/create-tour', upload.single('tourImage'), async (req, res) => {
-    // Aus dem multipart/form-data-Body:
-    const {
-        title,
-        description,
-        startDate,
-        endDate,
-        artistId,
-        genres: genresJson,
-    } = req.body;
+    try {
+        // 1) Aus dem Body lesen
+        const {
+            title,
+            description,
+            startDate,
+            endDate,
+            artistIdsJson,
+            genres: genresJson,
+        } = req.body;
 
-    // 3.1 Pflichtfelder prüfen
-    if (!title || !startDate || !endDate || !artistId) {
-        return res.status(400).json({
-            message: 'Titel, Startdatum, Enddatum und Künstler sind erforderlich',
-        });
-    }
-
-    // 3.2 tourGenres parsen (Array von { genreId, subgenreIds: [...] })
-    let tourGenres = [];
-    if (genresJson) {
-        try {
-            tourGenres = JSON.parse(genresJson);
-        } catch {
-            return res
-                .status(400)
-                .json({ message: 'Ungültiges Format für genres/subgenres' });
-        }
-    }
-
-    // 3.3 Validierung der Genre-/Subgenre-Struktur
-    for (let i = 0; i < tourGenres.length; i++) {
-        const { genreId, subgenreIds } = tourGenres[i] || {};
-        if (!genreId) {
-            return res
-                .status(400)
-                .json({ message: `Genre ${i + 1} muss ausgewählt werden` });
-        }
-        if (!Array.isArray(subgenreIds) || subgenreIds.length === 0) {
+        // 2) Pflichtfelder prüfen
+        if (
+            !title ||
+            !startDate ||
+            !endDate ||
+            !artistIdsJson ||
+            typeof artistIdsJson !== 'string'
+        ) {
             return res.status(400).json({
-                message: `Für Genre ${i + 1} muss mindestens ein Subgenre angegeben sein`,
+                message: 'Titel, Startdatum, Enddatum und mindestens ein Künstler sind erforderlich',
             });
         }
-        for (let j = 0; j < subgenreIds.length; j++) {
-            if (!subgenreIds[j]) {
+
+        // 3) artistIds parsen (muss ein nicht-leeres Array sein)
+        let artistIds;
+        try {
+            artistIds = JSON.parse(artistIdsJson);
+            if (!Array.isArray(artistIds) || artistIds.length === 0) {
+                throw new Error('artistIds ist kein nicht-leeres Array');
+            }
+        } catch {
+            return res.status(400).json({
+                message: 'Ungültiges Format für artistIds (erwarte JSON-Array)',
+            });
+        }
+
+        // 4) tourGenres parsen
+        let tourGenres = [];
+        if (genresJson) {
+            try {
+                tourGenres = JSON.parse(genresJson);
+            } catch {
                 return res.status(400).json({
-                    message: `Subgenre ${j + 1} in Genre-Block ${i + 1} ist erforderlich`,
+                    message: 'Ungültiges Format für genres (erwarte JSON-Array)',
                 });
             }
-            // Optional: Hier könnten Sie noch per SELECT prüfen,
-            // ob subgenreIds[j] tatsächlich zu genreId gehört.
         }
-    }
 
-    try {
+        // 5) Validierung: Für jeden Genre-Block muss genreId gesetzt sein und Subgenres vorhanden sein
+        for (let i = 0; i < tourGenres.length; i++) {
+            const { genreId, subgenreIds } = tourGenres[i] || {};
+            if (!genreId) {
+                return res.status(400).json({ message: `Genre ${i + 1} muss ausgewählt werden` });
+            }
+            if (!Array.isArray(subgenreIds) || subgenreIds.length === 0) {
+                return res.status(400).json({
+                    message: `Für Genre ${i + 1} muss mindestens ein Subgenre angegeben sein`,
+                });
+            }
+            for (let j = 0; j < subgenreIds.length; j++) {
+                if (!subgenreIds[j]) {
+                    return res.status(400).json({
+                        message: `Subgenre ${j + 1} in Genre-Block ${i + 1} ist erforderlich`,
+                    });
+                }
+            }
+        }
+
+        // 6) Validierung: Jede artistId muss ein String sein (optional: weitere DB-Prüfung)
+        for (const aid of artistIds) {
+            if (typeof aid !== 'string' || aid.trim() === '') {
+                return res.status(400).json({ message: 'Ungültige artistIds' });
+            }
+            // Optional:
+            // const { rows: chk } = await client.query('SELECT id FROM artists WHERE id = $1', [aid]);
+            // if (chk.length === 0) {
+            //   return res.status(400).json({ message: `Künstler ${aid} existiert nicht` });
+            // }
+        }
+
+        // 7) Transaktion starten
         await client.query('BEGIN');
 
-        // 3.4 Tour-ID generieren
+        // 8) Neue Tour-ID generieren
         const tourId = uuidv4();
 
-        // 3.5 Bild speichern (falls vorhanden) – mit tourId als entity_id
+        // 9) Tour-Bild speichern (falls vorhanden)
         let imageId = null;
         if (req.file) {
             imageId = uuidv4();
             await client.query(
                 `
-        INSERT INTO images
-          (id, image_data, image_type, entity_type, entity_id)
-        VALUES ($1, $2, $3, $4, $5)
-        `,
+                    INSERT INTO images (id, image_data, image_type, entity_type, entity_id)
+                    VALUES ($1, $2, $3, $4, $5)
+                `,
                 [
                     imageId,
                     req.file.buffer,
                     req.file.mimetype,
                     'tour',
-                    tourId, // sofort auf die neue Tour verweisen
+                    tourId, // entity_id verweist auf neue Tour
                 ]
             );
         }
 
-        // 3.6 Tour-Datensatz speichern
+        // 10) Tour-Datensatz speichern (ohne artist_id, denn viele Künstler möglich)
         const {
             rows: [createdTour],
         } = await client.query(
             `
                 INSERT INTO tours
-                    (id, title, subtitle, start_date, end_date, artist_id, tour_image)
-                VALUES ($1, $2, $3, $4, $5, $6, $7)
+                (id, title, subtitle, start_date, end_date, tour_image, created_at, updated_at)
+                VALUES ($1, $2, $3, $4, $5, $6, NOW(), NOW())
                 RETURNING *
             `,
             [
@@ -438,30 +526,41 @@ app.post('/create-tour', upload.single('tourImage'), async (req, res) => {
                 description || null,
                 startDate,
                 endDate,
-                artistId,
                 imageId,
             ]
         );
 
-        // 3.7 Für jedes Genre-Objekt → alle Subgenre-IDs in tour_subgenres einfügen
+        // 11) Genres & Subgenres speichern (unverändert)
         for (const blk of tourGenres) {
             for (const subId of blk.subgenreIds) {
                 await client.query(
                     `
-          INSERT INTO tour_subgenres (tour_id, subgenre_id)
-          VALUES ($1, $2)
-          `,
+                        INSERT INTO tour_subgenres (tour_id, subgenre_id)
+                        VALUES ($1, $2)
+                    `,
                     [tourId, subId]
                 );
             }
         }
 
+        // 12) Tour-Artists in Zwischentabelle speichern
+        for (const aid of artistIds) {
+            await client.query(
+                `
+                    INSERT INTO tour_artists (tour_id, artist_id)
+                    VALUES ($1, $2)
+                `,
+                [tourId, aid]
+            );
+        }
+
+        // 13) Commit
         await client.query('COMMIT');
-        res.status(201).json({ message: 'Tour erstellt', tour: createdTour });
+        return res.status(201).json({ message: 'Tour erstellt', tour: createdTour });
     } catch (error) {
         await client.query('ROLLBACK');
         console.error('Create-tour error:', error);
-        res.status(500).json({ message: 'Serverfehler beim Erstellen der Tour' });
+        return res.status(500).json({ message: 'Serverfehler beim Erstellen der Tour' });
     }
 });
 
@@ -614,10 +713,10 @@ app.post('/create-event', express.json(), async (req, res) => {
 
         for (const ea of eventArtists) {
             await client.query(
-                `INSERT INTO event_artists
-          (event_id, artist_id, role)
+                `INSERT INTO event_supporting_acts
+          (event_id, artist_id)
          VALUES ($1,$2,$3)`,
-                [eventId, ea.artistId, ea.role]
+                [eventId, ea.artistId]
             );
         }
 
@@ -682,7 +781,107 @@ app.post('/create-genre', async (req, res) => {
     }
 });
 
-const credentials = require('./credentials.json')
+app.get('/genres-with-subgenres', async (req, res) => {
+    try {
+        // 1) Fetch each genre, plus its subgenres in a single query.
+        // We use a LEFT JOIN so that genres without subgenres still appear.
+        const { rows } = await client.query(`
+      SELECT
+        g.id              AS genre_id,
+        g.name            AS genre_name,
+        COALESCE(
+          json_agg(
+            json_build_object(
+              'id', s.id,
+              'name', s.name
+            )
+          ) FILTER (WHERE s.id IS NOT NULL),
+          '[]'
+        ) AS subgenres
+      FROM genres g
+      LEFT JOIN subgenres s
+        ON s.genre_id = g.id
+      GROUP BY g.id, g.name
+      ORDER BY g.name
+    `);
+
+        // 2) Transform rows into a simpler array-of-objects format:
+        //    [{ id: <genre_id>, name: <genre_name>, subgenres: [{ id, name }, …] }, …]
+        const genresWithSub = rows.map((r) => ({
+            id: r.genre_id,
+            name: r.genre_name,
+            subgenres: r.subgenres,
+        }));
+
+        return res.status(200).json({ genres: genresWithSub });
+    } catch (error) {
+        console.error('Error fetching genres with subgenres:', error);
+        return res.status(500).json({ message: 'Fehler beim Laden der Genres und Subgenres' });
+    }
+});
+
+app.get('/cities-with-venues', async (req, res) => {
+    try {
+        const { rows } = await client.query(`
+      SELECT
+        ci.id            AS city_id,
+        ci.name          AS city_name,
+        COALESCE(
+          json_agg(
+            json_build_object(
+              'id', v.id,
+              'name', v.name
+            )
+          ) FILTER (WHERE v.id IS NOT NULL),
+          '[]'
+        ) AS venues
+      FROM cities ci
+      LEFT JOIN venues v
+        ON v.city_id = ci.id
+      GROUP BY ci.id, ci.name
+      ORDER BY ci.name
+    `);
+
+        const citiesWithVenues = rows.map(r => ({
+            id: r.city_id,
+            name: r.city_name,
+            venues: r.venues
+        }));
+
+        return res.status(200).json({ cities: citiesWithVenues });
+    } catch (error) {
+        console.error('Error fetching cities with venues:', error);
+        return res.status(500).json({ message: 'Fehler beim Laden der Städte und Venues' });
+    }
+});
+
+app.get("/tours-with-images", async (req, res) => {
+    try {
+        const { rows } = await client.query(
+            `SELECT id, title, tour_image
+       FROM tours
+       ORDER BY title`
+        );
+        res.status(200).json({ tours: rows });
+    } catch (err) {
+        console.error("Error fetching tours:", err);
+        res.status(500).json({ message: "Fehler beim Laden der Touren" });
+    }
+});
+
+app.get("/artists-with-images", async (req, res) => {
+    try {
+        const { rows } = await client.query(
+            `SELECT id, name, artist_image
+       FROM artists
+       ORDER BY name`
+        );
+        res.status(200).json({ artists: rows });
+    } catch (err) {
+        console.error("Error fetching artists:", err);
+        res.status(500).json({ message: "Fehler beim Laden der Künstler" });
+    }
+});
 
 const client = new Client(credentials);
 client.connect();

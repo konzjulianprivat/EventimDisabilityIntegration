@@ -1,3 +1,49 @@
 node_modules
 !/eventim-disability-integration/server/credentials.json
 *.gz
+
+# Ignore all log files
+*.log
+# Ignore all npm debug files
+npm-debug.log*
+# Ignore all yarn debug files
+yarn-debug.log*
+# Ignore all pnpm debug files
+pnpm-debug.log*
+/eventim-disability-integration/.next
+# Ignore all build artifacts
+dist
+# Ignore all coverage reports
+coverage
+# Ignore all environment variable files
+.env
+# Ignore all IDE specific files
+.idea
+# Ignore all temporary files
+*.tmp
+# Ignore all temporary files
+*.temp
+# Ignore all cache files
+.cache
+# Ignore all build directories
+build
+# Ignore all test files
+*.test.js
+# Ignore all test files
+*.spec.js
+# Ignore all TypeScript declaration files
+*.d.ts
+# Ignore all TypeScript configuration files
+tsconfig.json
+# Ignore all TypeScript configuration files
+tsconfig.*.json
+# Ignore all TypeScript output files
+*.tsbuildinfo
+# Ignore all TypeScript output files
+*.js.map
+# Ignore all TypeScript output files
+*.d.ts.map
+# Ignore all TypeScript output files
+*.js.flow
+# Ignore all TypeScript output files
+*.d.ts.flow

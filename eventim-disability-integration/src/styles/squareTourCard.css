@@ -1,0 +1,66 @@
+/* squareTourCard.css */
+
+/* Wrapper, der die gesamte Karte umschließt */
+.square-tourCard-class {
+    width: 180px;        /* feste Breite */
+    flex-shrink: 0;      /* im flex-Container nicht schrumpfen */
+    background-color: #ffffff;
+    border: 1px solid #e0e0e0;
+    border-radius: 4px;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    margin: 0;           /* kein eigener Margin: gap liefert Abstand */
+}
+
+/* Bild-Wrapper, damit das Bild exakt 180 × 180 px groß ist */
+.square-tourCard-image-wrapper {
+    width: 100%;
+    height: 180px;       /* Bild-Teil exakt 180px hoch */
+    overflow: hidden;
+    position: relative;
+}
+
+/* Das eigentliche <img> */
+.square-tourCard-image {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+/* Platzhalter, falls das Bild nicht geladen ist */
+.square-tourCard-image-placeholder {
+    width: 100%;
+    height: 100%;
+    background-color: #f5f5f5;
+}
+
+/* Info-Bereich (Titel + Preis) */
+.square-tourCard-info {
+    padding: 0.5rem;
+    flex: 1;                  /* verbleibender Platz unter dem Bild */
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+}
+
+.square-tourCard-title {
+    font-size: 0.95rem;
+    color: #002b55;
+    margin: 0 0 0.25rem 0;
+    line-height: 1.2;
+}
+
+.square-tourCard-price {
+    margin: 0;
+    font-size: 0.9rem;
+}
+
+.square-tourCard-link {
+    color: #007acf;
+    text-decoration: none;
+}
+
+.square-tourCard-link:hover {
+    text-decoration: underline;
+}

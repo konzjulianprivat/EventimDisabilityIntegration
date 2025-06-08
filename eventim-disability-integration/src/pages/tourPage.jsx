@@ -21,7 +21,7 @@ const eventData = [
     },
     {
         date: '14',
-        month: 'Jan.',
+        month: 'Feb.',
         year: '2026',
         weekday: 'Mi.',
         time: '20:00',
@@ -86,7 +86,7 @@ const WinterConcerts = () => {
             </div>
 
             <div className="events-list">
-                {eventData.map((event, index) => (
+                {eventData.map((event) => (
                     <EventCard 
                         key={`${event.date}-${event.time}-${event.location}`} 
                         event={event} 

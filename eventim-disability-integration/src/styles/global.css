@@ -10,16 +10,16 @@ body, html {
 }
 
 .highlights-section{
-    margin: 40px 0px 0px 0px;
+    margin: 40px 0 0 0;
 }
 
 .artists-section{
-    margin: 40px 0px 0px 0px;
+    margin: 40px 0 0 0;
 }
 
 
 .page {
-    margin: 0 1%;
+    margin: 1% 1% 0 1%;
     background-color: white;
     min-height: 100vh;
     display: flex;
@@ -33,7 +33,7 @@ body, html {
 }
 
 .homepage{
-    margin: 20px 0px 0px 0px;
+    margin: 20px;
 }
 
 .link-clean{
@@ -97,6 +97,18 @@ body, html {
     gap: 1rem;
     margin-left: 1rem;
     justify-content: center;
+}
+
+.nav-bar .login-button {
+    background-color: #007bff;
+    color: #ffffff;
+    font-size: 1rem;
+    font-weight: 600;
+    padding: 0.75rem 1.5rem;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;     /* Etwas mehr Abstand über dem Button */
+    transition: background 0.2s;
 }
 
 .nav-bar .menu a {
@@ -237,8 +249,66 @@ nav-bar .dropdown-menu .dropdown-item:hover > .sub-menu {
     display: block;
 }
 
+.nav-bar .dropdown.profile .dropdown-menu {
+    left: auto;
+    right: 1%;
+    min-width: 200px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+    background-color: #fff;
+    z-index: 2000;
+}
 
+.nav-bar .dropdown.profile .dropdown-toggle::after {
+    content: none;
+}
 
+.nav-bar .dropdown-menu .dropdown-footer {
+    color: #333;
+    font-size: 0.9rem;
+    text-align: center;
+    border-top: 1px solid #e0e0e0;
+    margin-top: 0.5rem;
+}
+
+.nav-bar .dropdown-menu .dropdown-footer-name {
+    margin: 1rem 1rem;
+}
+
+.nav-bar .dropdown-menu .dropdown-footer-name p {
+    margin: 0.5rem 0;
+    line-height: 1;
+}
+
+.nav-bar .dropdown-menu .dropdown-footer-name h3 {
+    margin: 0.25rem 0;
+    line-height: 1;
+    margin-bottom: 0.5rem;
+}
+
+.nav-bar .dropdown-logout {
+    display: block;
+    width: calc(100% - 2rem);
+    margin: 0.5rem 1rem 1rem;
+    text-align: center;
+    font-size: 1rem;
+    font-weight: 600;
+    background-color: #007bff;
+    color: #ffffff;
+    padding: 0.5rem 0;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.nav-bar .dropdown-logout:hover,
+.nav-bar .dropdown-logout:focus {
+    background-color: #0056b3;
+}
+
+.nav-bar .dropdown.profile .dropdown-menu .dropdown-item {
+    color: #333 !important;
+}
 /*FOOTER*/
 .footer {
     background-color: #EDF0EF;
@@ -420,6 +490,7 @@ nav-bar .dropdown-menu .dropdown-item:hover > .sub-menu {
     width: 100%;
     overflow: hidden;
     position: relative;
+    margin-top: 50px;
 }
 
 .homepage-scroller {
@@ -465,7 +536,7 @@ nav-bar .dropdown-menu .dropdown-item:hover > .sub-menu {
 .tour-header-text {
     flex: 1;
     min-width: 300px;
-    margin: 0px 0px 0px 10px;
+    margin: 0 0 0 10px;
 
 }
 
@@ -476,7 +547,7 @@ nav-bar .dropdown-menu .dropdown-item:hover > .sub-menu {
 
 .tour-header-text p {
     font-size: 1rem;
-    margin: 5px 0px 0px 0px;
+    margin: 5px 0 0 0;
     color: #333;
 }
 
@@ -687,4 +758,46 @@ nav-bar .dropdown-menu .dropdown-item:hover > .sub-menu {
     color: white;
     padding: 1rem;
     border-radius: 8px;
+}
+
+.error-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    background-color: #f2f2f2;
+    padding: 2rem;
+    text-align: center;
+}
+
+.error-box {
+    background-color: white;
+    padding: 3rem;
+    border-radius: 12px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+    max-width: 500px;
+    width: 100%;
+}
+
+.error-code {
+    font-size: 6rem;
+    margin: 0;
+    color: #000000;
+}
+
+.error-title {
+    font-size: 2rem;
+    margin: 1rem 0;
+}
+
+.error-message {
+    font-size: 1rem;
+    color: #666;
+}
+
+.small-tourCard-image-placeholder,
+.homepage-scroller-img-placeholder {
+    width: 200px;   /* oder feste Breite eures Bildes */
+    height: 120px;  /* oder feste Höhe */
+    background-color: #e0e0e0;
 }

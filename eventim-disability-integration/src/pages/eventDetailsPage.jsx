@@ -4,7 +4,6 @@ const eventDetailsPage = {
     title: 'Clueso - Weihnachten zu Hause',
     date: 'Montag, 29.12.2025 | 19:30',
     location: 'ERFURT | Messehalle Erfurt',
-    stars: 1392,
     categories: [
         { id: 1, name: 'Kategorie 1', type: 'Sitzplatz', price: 85.0, available: true },
         { id: 2, name: 'Kategorie 2', type: 'Sitzplatz', price: 75.0, available: false },
@@ -33,11 +32,10 @@ export default function EventDetailsPage() {
                         <h1>{eventDetailsPage.title}</h1>
                         <p><strong>{eventDetailsPage.date}</strong></p>
                         <p>{eventDetailsPage.location}</p>
-                        <p>{'★'.repeat(5)} ({eventDetailsPage.stars})</p>
                     </div>
                     <div className="event-image">
                         <img
-                            src="[PLATZHALTER_BANNER_BILD]"
+                            src="/pictures/TestPictures/Test-Picture-EventCard.jpg"
                             alt="Event Banner"
                             className="banner-img"
                         />
