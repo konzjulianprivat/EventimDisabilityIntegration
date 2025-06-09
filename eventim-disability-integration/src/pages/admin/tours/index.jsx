@@ -3,6 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import FilterBar from '../../../components/filter-bar';
 import { useRouter } from 'next/router';
+import { API_BASE_URL } from '../../../config';
 
 export default function ToursContent() {
     const [tours, setTours] = useState([]);
@@ -94,7 +95,7 @@ export default function ToursContent() {
     // ──────────────────────────────────────────────────────────────────────────
     const fetchTours = async () => {
         try {
-            const res = await fetch('http://localhost:4000/tours-detailed');
+            const res = await fetch(`${API_BASE_URL}/tours-detailed`);
             if (!res.ok) {
                 console.error('fetchTours → status:', res.status);
                 throw new Error('Fehler beim Abrufen von /tours-detailed');
@@ -118,7 +119,7 @@ export default function ToursContent() {
     // ──────────────────────────────────────────────────────────────────────────
     const fetchAllArtists = async () => {
         try {
-            const res = await fetch('http://localhost:4000/artists');
+            const res = await fetch(`${API_BASE_URL}/artists`);
             if (!res.ok) {
                 console.error('fetchArtists → status:', res.status);
                 throw new Error('Fehler beim Abrufen von /artists');
@@ -141,7 +142,7 @@ export default function ToursContent() {
     // ──────────────────────────────────────────────────────────────────────────
     const fetchAllGenresWithSub = async () => {
         try {
-            const res = await fetch('http://localhost:4000/genres-with-subgenres');
+            const res = await fetch(`${API_BASE_URL}/genres-with-subgenres`);
             if (!res.ok) {
                 console.error('fetchGenres → status:', res.status);
                 throw new Error('Fehler beim Abrufen von /genres-with-subgenres');
@@ -213,7 +214,7 @@ export default function ToursContent() {
 
         // Tour-Künstler laden
         try {
-            const resA = await fetch(`http://localhost:4000/tour-artists?tourId=${tour.id}`);
+            const resA = await fetch(`${API_BASE_URL}/tour-artists?tourId=${tour.id}`);
             if (!resA.ok) throw new Error('fetchTourArtists failed: ' + resA.status);
             const jsonA = await resA.json();
             setTourArtists(jsonA.artists || []);
@@ -224,7 +225,7 @@ export default function ToursContent() {
 
         // Tour-Genres laden
         try {
-            const resG = await fetch(`http://localhost:4000/tour-genres?tourId=${tour.id}`);
+            const resG = await fetch(`${API_BASE_URL}/tour-genres?tourId=${tour.id}`);
             if (!resG.ok) throw new Error('fetchTourGenres failed: ' + resG.status);
             const jsonG = await resG.json();
             setTourGenres(jsonG.tourGenres || []);
@@ -314,7 +315,7 @@ export default function ToursContent() {
                 }));
             formData.append('genresJson', JSON.stringify(genresToSend));
 
-            const response = await fetch(`http://localhost:4000/tours/${editedData.id}`, {
+            const response = await fetch(`${API_BASE_URL}/tours/${editedData.id}`, {
                 method: 'PUT',
                 body: formData,
             });
@@ -335,7 +336,7 @@ export default function ToursContent() {
     // ──────────────────────────────────────────────────────────────────────────
     const handleDelete = async (id) => {
         try {
-            const response = await fetch(`http://localhost:4000/tours/${id}`, {
+            const response = await fetch(`${API_BASE_URL}/tours/${id}`, {
                 method: 'DELETE',
             });
             if (!response.ok) {
@@ -517,7 +518,7 @@ export default function ToursContent() {
                                         editedData.tour_image instanceof File
                                             ? URL.createObjectURL(editedData.tour_image)
                                             : tour.tour_image
-                                                ? `http://localhost:4000/image/${tour.tour_image}`
+                                                ? `${API_BASE_URL}/image/${tour.tour_image}`
                                                 : '/placeholder-tour.png'
                                     }
                                     alt={tour.title || 'Unbekannte Tour'}
