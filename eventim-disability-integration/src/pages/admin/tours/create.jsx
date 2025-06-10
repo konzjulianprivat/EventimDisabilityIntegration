@@ -62,7 +62,6 @@ export default function TourCreation() {
     const removeArtistBlock = (index) => {
         setTourArtists((prev) => prev.filter((_, idx) => idx !== index));
     };
-
     const updateArtistInBlock = (index, newArtistId) => {
         setTourArtists((prev) =>
             prev.map((aid, idx) => (idx === index ? newArtistId : aid))

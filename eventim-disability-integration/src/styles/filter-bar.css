@@ -1,0 +1,96 @@
+/* -------------------------------------------------------------
+   Generische Filter‐Bar (FilterBar.css)
+   Stil: Eventim-ähnlich, Blau (#005EA5), Grau/Weiß, kompakt
+-------------------------------------------------------------*/
+.filter-bar-container {
+    background-color: #fff;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    margin-bottom: 1rem;
+    overflow: hidden;
+}
+
+/* Hauptzeile: Prefix-Input + Toggle + Create‐Button */
+.filter-bar-main {
+    display: flex;
+    gap: 0.5rem;
+    padding: 0.5rem;
+    align-items: center;
+    background-color: #f9f9f9;
+}
+
+/* Input für „startsWith“-Felder */
+.filter-input {
+    flex: 1;
+    font-size: 0.95rem;
+    padding: 0.4rem 0.6rem;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    color: #333;
+    background-color: #fff;
+}
+
+/* Toggle‐Button */
+.btn-toggle-filters {
+    background-color: #005ea5;
+    color: #fff;
+    border: none;
+    border-radius: 4px;
+    font-size: 0.9rem;
+    padding: 0.4rem 0.8rem;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+}
+.btn-toggle-filters:hover {
+    background-color: #003f7f;
+}
+
+/* „Create‐Entity“-Button */
+.btn-create-entity {
+    background-color: #007bff;
+    color: #fff;
+    border: none;
+    border-radius: 4px;
+    font-size: 0.9rem;
+    padding: 0.4rem 0.8rem;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+}
+.btn-create-entity:hover {
+    background-color: #0056b3;
+}
+
+/* Erweitertes Bereich (sichtbar, wenn showFilters=true) */
+.filter-bar-advanced {
+    background-color: #fff;
+    padding: 0.75rem 0.5rem;
+    border-top: 1px solid #ddd;
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+/* Zeile pro „contains“-Filter */
+.filter-row {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+/* Label für „contains“-Felder */
+.filter-label {
+    flex: 0 0 130px;
+    font-size: 0.9rem;
+    color: #333;
+}
+
+/* Input im erweiterten Bereich */
+.filter-input-adv {
+    flex: 1;
+    font-size: 0.9rem;
+    padding: 0.35rem 0.6rem;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    color: #333;
+    background-color: #fafafa;
+}
