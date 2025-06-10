@@ -28,7 +28,9 @@ export default function ToursContent() {
 
     const [confirmDeleteId, setConfirmDeleteId] = useState(null);
 
-    // Erweiterte Filter-States
+    // ──────────
+    // Erweiterte Filter‐States (wurden zuvor direkt in index.jsx)
+    // ──────────
     const [filterStartDate, setFilterStartDate] = useState('');
     const [filterEndDate, setFilterEndDate] = useState('');
     const [filterCategories, setFilterCategories] = useState([]);
@@ -155,9 +157,9 @@ export default function ToursContent() {
         }
     };
 
-    // ────────────────────────────────────────────────────────────────────────
-    // 4) Erweiterte Filter anwenden
-    // ────────────────────────────────────────────────────────────────────────
+    // ──────────────────────────────────────────────────────────────────────────
+    // 4) Erweiterte Filter anwenden (jetzt basierend auf basicFilteredTours + Tour‐States)
+    // ──────────────────────────────────────────────────────────────────────────
     useEffect(() => {
         let result = basicFilteredTours;
         if (filterStartDate) {
@@ -195,10 +197,18 @@ export default function ToursContent() {
         }
         setFilteredTours(result);
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [basicFilteredTours, filterStartDate, filterEndDate, filterVenue, filterCity, filterArtists, filterCategories]);
+    }, [
+        basicFilteredTours,
+        filterStartDate,
+        filterEndDate,
+        filterVenue,
+        filterCity,
+        filterArtists,
+        filterCategories,
+    ]);
 
     // ──────────────────────────────────────────────────────────────────────────
-    // 4) Wenn man auf „Bearbeiten“ klickt: Tour-Daten (inkl. Künstler + Genres) holen
+    // 5) Wenn man auf „Bearbeiten“ klickt: Tour-Daten (inkl. Künstler + Genres) holen
     // ──────────────────────────────────────────────────────────────────────────
     const handleEditToggle = async (tour) => {
         setEditingId(tour.id);
@@ -236,7 +246,7 @@ export default function ToursContent() {
     };
 
     // ──────────────────────────────────────────────────────────────────────────
-    // 5) Eingabefelder (Titel, Subtitle, Datum, Bild, Künstler, Genres) verwalten
+    // 6) Eingabefelder (Titel, Subtitle, Datum, Bild, Künstler, Genres) verwalten
     // ──────────────────────────────────────────────────────────────────────────
     const handleInputChange = (e) => {
         const { name, value, files } = e.target;
@@ -290,7 +300,7 @@ export default function ToursContent() {
     };
 
     // ──────────────────────────────────────────────────────────────────────────
-    // 6) Speichern (PUT /tours/:id)
+    // 7) Speichern (PUT /tours/:id)
     // ──────────────────────────────────────────────────────────────────────────
     const handleSave = async () => {
         try {
@@ -332,7 +342,7 @@ export default function ToursContent() {
     };
 
     // ──────────────────────────────────────────────────────────────────────────
-    // 7) Löschen (DELETE /tours/:id)
+    // 8) Löschen (DELETE /tours/:id)
     // ──────────────────────────────────────────────────────────────────────────
     const handleDelete = async (id) => {
         try {
@@ -351,7 +361,7 @@ export default function ToursContent() {
     };
 
     // ──────────────────────────────────────────────────────────────────────────
-    // 8) JSX: Karte pro Tour
+    // 9) JSX: Karte pro Tour
     // ──────────────────────────────────────────────────────────────────────────
     return (
         <div className="artists-wrapper">
@@ -372,89 +382,33 @@ export default function ToursContent() {
                     entityName="Tour"
                     entityRoute="tours"
                     filterFields={filterFields}
+
+                    // ###############################
+                    // NEU: alle "Tours‐spezifischen" Filter‐Props
+                    // ###############################
+                    filterStartDate={filterStartDate}
+                    setFilterStartDate={setFilterStartDate}
+
+                    filterEndDate={filterEndDate}
+                    setFilterEndDate={setFilterEndDate}
+
+                    filterCategories={filterCategories}
+                    setFilterCategories={setFilterCategories}
+                    categoryOptions={categoryOptions}
+
+                    filterVenue={filterVenue}
+                    setFilterVenue={setFilterVenue}
+                    venueOptions={venueOptions}
+
+                    filterCity={filterCity}
+                    setFilterCity={setFilterCity}
+                    cityOptions={cityOptions}
+
+                    filterArtists={filterArtists}
+                    setFilterArtists={setFilterArtists}
+                    // artistOptions erwartet nur die Namen-Liste
+                    artistOptions={allArtists.map((a) => a.name)}
                 />
-                <div className="tour-advanced-filters">
-                    <label>
-                        Start:
-                        <input
-                            type="date"
-                            value={filterStartDate}
-                            onChange={(e) => setFilterStartDate(e.target.value)}
-                        />
-                    </label>
-                    <label>
-                        Ende:
-                        <input
-                            type="date"
-                            value={filterEndDate}
-                            onChange={(e) => setFilterEndDate(e.target.value)}
-                        />
-                    </label>
-                    <label>
-                        Kategorien:
-                        <select
-                            multiple
-                            value={filterCategories}
-                            onChange={(e) =>
-                                setFilterCategories(
-                                    Array.from(e.target.selectedOptions, (o) => o.value)
-                                )
-                            }
-                        >
-                            {categoryOptions.map((opt) => (
-                                <option key={opt} value={opt}>
-                                    {opt}
-                                </option>
-                            ))}
-                        </select>
-                    </label>
-                    <label>
-                        Venue:
-                        <select
-                            value={filterVenue}
-                            onChange={(e) => setFilterVenue(e.target.value)}
-                        >
-                            <option value="">— Venue wählen —</option>
-                            {venueOptions.map((opt) => (
-                                <option key={opt} value={opt}>
-                                    {opt}
-                                </option>
-                            ))}
-                        </select>
-                    </label>
-                    <label>
-                        Stadt:
-                        <select
-                            value={filterCity}
-                            onChange={(e) => setFilterCity(e.target.value)}
-                        >
-                            <option value="">— Stadt wählen —</option>
-                            {cityOptions.map((opt) => (
-                                <option key={opt} value={opt}>
-                                    {opt}
-                                </option>
-                            ))}
-                        </select>
-                    </label>
-                    <label>
-                        Künstler:
-                        <select
-                            multiple
-                            value={filterArtists}
-                            onChange={(e) =>
-                                setFilterArtists(
-                                    Array.from(e.target.selectedOptions, (o) => o.value)
-                                )
-                            }
-                        >
-                            {allArtists.map((a) => (
-                                <option key={a.id} value={a.name}>
-                                    {a.name}
-                                </option>
-                            ))}
-                        </select>
-                    </label>
-                </div>
             </div>
 
             <div className="tours-grid">
@@ -851,7 +805,7 @@ export default function ToursContent() {
                             </div>
                         </div>
 
-                        {/* 7) Delete-Icon (nur, wenn nicht im Bearbeitungs-Modus) */}
+                        {/* 10) Delete-Icon (nur, wenn nicht im Bearbeitungs-Modus) */}
                         {editingId !== tour.id && (
                             <button
                                 className="btn-edit delete-icon"
@@ -862,7 +816,7 @@ export default function ToursContent() {
                             </button>
                         )}
 
-                        {/* 8) Modal: Bestätigung Löschen */}
+                        {/* 11) Modal: Bestätigung Löschen */}
                         {confirmDeleteId === tour.id && (
                             <div className="modal-overlay">
                                 <div className="modal-box">
