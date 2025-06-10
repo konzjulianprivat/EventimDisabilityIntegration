@@ -2,7 +2,7 @@ const express = require('express');
 const session = require('express-session');
 const cors = require('cors');
 const path = require('path');
-const { Client } = require('pg');
+const { Pool } = require('pg');
 const bcrypt = require('bcrypt');
 const multer = require('multer');
 const crypto = require('crypto');
@@ -1761,7 +1761,17 @@ app.get('/event-accessibility', async (req, res) => {
 });
 
 
-const client = new Client(credentials);
-client.connect();
+const client = new Pool(credentials);
+client.on('error', (err) => {
+    console.error('Unexpected database error:', err);
+});
+
+process.on('unhandledRejection', (reason) => {
+    console.error('Unhandled rejection:', reason);
+});
+
+process.on('uncaughtException', (err) => {
+    console.error('Uncaught exception:', err);
+});
 
 app.listen(4000, () => console.log('Server on port 4000'));
