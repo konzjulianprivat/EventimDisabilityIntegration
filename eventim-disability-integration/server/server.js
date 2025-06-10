@@ -1695,55 +1695,39 @@ app.get('/events-with-accessibility', async (req, res) => {
     }
 
     try {
-        // 1) Hole alle Events dieser Tour mit City-Name und Venue-Name
-        //    Wir nehmen an, dass "venues" eine Spalte "name" besitzt und "cities" ebenfalls.
-        const { rows: events } = await client.query(
+        // Events samt zugehöriger disability_support_for Codes aus event_categories abrufen
+        const { rows } = await client.query(
             `
-      SELECT
-        e.id,
-        e.start_time,
-        v.name AS "venueName",
-        c.name AS "cityName"
-      FROM events e
-        JOIN venues v ON v.id = e.venue_id
-        JOIN cities c ON c.id = v.city_id
-      WHERE e.tour_id = $1
-      ORDER BY e.start_time
-      `,
+            SELECT
+                e.id,
+                e.start_time,
+                v.name AS "venueName",
+                c.name AS "cityName",
+                ARRAY_REMOVE(ARRAY_AGG(DISTINCT ec.disability_support_for), NULL) AS codes
+            FROM events e
+                JOIN venues v ON v.id = e.venue_id
+                JOIN cities c ON c.id = v.city_id
+                LEFT JOIN event_categories ec ON ec.event_id = e.id
+            WHERE e.tour_id = $1
+            GROUP BY e.id, e.start_time, v.name, c.name
+            ORDER BY e.start_time;
+            `,
             [tourId]
         );
 
-        // 2) Für jedes Event berechnen, welche Disability-Labels zutreffen.
-        //    Dazu verknüpfen wir event_venue_areas → venue_areas → disability_marks.
-        //    Ein Event kann mehrere „venue_area_id“ haben. Für jede VA prüfen wir, ob zugehörig ein
-        //    Eintrag in disability_marks existiert und erzeugen daraus das passende Label.
-        const result = await Promise.all(
-            events.map(async (ev) => {
-                const { rows: markRows } = await client.query(
-                    `
-          SELECT DISTINCT dm.mark_code
-          FROM event_venue_areas eva
-            JOIN venue_areas va ON va.id = eva.venue_area_id
-            JOIN disability_marks dm ON dm.area_id = va.area_id
-          WHERE eva.event_id = $1
-          `,
-                    [ev.id]
-                );
+        const result = rows.map((ev) => {
+            const labels = (ev.codes || [])
+                .map((code) => mapMarkCodeToLabel(code && code.trim()))
+                .filter((lbl) => lbl !== null);
 
-                // mappe jeden gefundenen mark_code → lesbares Label
-                const labels = markRows
-                    .map((r) => mapMarkCodeToLabel(r.mark_code))
-                    .filter((lbl) => lbl !== null);
-
-                return {
-                    id: ev.id,
-                    cityName: ev.cityName,
-                    venueName: ev.venueName,
-                    start_time: ev.start_time,
-                    accessibility: Array.from(new Set(labels)), // Duplikate entfernen
-                };
-            })
-        );
+            return {
+                id: ev.id,
+                cityName: ev.cityName,
+                venueName: ev.venueName,
+                start_time: ev.start_time,
+                accessibility: Array.from(new Set(labels)),
+            };
+        });
 
         return res.status(200).json({ events: result });
     } catch (error) {
@@ -1759,28 +1743,20 @@ app.get('/event-accessibility', async (req, res) => {
     }
 
     try {
-        // 1) Aus event_venue_areas alle venue_area_id des Events holen
-        // 2) JOIN auf venue_areas → um an area_id zu gelangen
-        // 3) JOIN auf disability_marks, um alle mark_code zu erhalten
+        // Alle disability_support_for Codes aus event_categories für das Event abrufen
         const { rows } = await client.query(
             `
-      SELECT DISTINCT dm.mark_code
-      FROM event_venue_areas eva
-        JOIN venue_areas va
-          ON va.id = eva.venue_area_id
-        JOIN disability_marks dm
-          ON dm.area_id = va.area_id
-      WHERE eva.event_id = $1
-      `,
+                SELECT DISTINCT disability_support_for AS code
+                FROM event_categories
+                WHERE event_id = $1
+            `,
             [eventId]
         );
 
-        // 4) Aus jedem mark_code das Label machen und Duplikate entfernen
         const labels = rows
-            .map(r => mapMarkCodeToLabel(r.mark_code))
-            .filter(lbl => lbl !== null); // null herausfiltern, falls ein unbekannter mark_code
+            .map((r) => mapMarkCodeToLabel(r.code && r.code.trim()))
+            .filter((lbl) => lbl !== null);
 
-        // Mit Set doppelte Einträge entfernen
         const uniqueLabels = Array.from(new Set(labels));
 
         return res.status(200).json({ accessibilityLabels: uniqueLabels });
