@@ -65,7 +65,7 @@ export default function EventCreation() {
                 const newPriceMap = {};
                 const newCapacityMap = {};
                 allAreas
-                    .filter(va => va.is_disability_category)
+                    .filter(va => va.is_disability_category != null)
                     .forEach(va => {
                         newPriceMap[va.id] = '';
                         newCapacityMap[va.id] = '';
@@ -208,7 +208,7 @@ export default function EventCreation() {
 
         // 8) Validierung Disability-Kategorien – jede Behinderten-Area einzeln prüfen
         //    Zuerst: Liste aller is_disability_category=true Areas des gewählten Venues
-        const disabilityAreas = venueAreas.filter(va => va.is_disability_category);
+        const disabilityAreas = venueAreas.filter(va => va.is_disability_category != null);
         //    Für jede Area sicherstellen, dass Price und Capacity gesetzt wurden
         for (const va of disabilityAreas) {
             const price = disabilityPriceMap[va.id];
@@ -611,7 +611,7 @@ export default function EventCreation() {
                                         >
                                             <option value="">Bereich wählen</option>
                                             {venueAreas
-                                                .filter(va => !va.is_disability_category)
+                                                .filter(va => !va.is_disability_category != null)
                                                 .map(va => (
                                                     <option key={va.id} value={va.id}>
                                                         {va.name} (max {va.max_capacity})
@@ -722,7 +722,7 @@ export default function EventCreation() {
 
                 {/* 2) Wenn Venue gewählt, aber keine Behinderten-Areas in venueAreas */}
                 {formData.venueId &&
-                    venueAreas.filter(va => va.is_disability_category).length === 0 && (
+                    venueAreas.filter(va => va.is_disability_category != null).length === 0 && (
                         <div
                             className="disability-category"
                             style={{
@@ -745,7 +745,7 @@ export default function EventCreation() {
 
                 {/* 3) Für jede Behinderten-Area eine eigene Kategorie-Box */}
                 {venueAreas
-                    .filter(va => va.is_disability_category)
+                    .filter(va => va.is_disability_category != null)
                     .map((va, idx) => (
                         <div
                             key={va.id}

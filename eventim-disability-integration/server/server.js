@@ -719,7 +719,7 @@ app.get('/venue-areas', async (req, res) => {
                  va.area_id AS area_id,
                  va.max_capacity,
                  a.name,
-                 a.is_disability_category
+                 a.disability_category_for
              FROM venue_areas va
                       JOIN areas a ON a.id = va.area_id
              WHERE va.venue_id = $1
@@ -1072,8 +1072,8 @@ app.post('/create-area', async (req, res) => {
 
         const areaId = uuidv4();
         await client.query(
-            'INSERT INTO areas (id, name, description, is_disability_category) VALUES ($1, $2, $3, $4)',
-            [areaId, name.trim(), description || null, false]
+            'INSERT INTO areas (id, name, description, disability_category_for) VALUES ($1, $2, $3, $4)',
+            [areaId, name.trim(), description || null, null]
         );
 
         return res.status(201).json({
