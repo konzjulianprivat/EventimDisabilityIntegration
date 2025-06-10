@@ -1,5 +1,6 @@
 /*-----------------------------------------------
   Eventim Look: Blau (#005EA5), Grau/ Weiß, dichter
+  (Nur für Artists; separater File)
 -----------------------------------------------*/
 
 /* ──────────────────────────────────────────────
@@ -31,8 +32,8 @@
 }
 
 /* ──────────────────────────────────────────────
-   4) Grid‐Container für Karten
-      3 Spalten auf Desktop, responsiv
+   4) Grid‐Container für Künstler‐Karten
+      3 Karten nebeneinander, responsiv
 ────────────────────────────────────────────── */
 .artists-grid {
     display: grid;
@@ -51,7 +52,7 @@
 }
 
 /* ──────────────────────────────────────────────
-   5) „Keine Künstler“-Hinweis / Touren‐Fallback
+   5) „Keine Künstler“-Hinweis
 ────────────────────────────────────────────── */
 .no-artists {
     grid-column: 1 / -1;  /* volle Breite im Grid */
@@ -62,7 +63,7 @@
 }
 
 /* ------------------------------------------------
-   6) Card‐Container: Einheitliches Layout
+   6) Artist-Card: Box + Shadow ähnlich zu Tours
 ------------------------------------------------ */
 .artist-card {
     background-color: #fff;
@@ -79,59 +80,42 @@
 }
 
 /* ------------------------------------------------
-   7) Card Header: Dunkle Blautöne nach Eventim
+   7) Card Header: Name + Edit/Save
 ------------------------------------------------ */
 .card-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    background: #005EA5;    /* Eventim‐Blau */
-    padding: 0.75rem 1rem;
+    background: #002b55;    /* Original-Dunkelblau */
+    padding: 0.5rem 0.75rem;
 }
 .artist-name {
-    font-size: 1.1rem;
+    font-size: 1rem;
     color: #fff;
     margin: 0;
     font-weight: 600;
 }
 .input-name {
     flex: 1;
-    padding: 0.4rem 0.6rem;
+    padding: 0.25rem 0.5rem;
     font-size: 1rem;
     border: 1px solid #ccc;
-    border-radius: 4px;
+    border-radius: 3px;
     color: #000;
 }
-
-/* Edit/Save‐Buttons, angepasst */
 .btn-edit,
 .btn-save {
     background: transparent;
     border: none;
-    font-size: 1.2rem;
-    color: #fff;
+    font-size: 1.1rem;
+    color: #007bff;
     cursor: pointer;
-    padding: 0.2rem;
+    padding: 0.1rem;
     transition: color 0.2s ease;
 }
 .btn-edit:hover,
 .btn-save:hover {
-    color: #cce0f5;
-}
-
-/* Löschen‐Icon in der Card‐Footer‐Ecke */
-.delete-icon {
-    align-self: flex-end;
-    margin: 0.5rem 1rem;
-    background: transparent;
-    border: none;
-    font-size: 1.2rem;
-    color: #c00;
-    cursor: pointer;
-    transition: color 0.2s ease;
-}
-.delete-icon:hover {
-    color: #a00;
+    color: #003f7f;
 }
 
 /* ------------------------------------------------
@@ -139,199 +123,106 @@
 ------------------------------------------------ */
 .card-body {
     display: flex;
-    padding: 1rem;
-    gap: 1rem;
+    padding: 0.75rem;
+    gap: 0.75rem;
 }
-
-/* Bild‐Wrapper (150×150 px) – angepasst */
-.tour-image-large {
-    flex: 0 0 150px;   /* Breite 150px */
-    height: 150px;     /* Höhe 150px */
+.image-wrapper {
+    flex: 0 0 80px;
+    height: 80px;
     background: #eee;
     display: flex;
     align-items: center;
     justify-content: center;
-    border-radius: 4px;
+    border-radius: 3px;
     overflow: hidden;
-    margin-right: 1rem; /* Abstand zum Details‐Teil */
 }
-.tour-image-large .artist-image {
+.artist-image {
     width: 100%;
     height: 100%;
     object-fit: cover;
 }
 
 /* ------------------------------------------------
-   9) Details‐Container: Inhalt untereinander
+   9) Details‐Container: Biografie + Website
 ------------------------------------------------ */
 .details-wrapper {
     flex: 1;
     display: flex;
     flex-direction: column;
-    justify-content: space-between;
 }
-
-/* ------------------------------------------------
-   10) Anzeigemodus: Einspaltige Detail‐Liste
------------------------------------------------- */
-.details-list {
-    display: flex;
-    flex-direction: column;
-    gap: 0.5rem;
-    margin-bottom: 1rem;
-}
-.detail-label {
-    font-weight: 600;
+.artist-bio {
+    font-size: 0.875rem;
+    line-height: 1.2;
     color: #333;
+    max-height: 3.6em; /* ca. 3 Zeilen bei 1.2er Zeilenhöhe */
+    overflow: hidden;  /* Versteckt Rest */
+    margin: 0 0 0.5rem;
+    position: relative;
+    word-break: break-word;
+    overflow-wrap: break-word;
 }
-.detail-value {
-    color: #555;
+.artist-bio.expanded {
+    max-height: none;
+}
+.read-more {
+    background: none;
+    border: none;
+    color: #005ea5;
+    text-decoration: underline;
+    font-size: 0.875rem;
+    cursor: pointer;
+    padding: 0;
+    align-self: flex-start;
+    margin-bottom: 0.5rem;
+}
+.website-wrapper {
+    margin-top: auto;
+}
+.artist-link {
+    color: #005ea5;
+    font-size: 0.875rem;
+    text-decoration: none;
+    word-break: break-word;
+    overflow-wrap: break-word;
+    white-space: normal;
+}
+.artist-link:hover {
+    text-decoration: underline;
+}
+.no-link {
+    font-size: 0.875rem;
+    color: #999;
+    font-style: italic;
 }
 
 /* ------------------------------------------------
-   11) Bearbeitungsmodus: Eingabe‐Felder
+   10) Input‐Felder im Bearbeitungsmodus
 ------------------------------------------------ */
+.input-bio {
+    width: 100%;
+    font-size: 0.875rem;
+    padding: 0.4rem;
+    border: 1px solid #ccc;
+    border-radius: 3px;
+    resize: none;
+    overflow: hidden;
+    min-height: 60px;
+    margin-bottom: 0.5rem;
+    line-height: 1.2;
+    box-sizing: border-box;
+}
 .input-website,
 .input-file {
     width: 100%;
-    font-size: 0.9rem;
+    font-size: 0.875rem;
     padding: 0.4rem;
     border: 1px solid #ccc;
-    border-radius: 4px;
-    margin-bottom: 0.75rem;
-}
-.input-date {
-    width: 100%;
-    margin-top: 0.25rem;
-    padding: 0.4rem;
-    font-size: 0.9rem;
-    border: 1px solid #ccc;
-    border-radius: 4px;
-}
-
-/* Zeile, in der Start und Ende nebeneinander stehen */
-.date-row {
-    display: flex;
-    gap: 1rem;
-    margin-bottom: 1rem;
-}
-.date-label {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    font-size: 0.9rem;
-    color: #333;
-}
-
-/* ------------------------------------------------
-   12) Sektionen: Künstler und Genres
------------------------------------------------- */
-.section-block {
-    margin-top: 1rem;
-    padding-top: 0.75rem;
-    border-top: 1px solid #eee;
-}
-.section-label {
-    font-weight: 600;
-    color: #005EA5;
-    font-size: 0.95rem;
+    border-radius: 3px;
     margin-bottom: 0.5rem;
 }
 
-/* Kleine Buttons für „+“ */
-.btn-small {
-    padding: 0.3rem 0.6rem;
-    font-size: 0.8rem;
-    background-color: #005EA5;
-    color: #fff;
-    border: none;
-    border-radius: 4px;
-    cursor: pointer;
-    transition: background-color 0.2s ease;
-    margin-top: 0.5rem;
-}
-.btn-small:hover {
-    background-color: #003f7f;
-}
-
-/* Inline‐Flex für Select + Entfernen‐Button */
-.inline-flex {
-    display: flex;
-    align-items: center;
-}
-.align-center {
-    align-items: center;
-}
-.gap-0_5rem {
-    gap: 0.5rem;
-}
-
-/* Entfernen‐Button in Feldern */
-.btn-remove-field {
-    background: transparent;
-    border: none;
-    font-size: 1.2rem;
-    color: #c00;
-    cursor: pointer;
-    transition: color 0.2s ease;
-}
-.btn-remove-field:hover {
-    color: #900;
-}
-
-/* Genre‐Block, abgesetzt durch hellen Hintergrund */
-.genre-block {
-    background-color: #f9f9f9;
-    border: 1px solid #ddd;
-    border-radius: 4px;
-    padding: 0.75rem;
-    margin-bottom: 0.75rem;
-}
-
-/* Subgenre‐Checkboxen */
-.subgenre-checkboxes {
-    margin-top: 0.5rem;
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.5rem;
-}
-.subgenre-checkboxes label {
-    display: flex;
-    align-items: center;
-    gap: 0.25rem;
-    font-size: 0.9rem;
-    color: #333;
-}
-.sub-name {
-    font-size: 0.9rem;
-}
-
 /* ------------------------------------------------
-   13) Listen in Anzeigemodus
------------------------------------------------- */
-.plain-list {
-    list-style: none;
-    padding-left: 1rem;
-    margin: 0.25rem 0;
-}
-.list-item {
-    font-size: 0.9rem;
-    color: #333;
-    margin-bottom: 0.25rem;
-}
-.nested-list {
-    list-style: none;
-    padding-left: 1rem;
-    margin: 0.25rem 0;
-}
-.sub-list-item {
-    font-size: 0.85rem;
-    color: #555;
-    margin-bottom: 0.2rem;
-}
-
-/* ------------------------------------------------
-   14) Modal (Löschen‐Bestätigung)
+   11) Modal (Löschen‐Bestätigung)
 ------------------------------------------------ */
 .modal-overlay {
     position: fixed;
@@ -339,7 +230,7 @@
     left: 0;
     width: 100%;
     height: 100%;
-    background-color: rgba(0, 0, 0, 0.5);
+    background-color: rgba(0, 0, 0, 0.4);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -347,32 +238,32 @@
 }
 .modal-box {
     background: #fff;
-    border-radius: 6px;
-    padding: 1.5rem;
-    width: 480px;
+    border-radius: 4px;
+    padding: 1rem;
+    width: 560px;
     text-align: center;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
 }
 .modal-box p {
-    margin-bottom: 1.25rem;
-    font-size: 1rem;
+    margin-bottom: 1rem;
+    font-size: 0.95rem;
     color: #333;
 }
 .modal-actions {
     display: flex;
     justify-content: center;
-    gap: 1rem;
+    gap: 0.5rem;
 }
 .btn {
-    padding: 0.5rem 1rem;
-    border-radius: 4px;
-    font-size: 0.95rem;
+    padding: 0.4rem 0.8rem;
+    border-radius: 3px;
+    font-size: 0.875rem;
     font-weight: bold;
     cursor: pointer;
     border: none;
 }
 .btn-confirm {
-    background-color: #005EA5;
+    background-color: #005ea5;
     color: #fff;
     transition: background-color 0.2s ease;
 }
@@ -380,16 +271,16 @@
     background-color: #003f7f;
 }
 .btn-cancel {
-    background-color: #f2f2f2;
+    background-color: #eee;
     color: #333;
     transition: background-color 0.2s ease;
 }
 .btn-cancel:hover {
-    background-color: #ddd;
+    background-color: #ccc;
 }
 
 /* ------------------------------------------------
-   15) Header‐Bereich der Listenseite
+   12) Überschrift + „+ Neuer Künstler“-Button
 ------------------------------------------------ */
 .artists-header {
     display: flex;
@@ -397,20 +288,18 @@
     align-items: center;
 }
 .artists-title {
-    font-size: 1.6rem;
-    color: #005EA5;
+    font-size: 1.5rem;
+    color: black;
     margin: 0;
-    font-weight: 600;
 }
 .btn-create-entity {
-    background-color: #005EA5;
+    background-color: #007bff;
     color: #fff;
-    font-weight: 600;
+    font-weight: bold;
     font-size: 0.9rem;
     padding: 0.5rem 1rem;
     border-radius: 4px;
-    border: none;
-    cursor: pointer;
+    text-decoration: none;
     transition: background-color 0.2s ease;
 }
 .btn-create-entity:hover {
@@ -418,10 +307,14 @@
 }
 
 /* ------------------------------------------------
-   16) tours-grid: eine Spalte pro Zeile
+   13) Responsive Anpassungen
 ------------------------------------------------ */
-.tours-grid {
-    display: grid;
-    grid-template-columns: 1fr;
-    gap: 1rem;
+@media (max-width: 768px) {
+    .card-body {
+        flex-direction: column;
+        align-items: center;
+    }
+    .image-wrapper {
+        margin-bottom: 0.75rem;
+    }
 }

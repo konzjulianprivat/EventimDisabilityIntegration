@@ -44,13 +44,16 @@ export default function LoginPage() {
 
             const data = await res.json();
             if (res.ok) {
+                // The API already returns camelCase properties, but we were
+                // incorrectly using the snake_case variants here. This caused
+                // `useAuth` to read `undefined` values from localStorage.
                 localStorage.setItem(
                     'user',
                     JSON.stringify({
-                          userId: data.user.user_id,
-                          email: data.user.email,
-                          firstName: data.user.first_name,
-                        lastName: data.user.last_name,
+                        userId:    data.user.userId,
+                        email:     data.user.email,
+                        firstName: data.user.firstName,
+                        lastName:  data.user.lastName,
                     })
                 );
                 router.push('/').then(() => window.location.reload());

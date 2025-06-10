@@ -797,3 +797,62 @@ nav-bar .dropdown-menu .dropdown-item:hover > .sub-menu {
     height: 120px;  /* oder feste Höhe */
     background-color: #e0e0e0;
 }
+
+/* ------------------------------------------------------------------
+   1) Das Grid für die disability marks (2 Spalten, 3 Reihen)
+------------------------------------------------------------------ */
+.marks-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr); /* genau 2 Spalten, jede 1fr */
+    gap: 0.75rem; /* Abstand zwischen den Zellen */
+    margin-bottom: 1rem; /* optional, damit unter dem Grid noch Platz bleibt */
+}
+
+/* ------------------------------------------------------------------
+   2) Jedes Kästchen (mark-item) */
+.mark-item {
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    padding: 0.75rem;
+
+    display: flex;
+    align-items: center;
+
+    min-height: 30px; /* sorgt dafür, dass alle Zellen in der Höhe gleich sind */
+    background-color: #fff; /* optional, wenn du weißen Hintergrund erzwingen willst */
+    transition: border-color 0.2s; /* kleiner Hover-Effekt */
+}
+
+/* Wenn du möchtest, dass beim Hover das Kästchen etwas farbiger wird: */
+.mark-item:hover {
+    border-color: #888;
+}
+
+/* ------------------------------------------------------------------
+   3) Checkbox selbst */
+.mark-checkbox {
+    margin-right: 0.5rem;
+    /* width/height der Checkbox kannst du hier noch anpassen, falls nötig */
+}
+
+/* ------------------------------------------------------------------
+   4) Label innerhalb des Kästchens */
+.mark-label {
+    font-size: 0.9rem;
+    line-height: 1.2rem;      /* damit mehrzeiliger Text kompakt bleibt */
+    word-break: break-word;   /* Zeilenumbruch, falls Beschreibung länger ist */
+}
+
+.new-label {
+    color: #6a0dad;          /* purple tone */
+    font-weight: bold;
+    font-style: italic;
+    font-size: 0.875rem;     /* slightly smaller than normal text */
+    margin-bottom: 0.5rem;     /* space before it */
+}
+
+.disability-category {
+    border: 2px solid #6a0dad;   /* same purple tone */
+    border-radius: 4px;          /* if you like rounded corners */
+    padding: 1rem;               /* whatever spacing you already had */
+}

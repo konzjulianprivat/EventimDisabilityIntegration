@@ -4,6 +4,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import Image from 'next/image';
 import { useAuth } from '../hooks/useAuth';
+import { API_BASE_URL } from '../config';
 
 export default function NavBar() {
     const [openDropdown, setOpenDropdown] = useState(null);
@@ -20,7 +21,7 @@ export default function NavBar() {
     useEffect(() => {
         async function fetchGenres() {
             try {
-                const res = await fetch('http://localhost:4000/genres-with-subgenres', {
+                const res = await fetch(`${API_BASE_URL}/genres-with-subgenres`, {
                     credentials: 'include',
                 });
                 if (!res.ok) throw new Error('Fetch fehlgeschlagen');
@@ -36,7 +37,7 @@ export default function NavBar() {
     useEffect(() => {
         async function fetchCities() {
             try {
-                const res = await fetch('http://localhost:4000/cities-with-venues', {
+                const res = await fetch(`${API_BASE_URL}/cities-with-venues`, {
                     credentials: 'include',
                 });
                 if (!res.ok) throw new Error('Fetch fehlgeschlagen');
@@ -211,7 +212,7 @@ export default function NavBar() {
                                     className="login-button dropdown-logout"
                                     onClick={async () => {
                                         try {
-                                            await fetch('http://localhost:4000/logout', {
+                                            await fetch(`${API_BASE_URL}/logout`, {
                                                 method: 'POST',
                                                 credentials: 'include',
                                             });

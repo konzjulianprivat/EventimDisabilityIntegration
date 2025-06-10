@@ -5,6 +5,7 @@ import { useRouter } from 'next/router';
 
 export default function Registration() {
     const router = useRouter();
+
     const [formData, setFormData] = useState({
         firstName: '',
         lastName: '',
@@ -24,14 +25,18 @@ export default function Registration() {
         salutation: '',
     });
 
+    // Holds all marks fetched from server:
+    const [disabilityMarks, setDisabilityMarks] = useState([]);
+    // Holds the mark_codes that the user has checked:
+    const [selectedMarks, setSelectedMarks] = useState([]);
+
     const [message, setMessage] = useState('');
     const [loading, setLoading] = useState(false);
 
-    // 1) Werte aus sessionStorage vorab befüllen (E-Mail + Passwort), aber nicht anzeigen
+    // 1) Prefill email/password from sessionStorage if present (unchanged)
     useEffect(() => {
         const preEmail = sessionStorage.getItem('preRegEmail');
         const prePassword = sessionStorage.getItem('preRegPassword');
-
         if (preEmail || prePassword) {
             setFormData((prev) => ({
                 ...prev,
@@ -39,10 +44,26 @@ export default function Registration() {
                 password: prePassword || '',
                 confirmPassword: prePassword || '',
             }));
-            // Option: Danach entfernen, damit keine Reste verbleiben:
+            // Optionally remove from sessionStorage:
             // sessionStorage.removeItem('preRegEmail');
             // sessionStorage.removeItem('preRegPassword');
         }
+    }, []);
+
+    // 2) As soon as the component mounts, fetch all disability marks:
+    useEffect(() => {
+        async function fetchMarks() {
+            try {
+                const res = await fetch('http://localhost:4000/disability-marks');
+                if (!res.ok) throw new Error('Failed to load disability marks');
+                const json = await res.json();
+                // Expecting json.marks to be an array of { mark_code, description, area_name }
+                setDisabilityMarks(json.marks);
+            } catch (err) {
+                console.error('Error fetching disability marks:', err);
+            }
+        }
+        fetchMarks();
     }, []);
 
     const handleChange = (e) => {
@@ -52,11 +73,25 @@ export default function Registration() {
                 ...formData,
                 [name]: e.target.files[0],
             });
-        } else if (type === 'checkbox') {
+        } else if (type === 'checkbox' && name === 'disabilityCheck') {
+            // For the single “Ich habe einen Behindertenausweis” box:
             setFormData({
                 ...formData,
-                [name]: e.target.checked,
+                disabilityCheck: e.target.checked,
+                // If unchecked, also clear degree and any selectedMarks:
+                ...(e.target.checked
+                    ? {}
+                    : {
+                        disabilityDegree: '',
+                        disabilityCardImage: null,
+                        // Clear any mark‐checkboxes if user unticks “I have a card”
+                        selectedMarks: [],
+                    }),
             });
+            // If the user just cleared disabilityCheck, clear selectedMarks state:
+            if (!e.target.checked) {
+                setSelectedMarks([]);
+            }
         } else {
             const { value } = e.target;
             setFormData({
@@ -66,12 +101,25 @@ export default function Registration() {
         }
     };
 
+    // Called when the user toggles an individual mark‐checkbox
+    const handleMarkToggle = (markCode) => {
+        setSelectedMarks((prev) => {
+            if (prev.includes(markCode)) {
+                // Remove it
+                return prev.filter((m) => m !== markCode);
+            } else {
+                // Add it
+                return [...prev, markCode];
+            }
+        });
+    };
+
     const handleSubmit = async (e) => {
         e.preventDefault();
         setLoading(true);
         setMessage('');
 
-        // Passwort-Abgleich (intern, nicht sichtbar)
+        // 1) Passwords match?
         if (formData.password !== formData.confirmPassword) {
             setMessage('Passwörter stimmen nicht überein');
             setLoading(false);
@@ -79,35 +127,39 @@ export default function Registration() {
         }
 
         try {
-            const formDataToSend = new FormData();
+            // Build FormData
+            const payload = new FormData();
+            // Append all existing simple fields except file and except we’ll handle marks separately
             Object.keys(formData).forEach((key) => {
-                if (key !== 'disabilityCardImage' || !formData[key]) {
-                    formDataToSend.append(key, formData[key]);
-                }
+                // We’ll append the file later. Also skip disabilityCardImage if null
+                if (key === 'disabilityCardImage') return;
+                payload.append(key, formData[key]);
             });
+
+            // Append the file if present
             if (formData.disabilityCardImage) {
-                formDataToSend.append(
-                    'disabilityCardImage',
-                    formData.disabilityCardImage
-                );
+                payload.append('disabilityCardImage', formData.disabilityCardImage);
             }
+
+            // Append the selected marks as a JSON string
+            // (Server will parse JSON.parse(req.body.disabilityMarks))
+            payload.append('disabilityMarks', JSON.stringify(selectedMarks));
 
             const response = await fetch('http://localhost:4000/register-user', {
                 method: 'POST',
-                body: formDataToSend,
+                body: payload,
             });
             const data = await response.json();
 
             if (response.ok) {
                 setMessage('Registrierung erfolgreich! Weiterleitung...');
-                // Optional: Nach kurzer Verzögerung weiterleiten:
-                // setTimeout(() => router.push('/login'), 2000);
+                setTimeout(() => router.push('/login'), 2000);
             } else {
                 setMessage(data.message || 'Registrierung fehlgeschlagen');
             }
         } catch (error) {
-            setMessage('Fehler bei der Verbindung zum Server');
             console.error('Registration error:', error);
+            setMessage('Fehler bei der Verbindung zum Server');
         } finally {
             setLoading(false);
         }
@@ -135,7 +187,7 @@ export default function Registration() {
             )}
 
             <form onSubmit={handleSubmit}>
-                {/* Anrede */}
+                {/* ---------------- Anrede ---------------- */}
                 <div style={{ marginBottom: '1rem' }}>
                     <label
                         htmlFor="salutation"
@@ -164,7 +216,7 @@ export default function Registration() {
                     </select>
                 </div>
 
-                {/* Vorname */}
+                {/* ---------------- Vorname ---------------- */}
                 <div style={{ marginBottom: '1rem' }}>
                     <label
                         htmlFor="firstName"
@@ -188,7 +240,7 @@ export default function Registration() {
                     />
                 </div>
 
-                {/* Nachname */}
+                {/* ---------------- Nachname ---------------- */}
                 <div style={{ marginBottom: '1rem' }}>
                     <label
                         htmlFor="lastName"
@@ -212,7 +264,7 @@ export default function Registration() {
                     />
                 </div>
 
-                {/* Firma */}
+                {/* ---------------- Firma ---------------- */}
                 <div style={{ marginBottom: '1rem' }}>
                     <label
                         htmlFor="company"
@@ -235,7 +287,7 @@ export default function Registration() {
                     />
                 </div>
 
-                {/* Straße und Hausnummer */}
+                {/* ---------------- Straße und Hausnummer ---------------- */}
                 <div style={{ marginBottom: '1rem' }}>
                     <label
                         htmlFor="streetAddress"
@@ -259,7 +311,7 @@ export default function Registration() {
                     />
                 </div>
 
-                {/* PLZ / Stadt */}
+                {/* ---------------- PLZ / Stadt ---------------- */}
                 <div style={{ marginBottom: '1rem', display: 'flex', gap: '1rem' }}>
                     <div style={{ flex: '1' }}>
                         <label
@@ -307,7 +359,7 @@ export default function Registration() {
                     </div>
                 </div>
 
-                {/* Land */}
+                {/* ---------------- Land ---------------- */}
                 <div style={{ marginBottom: '1rem' }}>
                     <label
                         htmlFor="country"
@@ -333,7 +385,7 @@ export default function Registration() {
 
                 {/* E-Mail + Passwort sind unsichtbar, aber in formData enthalten */}
 
-                {/* Geburtsdatum */}
+                {/* ---------------- Geburtsdatum ---------------- */}
                 <div style={{ marginBottom: '1rem' }}>
                     <label
                         htmlFor="birthDate"
@@ -356,7 +408,7 @@ export default function Registration() {
                     />
                 </div>
 
-                {/* Telefon */}
+                {/* ---------------- Telefon ---------------- */}
                 <div style={{ marginBottom: '1rem' }}>
                     <label
                         htmlFor="phone"
@@ -379,7 +431,7 @@ export default function Registration() {
                     />
                 </div>
 
-                {/* Behindertenausweis Checkbox */}
+                {/* ---------------- Behindertenausweis Checkbox ---------------- */}
                 <div style={{ marginBottom: '1rem' }}>
                     <div style={{ display: 'flex', alignItems: 'center' }}>
                         <input
@@ -387,12 +439,7 @@ export default function Registration() {
                             id="disabilityCheck"
                             name="disabilityCheck"
                             checked={formData.disabilityCheck || false}
-                            onChange={(e) =>
-                                setFormData({
-                                    ...formData,
-                                    disabilityCheck: e.target.checked,
-                                })
-                            }
+                            onChange={handleChange}
                             style={{ marginRight: '0.5rem' }}
                         />
                         <label htmlFor="disabilityCheck" style={{ fontWeight: 'bold' }}>
@@ -401,9 +448,10 @@ export default function Registration() {
                     </div>
                 </div>
 
-                {/* Wenn Behindertenausweis gesetzt */}
+                {/* ---------------- Wenn Behindertenausweis gesetzt, zeige Grad + Datei + Markierungen ---------------- */}
                 {formData.disabilityCheck && (
                     <>
+                        {/* Grad der Behinderung */}
                         <div style={{ marginBottom: '1rem' }}>
                             <label
                                 htmlFor="disabilityDegree"
@@ -428,6 +476,7 @@ export default function Registration() {
                             />
                         </div>
 
+                        {/* Behindertenausweis hochladen */}
                         <div style={{ marginBottom: '1rem' }}>
                             <label
                                 htmlFor="disabilityCardImage"
@@ -448,10 +497,40 @@ export default function Registration() {
                                 }}
                             />
                         </div>
+
+                        {/* ---------------- Grad der Behinderung: Auswahl der Markierungen ---------------- */}
+                        <div style={{ marginBottom: '1rem' }}>
+                            <label
+                                style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 'bold' }}
+                            >
+                                Grad der Behinderung – Markierungen
+                            </label>
+
+                            {/* Grid-Container für alle Marks */}
+                            <div className="marks-grid">
+                                {disabilityMarks.map((mark) => (
+                                    <div key={mark.mark_code} className="mark-item">
+                                        <input
+                                            type="checkbox"
+                                            id={`mark-${mark.mark_code}`}
+                                            checked={selectedMarks.includes(mark.mark_code)}
+                                            onChange={() => handleMarkToggle(mark.mark_code)}
+                                            className="mark-checkbox"
+                                        />
+                                        <label
+                                            htmlFor={`mark-${mark.mark_code}`}
+                                            className="mark-label"
+                                        >
+                                            {mark.mark_code} – {mark.description}
+                                        </label>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
                     </>
                 )}
 
-                {/* Submit Button */}
+                {/* ---------------- Submit Button ---------------- */}
                 <button
                     type="submit"
                     disabled={loading}
