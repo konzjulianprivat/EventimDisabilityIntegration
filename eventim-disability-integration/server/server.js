@@ -878,12 +878,42 @@ app.post('/create-event', express.json(), async (req, res) => {
             // 3a) Create a new category_id
             const catId = uuidv4();
 
+            // Determine disability_support_for either from payload or via marks
+            let disabilitySupport = cat.disabilitySupport || null;
+            if (!disabilitySupport) {
+                for (const entry of cat.venueAreas) {
+                    const { rows: vaRows } = await client.query(
+                        'SELECT area_id FROM venue_areas WHERE id = $1',
+                        [entry.areaId]
+                    );
+                    const areaId = vaRows[0] && vaRows[0].area_id;
+                    if (areaId) {
+                        const { rows: markRows } = await client.query(
+                            'SELECT mark_code FROM disability_marks WHERE area_id = $1',
+                            [areaId]
+                        );
+                        for (const r of markRows) {
+                            const code = (r.mark_code || '').trim();
+                            if (code === 'G' || code === 'aG') {
+                                disabilitySupport = 'G';
+                            } else if (code === 'Bl') {
+                                disabilitySupport = 'Bl';
+                            } else if (code === 'Gl') {
+                                disabilitySupport = 'Gl';
+                            }
+                            if (disabilitySupport) break;
+                        }
+                    }
+                    if (disabilitySupport) break;
+                }
+            }
+
             // 3b) Insert into event_categories
             await client.query(
                 `INSERT INTO event_categories
-                     (id, event_id, name, price)
-                 VALUES ($1, $2, $3, $4)`,
-                [catId, eventId, cat.name || null, cat.price]
+                     (id, event_id, name, price, disability_support_for)
+                 VALUES ($1, $2, $3, $4, $5)`,
+                [catId, eventId, cat.name || null, cat.price, disabilitySupport]
             );
 
             // 3c) Now iterate over cat.venueAreas[], each one has { areaId, capacity }
