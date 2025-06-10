@@ -21,7 +21,7 @@ const credentials = require('./credentials.json')
 app.use(
     session({
         name: 'sid',                        // the name of the cookie (optional)
-        secret: 'credentials.sessionSecret',    // replace with an env var in production
+        secret: credentials.sessionSecret,    // replace with an env var in production
         resave: false,
         saveUninitialized: false,
         cookie: {
@@ -1204,33 +1204,33 @@ app.delete('/artists/:id', async (req, res) => {
     }
 });
 
-app.delete('/artists/:id', async (req, res) => {
-    const artistId = req.params.id;
-    try {
-        // 1) hole artist_image id
-        const { rows } = await client.query(
-            'SELECT artist_image FROM artists WHERE id = $1',
-            [artistId]
-        );
-        if (rows.length === 0) {
-            return res.status(404).json({ message: 'Artist nicht gefunden' });
-        }
-        const imageId = rows[0].artist_image;
-
-        // 2) lösche Künstler
-        await client.query('DELETE FROM artists WHERE id = $1', [artistId]);
-
-        // 3) lösche zugehöriges Bild, falls vorhanden
-        if (imageId) {
-            await client.query('DELETE FROM images WHERE id = $1', [imageId]);
-        }
-
-        return res.status(200).json({ message: 'Artist gelöscht' });
-    } catch (err) {
-        console.error('Delete-Artist error:', err);
-        return res.status(500).json({ message: 'Serverfehler beim Löschen des Künstlers' });
-    }
-});
+// app.delete('/artists/:id', async (req, res) => {
+//     const artistId = req.params.id;
+//     try {
+//         // 1) hole artist_image id
+//         const { rows } = await client.query(
+//             'SELECT artist_image FROM artists WHERE id = $1',
+//             [artistId]
+//         );
+//         if (rows.length === 0) {
+//             return res.status(404).json({ message: 'Artist nicht gefunden' });
+//         }
+//         const imageId = rows[0].artist_image;
+//
+//         // 2) lösche Künstler
+//         await client.query('DELETE FROM artists WHERE id = $1', [artistId]);
+//
+//         // 3) lösche zugehöriges Bild, falls vorhanden
+//         if (imageId) {
+//             await client.query('DELETE FROM images WHERE id = $1', [imageId]);
+//         }
+//
+//         return res.status(200).json({ message: 'Artist gelöscht' });
+//     } catch (err) {
+//         console.error('Delete-Artist error:', err);
+//         return res.status(500).json({ message: 'Serverfehler beim Löschen des Künstlers' });
+//     }
+// });
 
 // … ganz oben: express, client etc. importieren …
 
@@ -1768,6 +1768,14 @@ app.get('/event-accessibility', async (req, res) => {
 
 
 const client = new Client(credentials);
-client.connect();
+client.connect()
+    .then(() => {
+        console.log('DB connected');            // ← did this print?
+        app.listen(4000, () => console.log('Server listening on http://localhost:4000'));
+    })
+    .catch(err => {
+        console.error('Failed to connect to DB, exiting.', err);
+        process.exit(1);
+    });
 
 app.listen(4000, () => console.log('Server on port 4000'));
