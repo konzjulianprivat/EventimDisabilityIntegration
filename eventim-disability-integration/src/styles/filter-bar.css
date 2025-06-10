@@ -1,6 +1,6 @@
+/* filter-bar.css */
 /* -------------------------------------------------------------
-   Generische Filter‐Bar (FilterBar.css)
-   Stil: Eventim‐ähnlich, Blau (#005EA5), Grau/Weiß, kompakt
+   Generische Filter‐Bar (Eventim‐Style in Blau/Grau/Weiß)
 -------------------------------------------------------------*/
 .filter-bar-container {
     background-color: #fff;
@@ -10,7 +10,6 @@
     overflow: hidden;
 }
 
-/* Hauptzeile: Prefix‐Input + Toggle + Create‐Button */
 .filter-bar-main {
     display: flex;
     gap: 0.5rem;
@@ -19,48 +18,42 @@
     background-color: #f9f9f9;
 }
 
-/* Input für „startsWith“-Felder */
 .filter-input {
     flex: 1;
     font-size: 0.95rem;
     padding: 0.4rem 0.6rem;
     border: 1px solid #ccc;
     border-radius: 4px;
-    color: #333;
     background-color: #fff;
+    color: #333;
 }
 
-/* Toggle‐Button */
-.btn-toggle-filters {
-    background-color: #005ea5;
-    color: #fff;
+.btn-toggle-filters,
+.btn-create-entity {
     border: none;
     border-radius: 4px;
     font-size: 0.9rem;
     padding: 0.4rem 0.8rem;
     cursor: pointer;
     transition: background-color 0.2s ease;
+}
+
+.btn-toggle-filters {
+    background-color: #005ea5;
+    color: #fff;
 }
 .btn-toggle-filters:hover {
     background-color: #003f7f;
 }
 
-/* „Create‐Entity“-Button */
 .btn-create-entity {
     background-color: #007bff;
     color: #fff;
-    border: none;
-    border-radius: 4px;
-    font-size: 0.9rem;
-    padding: 0.4rem 0.8rem;
-    cursor: pointer;
-    transition: background-color 0.2s ease;
 }
 .btn-create-entity:hover {
     background-color: #0056b3;
 }
 
-/* Erweitertes Bereich (sichtbar, wenn showFilters=true) */
 .filter-bar-advanced {
     background-color: #fff;
     padding: 0.75rem 0.5rem;
@@ -70,34 +63,29 @@
     gap: 0.75rem;
 }
 
-/* Zeile pro „contains“-Filter */
 .filter-row {
     display: flex;
     align-items: center;
     gap: 0.5rem;
 }
 
-/* Label für „contains“-Felder */
 .filter-label {
     flex: 0 0 130px;
     font-size: 0.9rem;
     color: #333;
 }
 
-/* Input im erweiterten Bereich */
 .filter-input-adv {
     flex: 1;
     font-size: 0.9rem;
     padding: 0.35rem 0.6rem;
     border: 1px solid #ccc;
     border-radius: 4px;
-    color: #333;
     background-color: #fafafa;
+    color: #333;
 }
 
-/* -------------------------------------------------------------
-   Zusätzliche Styles für die TÜRENSPEZIFISCHEN Tour‐Filter
--------------------------------------------------------------*/
+/* Tourspezifische Filter */
 .filter-bar-tour-advanced {
     display: flex;
     flex-direction: column;
@@ -105,13 +93,11 @@
     margin-top: 0.5rem;
 }
 
-/* Gruppieren: zwei Felder nebeneinander */
 .filter-tour-row {
     display: flex;
     gap: 1rem;
 }
 
-/* Gemeinsame Label‐Styles für Tour‐Filter */
 .filter-tour-label {
     display: flex;
     flex-direction: column;
@@ -121,17 +107,7 @@
     flex: 1;
 }
 
-/* Date‐Input in Tour‐Filter */
-.filter-date-input {
-    font-size: 0.9rem;
-    padding: 0.35rem 0.5rem;
-    border: 1px solid #ccc;
-    border-radius: 4px;
-    background-color: #fff;
-    color: #333;
-}
-
-/* Select‐Input (einfacher Dropdown) */
+.filter-date-input,
 .filter-select {
     font-size: 0.9rem;
     padding: 0.35rem 0.5rem;
@@ -141,18 +117,34 @@
     color: #333;
 }
 
-/* Mehrfach‐Select (für Kategorien + Künstler) */
-.filter-multiselect {
-    font-size: 0.9rem;
-    padding: 0.3rem 0.4rem;
-    border: 1px solid #ccc;
-    border-radius: 4px;
-    background-color: #fff;
-    color: #333;
-    min-height: 2.5rem;
+/* Checkbox‐Sets für Kategorien & Künstler */
+.filter-tour-fieldset {
+    flex: 1;
 }
 
-/* Platzhaltertext, falls keine Kategorien o.Ä. */
-.filter-multiselect option {
-    padding: 0.25rem;
+.filter-fieldset-legend {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: #333;
+    margin-bottom: 0.5rem;
+}
+
+.filter-checkbox-group {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+
+.filter-checkbox-label {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+    font-size: 0.9rem;
+    color: #333;
+}
+
+.filter-checkbox-label input[type="checkbox"] {
+    width: 1em;
+    height: 1em;
+    accent-color: #005ea5;
 }

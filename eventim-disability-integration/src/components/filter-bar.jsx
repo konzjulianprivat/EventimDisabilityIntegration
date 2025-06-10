@@ -1,34 +1,19 @@
+// FilterBar.jsx
 import React, { useState, useEffect } from 'react';
 import PropTypes from 'prop-types';
 import { useRouter } from 'next/router';
 
 /**
  * Props:
- *   - items: Array der Objekte, die gefiltert werden sollen
- *   - onFiltered: Callback (Array) => void, wird aufgerufen, sobald sich die gefilterte Liste ändert
- *   - entityName: z.B. "Künstler" (wird für Button‐Label verwendet)
- *   - entityRoute: z.B. "artists" (Pfad für den „Create“-Button: /admin/{entityRoute}/create)
- *   - filterFields: Array von Feldern, die gefiltert werden sollen, z.B.
- *         [
- *           { key: 'name', label: 'Name', match: 'startsWith' },
- *           { key: 'biography', label: 'Biografie', match: 'contains' },
- *           { key: 'website', label: 'Website', match: 'contains' }
- *         ]
- *
- *   - filterStartDate, setFilterStartDate            (String yyyy-MM-dd)
- *   - filterEndDate, setFilterEndDate                  (String yyyy-MM-dd)
- *   - filterCategories, setFilterCategories            (Array of Strings)
- *   - categoryOptions                                  (Array of Strings)
- *   - filterVenue, setFilterVenue                      (String)
- *   - venueOptions                                     (Array of Strings)
- *   - filterCity, setFilterCity                        (String)
- *   - cityOptions                                      (Array of Strings)
- *   - filterArtists, setFilterArtists                  (Array of Strings)
- *   - artistOptions                                    (Array of Strings)
- *
- * Die Filter‐Logik:
- *   - Für match === 'startsWith' gilt: item[key].toLowerCase().startsWith(query)
- *   - Für match === 'contains' gilt: item[key].toLowerCase().includes(query)
+ *   - items: Array der Tour‐Objekte, wie sie das
+ *     /tours-detailed‐Endpoint liefert (u.a. .artistsList, .genresWithSubs)
+ *   - onFiltered: Callback (Array) => void
+ *   - entityName, entityRoute, filterFields  … (wie gehabt)
+ *   - filterStartDate, setFilterStartDate, …
+ *   - filterCategories, setFilterCategories, categoryOptions
+ *   - filterVenue, setFilterVenue, venueOptions
+ *   - filterCity, setFilterCity, cityOptions
+ *   - filterArtists, setFilterArtists, artistOptions
  */
 export default function FilterBar({
                                       items,
@@ -37,7 +22,7 @@ export default function FilterBar({
                                       entityRoute,
                                       filterFields,
 
-                                      // NEUE Props für "Tours"
+                                      // Tours‐Filter
                                       filterStartDate,
                                       setFilterStartDate,
                                       filterEndDate,
@@ -58,70 +43,104 @@ export default function FilterBar({
     const router = useRouter();
     const [showFilters, setShowFilters] = useState(false);
 
-    // State: für jedes Feld einen eigenen Query‐String
+    // Text‐Queries initialisieren
     const [queries, setQueries] = useState(
-        filterFields.reduce((acc, field) => {
-            acc[field.key] = '';
-            return acc;
-        }, {})
+        filterFields.reduce((acc, f) => ({ ...acc, [f.key]: '' }), {})
     );
 
-    // Hilfsfunktion: Filter anwenden, sobald sich queries oder items ändern
+    // Checkbox‐Toggle‐Handler
+    const toggleCategory = (cat) =>
+        filterCategories.includes(cat)
+            ? setFilterCategories(filterCategories.filter((c) => c !== cat))
+            : setFilterCategories([...filterCategories, cat]);
+
+    const toggleArtist = (artist) =>
+        filterArtists.includes(artist)
+            ? setFilterArtists(filterArtists.filter((a) => a !== artist))
+            : setFilterArtists([...filterArtists, artist]);
+
+    // Filter‐Anwendung
     const applyFilters = () => {
-        const normalized = items.filter((item) => {
-            return filterFields.every(({ key, match }) => {
+        const filtered = items.filter((item) => {
+            // 1) Text‐Filter (startsWith + contains)
+            const textOk = filterFields.every(({ key, match }) => {
                 const q = (queries[key] || '').trim().toLowerCase();
                 if (!q) return true;
-
-                const value = (item[key] || '').toString().toLowerCase();
-                if (match === 'startsWith') {
-                    return value.startsWith(q);
-                } else if (match === 'contains') {
-                    return value.includes(q);
-                }
-                return true;
+                const val = (item[key] || '').toString().toLowerCase();
+                return match === 'startsWith'
+                    ? val.startsWith(q)
+                    : val.includes(q);
             });
+            if (!textOk) return false;
+
+            if (filterCategories.length > 0) {
+                     const hasAcc = Array.isArray(item.events) &&
+                           item.events.some(ev =>
+                                 Array.isArray(ev.accessibility) &&
+                                 ev.accessibility.some(lbl => filterCategories.includes(lbl))
+                               );
+                     if (!hasAcc) return false;
+                   }
+
+            // 3) Künstler‐Filter:
+            //    item.artistsList: ['Alice', 'Bob', …]
+            if (filterArtists.length > 0) {
+                const hasArt = item.artistsList
+                    .some((name) => filterArtists.includes(name));
+                if (!hasArt) return false;
+            }
+
+            // 4) (Optional) Datum, Venue, Stadt …
+            //    je nachdem, wie Sie item strukturieren
+
+            return true;
         });
-        onFiltered(normalized);
+
+        onFiltered(filtered);
     };
 
-    // Jeden Query‐Änderungsauslöser oder Items‐Update neu filtern
-    useEffect(() => {
-        applyFilters();
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [queries, items]);
+    // bei jeder Abhängigkeit neu filtern
+    useEffect(applyFilters, [
+        queries,
+        items,
+        filterCategories,
+        filterArtists,
+        // … weitere falls genutzt
+    ]);
 
-    // Bei Änderung eines Input‐Felds queries updaten
-    const handleFieldChange = (key, value) => {
-        setQueries((prev) => ({ ...prev, [key]: value }));
-    };
+    const handleFieldChange = (key, val) =>
+        setQueries((prev) => ({ ...prev, [key]: val }));
 
     return (
         <div className="filter-bar-container">
             <div className="filter-bar-main">
-                {/* Die einfache Suchzeile ist jetzt das „startsWith“-Feld(en) */}
                 {filterFields
                     .filter((f) => f.match === 'startsWith')
-                    .map((field) => (
+                    .map((f) => (
                         <input
-                            key={field.key}
+                            key={f.key}
                             type="text"
                             className="filter-input"
-                            placeholder={`${field.label} suchen…`}
-                            value={queries[field.key]}
-                            onChange={(e) => handleFieldChange(field.key, e.target.value)}
+                            placeholder={`${f.label} suchen…`}
+                            value={queries[f.key]}
+                            onChange={(e) =>
+                                handleFieldChange(f.key, e.target.value)
+                            }
                         />
                     ))}
 
                 <button
                     className="btn-toggle-filters"
-                    onClick={() => setShowFilters((prev) => !prev)}
+                    onClick={() => setShowFilters((s) => !s)}
                 >
                     {showFilters ? 'Filter verbergen ▲' : 'Filter öffnen ▼'}
                 </button>
+
                 <button
                     className="btn-create-entity"
-                    onClick={() => router.push(`/admin/${entityRoute}/create`)}
+                    onClick={() =>
+                        router.push(`/admin/${entityRoute}/create`)
+                    }
                 >
                     + {entityName} erstellen
                 </button>
@@ -129,90 +148,91 @@ export default function FilterBar({
 
             {showFilters && (
                 <div className="filter-bar-advanced">
-                    {/* === Text‐Filter (match === 'contains') === */}
+                    {/* text‐contains */}
                     {filterFields
                         .filter((f) => f.match === 'contains')
-                        .map((field) => (
-                            <div className="filter-row" key={field.key}>
+                        .map((f) => (
+                            <div className="filter-row" key={f.key}>
                                 <label
                                     className="filter-label"
-                                    htmlFor={`${field.key}-filter`}
+                                    htmlFor={`${f.key}-filter`}
                                 >
-                                    {field.label} enthält:
+                                    {f.label} enthält:
                                 </label>
                                 <input
-                                    id={`${field.key}-filter`}
+                                    id={`${f.key}-filter`}
                                     type="text"
                                     className="filter-input-adv"
-                                    placeholder={`z.B. ${field.label} …`}
-                                    value={queries[field.key]}
+                                    placeholder={`z.B. ${f.label}…`}
+                                    value={queries[f.key]}
                                     onChange={(e) =>
-                                        handleFieldChange(field.key, e.target.value)
+                                        handleFieldChange(f.key, e.target.value)
                                     }
                                 />
                             </div>
                         ))}
 
-                    {/* === TÜRENSPEZIFISCHE ERWEITERTE FILTER (Start, Ende, Kategorien, Venue, Stadt, Künstler) === */}
                     <div className="filter-bar-tour-advanced">
                         <div className="filter-tour-row">
                             <label className="filter-tour-label">
                                 Start:
                                 <input
                                     type="date"
+                                    className="filter-date-input"
                                     value={filterStartDate}
                                     onChange={(e) =>
                                         setFilterStartDate(e.target.value)
                                     }
-                                    className="filter-date-input"
                                 />
                             </label>
                             <label className="filter-tour-label">
                                 Ende:
                                 <input
                                     type="date"
-                                    value={filterEndDate}
-                                    onChange={(e) => setFilterEndDate(e.target.value)}
                                     className="filter-date-input"
+                                    value={filterEndDate}
+                                    onChange={(e) =>
+                                        setFilterEndDate(e.target.value)
+                                    }
                                 />
                             </label>
                         </div>
 
                         <div className="filter-tour-row">
-                            <label className="filter-tour-label">
-                                Kategorien:
-                                <select
-                                    multiple
-                                    value={filterCategories}
-                                    onChange={(e) =>
-                                        setFilterCategories(
-                                            Array.from(
-                                                e.target.selectedOptions,
-                                                (o) => o.value
-                                            )
-                                        )
-                                    }
-                                    className="filter-multiselect"
-                                >
+                            <div className="filter-tour-fieldset">
+                                <div className="filter-fieldset-legend">
+                                    Kategorien:
+                                </div>
+                                <div className="filter-checkbox-group">
                                     {categoryOptions.map((opt) => (
-                                        <option key={opt} value={opt}>
+                                        <label
+                                            key={opt}
+                                            className="filter-checkbox-label"
+                                        >
+                                            <input
+                                                type="checkbox"
+                                                checked={filterCategories.includes(opt)}
+                                                onChange={() => toggleCategory(opt)}
+                                            />
                                             {opt}
-                                        </option>
+                                        </label>
                                     ))}
-                                </select>
-                            </label>
+                                </div>
+                            </div>
 
                             <label className="filter-tour-label">
                                 Venue:
                                 <select
-                                    value={filterVenue}
-                                    onChange={(e) => setFilterVenue(e.target.value)}
                                     className="filter-select"
+                                    value={filterVenue}
+                                    onChange={(e) =>
+                                        setFilterVenue(e.target.value)
+                                    }
                                 >
                                     <option value="">— Venue wählen —</option>
-                                    {venueOptions.map((opt) => (
-                                        <option key={opt} value={opt}>
-                                            {opt}
+                                    {venueOptions.map((v) => (
+                                        <option key={v} value={v}>
+                                            {v}
                                         </option>
                                     ))}
                                 </select>
@@ -223,44 +243,43 @@ export default function FilterBar({
                             <label className="filter-tour-label">
                                 Stadt:
                                 <select
-                                    value={filterCity}
-                                    onChange={(e) => setFilterCity(e.target.value)}
                                     className="filter-select"
+                                    value={filterCity}
+                                    onChange={(e) =>
+                                        setFilterCity(e.target.value)
+                                    }
                                 >
                                     <option value="">— Stadt wählen —</option>
-                                    {cityOptions.map((opt) => (
-                                        <option key={opt} value={opt}>
-                                            {opt}
+                                    {cityOptions.map((c) => (
+                                        <option key={c} value={c}>
+                                            {c}
                                         </option>
                                     ))}
                                 </select>
                             </label>
 
-                            <label className="filter-tour-label">
-                                Künstler:
-                                <select
-                                    multiple
-                                    value={filterArtists}
-                                    onChange={(e) =>
-                                        setFilterArtists(
-                                            Array.from(
-                                                e.target.selectedOptions,
-                                                (o) => o.value
-                                            )
-                                        )
-                                    }
-                                    className="filter-multiselect"
-                                >
-                                    {artistOptions.map((name) => (
-                                        <option key={name} value={name}>
-                                            {name}
-                                        </option>
+                            <div className="filter-tour-fieldset">
+                                <div className="filter-fieldset-legend">
+                                    Künstler:
+                                </div>
+                                <div className="filter-checkbox-group">
+                                    {artistOptions.map((a) => (
+                                        <label
+                                            key={a}
+                                            className="filter-checkbox-label"
+                                        >
+                                            <input
+                                                type="checkbox"
+                                                checked={filterArtists.includes(a)}
+                                                onChange={() => toggleArtist(a)}
+                                            />
+                                            {a}
+                                        </label>
                                     ))}
-                                </select>
-                            </label>
+                                </div>
+                            </div>
                         </div>
                     </div>
-                    {/* Ende: Tourspezifische erweiterte Filter */}
                 </div>
             )}
         </div>
@@ -276,11 +295,13 @@ FilterBar.propTypes = {
         PropTypes.shape({
             key: PropTypes.string.isRequired,
             label: PropTypes.string.isRequired,
-            match: PropTypes.oneOf(['startsWith', 'contains']).isRequired,
+            match: PropTypes.oneOf([
+                'startsWith',
+                'contains',
+            ]).isRequired,
         })
     ).isRequired,
 
-    // Props für erweiterte Tours‐Filter
     filterStartDate: PropTypes.string.isRequired,
     setFilterStartDate: PropTypes.func.isRequired,
     filterEndDate: PropTypes.string.isRequired,

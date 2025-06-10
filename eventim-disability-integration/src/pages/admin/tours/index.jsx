@@ -737,7 +737,13 @@ export default function ToursContent() {
                                         {/* 5) Event-Liste */}
                                         <div className="events-list">
                                             {Array.isArray(tour.events) &&
-                                                tour.events.map((ev) => {
+                                               (filterCategories.length > 0
+                                                   ? tour.events.filter(ev =>
+                                                               Array.isArray(ev.accessibility) &&
+                                                               ev.accessibility.some(lbl => filterCategories.includes(lbl))
+                                                             )
+                                                       : tour.events
+                                                   ).map((ev) => {
                                                     // Datum / Uhrzeit formatiert
                                                     const dateObj = new Date(ev.start_time);
                                                     const dateStr = dateObj.toLocaleDateString(
