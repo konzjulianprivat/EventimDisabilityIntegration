@@ -25,7 +25,6 @@ export default function EventCreation() {
     const [categories, setCategories] = useState([]);
 
     // Für jede Disability-Area: eigener Preis und eigene Kapazität
-    // Key ist die areaId, Wert ist String oder Zahl
     const [disabilityPriceMap, setDisabilityPriceMap] = useState({});
     const [disabilityCapacityMap, setDisabilityCapacityMap] = useState({});
 
@@ -34,7 +33,8 @@ export default function EventCreation() {
 
     // 1) Load tours, venues, artists
     useEffect(() => {
-        fetch('http://localhost:4000/tours')
+        // wir brauchen start_date und end_date für Validierung
+        fetch('http://localhost:4000/tours-detailed')
             .then(r => r.json())
             .then(d => setTours(d.tours));
 
@@ -165,13 +165,12 @@ export default function EventCreation() {
         setDisabilityCapacityMap(cm => ({ ...cm, [areaId]: val }));
     };
 
-    // 6) Hilfsfunktion: Gesamtkapazität summieren (kann für normale Kategorien bleiben)
-    const getTotalCapacityForCategory = cat => {
-        return cat.venueAreas.reduce((sum, entry) => {
-            const cap = parseInt(entry.capacity, 10);
-            return sum + (isNaN(cap) ? 0 : cap);
-        }, 0);
-    };
+    // 6) Hilfsfunktion: Gesamtkapazität summieren (normale Kategorien)
+    const getTotalCapacityForCategory = cat =>
+        cat.venueAreas.reduce(
+            (sum, entry) => sum + (parseInt(entry.capacity, 10) || 0),
+            0
+        );
 
     const handleSubmit = async e => {
         e.preventDefault();
@@ -185,7 +184,32 @@ export default function EventCreation() {
             return;
         }
 
-        // 7) Validierung normale Kategorien
+        // ─── Zeit‐Validierung ───
+        const selectedTour = tours.find(t => t.id === tourId);
+        if (selectedTour) {
+            const tourStart = new Date(selectedTour.start_date);
+            const tourEnd = new Date(selectedTour.end_date);
+            const door = new Date(doorTime);
+            if (door < tourStart || door > tourEnd) {
+                setMessage('Einlasszeit muss zwischen Tour-Start und Tour-Ende liegen');
+                setLoading(false);
+                return;
+            }
+            const start = new Date(startTime);
+            if (start <= door || start < tourStart || start > tourEnd) {
+                setMessage('Beginn muss nach Einlasszeit liegen und innerhalb der Tour-Daten sein');
+                setLoading(false);
+                return;
+            }
+            const end = new Date(endTime);
+            if (end <= start || end < tourStart || end > tourEnd) {
+                setMessage('Ende muss nach Beginn liegen und innerhalb der Tour-Daten sein');
+                setLoading(false);
+                return;
+            }
+        }
+
+        // ─── Normale Kategorien validieren ───
         for (const cat of categories) {
             if (!cat.name || !cat.price) {
                 setMessage('Alle Kategorien benötigen Namen und Preis');
@@ -206,10 +230,16 @@ export default function EventCreation() {
             }
         }
 
-        // 8) Validierung Disability-Kategorien – jede Behinderten-Area einzeln prüfen
-        //    Zuerst: Liste aller disability_category_for-Areas des gewählten Venues
-        const disabilityAreas = venueAreas.filter(va => va.disability_category_for != null);
-        //    Für jede Area sicherstellen, dass Price und Capacity gesetzt wurden
+        // ─── Disability-Kategorien validieren ───
+        const disabilityAreas = venueAreas.filter(
+            va => va.disability_category_for != null
+        );
+        // wenn keine Disability-Areas, muss mindestens eine normale Kategorie existieren
+        if (disabilityAreas.length === 0 && categories.length === 0) {
+            setMessage('Mindestens eine Kategorie muss definiert werden');
+            setLoading(false);
+            return;
+        }
         for (const va of disabilityAreas) {
             const price = disabilityPriceMap[va.id];
             const cap = disabilityCapacityMap[va.id];
@@ -225,15 +255,29 @@ export default function EventCreation() {
             }
         }
 
+        // ─── Gesamtkapazität prüfen ───
+        const normalCap = categories.reduce(
+            (sum, cat) => sum + getTotalCapacityForCategory(cat),
+            0
+        );
+        const disCap = disabilityAreas.reduce(
+            (sum, va) => sum + (parseInt(disabilityCapacityMap[va.id], 10) || 0),
+            0
+        );
+        if (normalCap + disCap <= 0) {
+            setMessage('Gesamtkapazität muss größer als 0 sein');
+            setLoading(false);
+            return;
+        }
+
         try {
-            // 9) Baue komplettes categories-Array inkl. Disability-Kategorien
+            // baue categories inkl. Disability
             const disabilityCategories = disabilityAreas.map(va => ({
-                name: va.name,                  // Bereichsname als Kategorien-Name
+                name: va.name,
                 price: disabilityPriceMap[va.id],
                 disabilitySupport: va.disability_category_for,
                 venueAreas: [{ areaId: va.id, capacity: disabilityCapacityMap[va.id] }]
             }));
-
             const allCats = [...categories, ...disabilityCategories];
 
             const payload = {
@@ -248,7 +292,7 @@ export default function EventCreation() {
             });
             const data = await res.json();
             if (res.ok) {
-                setMessage(`Event erstellt`);
+                setMessage('Event erstellt');
                 setFormData({
                     tourId: '',
                     venueId: '',
@@ -283,7 +327,9 @@ export default function EventCreation() {
                 <div
                     style={{
                         padding: '0.75rem',
-                        backgroundColor: message.includes('erstellt') ? '#d4edda' : '#f8d7da',
+                        backgroundColor: message.includes('erstellt')
+                            ? '#d4edda'
+                            : '#f8d7da',
                         color: message.includes('erstellt') ? '#155724' : '#721c24',
                         borderRadius: '4px',
                         marginBottom: '1rem'
