@@ -1,0 +1,32 @@
+.homepage-scroller-container {
+    width: 100%;
+    overflow: hidden;
+    position: relative;
+    margin-top: 50px;
+}
+
+.homepage-scroller {
+    display: flex;
+    animation: scroll 40s linear infinite;
+}
+
+.homepage-scroller-img {
+    width: 200px;
+    height: auto;
+    margin-right: 10px;
+    border-radius: 12px;
+    transition: transform 0.3s ease-in-out;
+}
+
+.homepage-scroller-img:hover {
+    transform: scale(1.05);
+}
+
+@keyframes scroll {
+    0% {
+        transform: translateX(0);
+    }
+    100% {
+        transform: translateX(-50%);
+    }
+}

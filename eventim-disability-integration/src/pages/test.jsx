@@ -64,9 +64,9 @@ const EventCard = ({ event, title }) => (
             ) : (
                 <>
                     <span className="tourPage-not-available">zur Zeit nicht verfügbar</span>
-                    <button ><a href="/notImplemented" className="btn btn-outline">Infos
-                        anzeigen</a>
-                    </button>
+                    <a href="/notImplemented">
+                        <button className="btn btn-outline">Infos anzeigen</button>
+                    </a>
                 </>
             )}
         </div>
