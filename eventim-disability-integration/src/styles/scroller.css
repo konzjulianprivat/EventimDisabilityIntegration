@@ -1,6 +1,6 @@
 .homepage-scroller-container {
     width: 100%;
-    overflow: hidden;
+    overflow: visible;
     position: relative;
     margin-top: 50px;
 }
@@ -11,15 +11,21 @@
 }
 
 .homepage-scroller-img {
-    width: 200px;
-    height: auto;
-    margin-right: 10px;
+    width: auto;
+    height: 250px;
     border-radius: 12px;
     transition: transform 0.3s ease-in-out;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    object-fit: cover;
+    object-position: center;
 }
 
 .homepage-scroller-img:hover {
-    transform: scale(1.05);
+    transform: scale(1.1);
 }
 
 @keyframes scroll {
