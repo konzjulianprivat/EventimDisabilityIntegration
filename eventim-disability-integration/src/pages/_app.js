@@ -7,6 +7,7 @@ import '../styles/squareTourCard.css';
 import '../styles/filter-bar.css';
 import '../styles/artists.css';
 import '../styles/tours.css';
+import '../styles/AS-Login.css';
 import NavBar from '../components/nav-bar.jsx';
 import Footer from '../components/footer.jsx';
 import Head from 'next/head';
