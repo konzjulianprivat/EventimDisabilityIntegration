@@ -1,56 +1,88 @@
-import React, { useState } from 'react';
-
-const sampleEvent = {
-    title: 'AB/CD',
-    date: 'Samstag, 27.09.2025',
-    time: '20:30',
-    location: 'KAISERSLAUTERN',
-    venue: 'Irish House',
-    imageUrl: '/pictures/sample-event.jpg',
-    categories: [
-        {
-            id: 1,
-            name: 'Kategorie 1',
-            description: 'Eintrittskarte',
-            type: 'Normalpreis',
-            price: 23.69,
-        },
-        {
-            id: 2,
-            name: 'Kategorie 2',
-            description: 'Eintrittskarte',
-            type: 'Normalpreis',
-            price: 28.50,
-        },
-        // …add more if you need
-    ],
-};
+import React, { useEffect, useState } from 'react';
+import { useRouter } from 'next/router';
+import { API_BASE_URL } from '../../../../config';
 
 export default function EventPage() {
-    const [qty, setQty] = useState(1);
-    const [selectedCat, setSelectedCat] = useState(sampleEvent.categories[0].id);
+    const router = useRouter();
+    const { artist, tour, event } = router.query;
 
-    const currentCat = sampleEvent.categories.find(c => c.id === selectedCat);
-    const total = (qty * currentCat.price).toFixed(2).replace('.', ',');
+    const [eventData, setEventData] = useState(null);
+    const [categories, setCategories] = useState([]);
+    const [error, setError] = useState('');
+    const [loading, setLoading] = useState(true);
+
+    const [qty, setQty] = useState(1);
+    const [selectedCat, setSelectedCat] = useState(null);
+
+    useEffect(() => {
+        if (!artist || !tour || !event) return;
+        const load = async () => {
+            try {
+                const res = await fetch(`${API_BASE_URL}/event-details/${event}`);
+                if (!res.ok) throw new Error('Fetch failed');
+                const data = await res.json();
+
+                if (data.event.tour_id !== tour || !(data.artistIds || []).includes(artist)) {
+                    setError('Event passt nicht zur Tour oder zum Künstler');
+                    setLoading(false);
+                    return;
+                }
+
+                setEventData(data.event);
+                setCategories(data.categories || []);
+                setSelectedCat(data.categories && data.categories[0] ? data.categories[0].id : null);
+                setLoading(false);
+            } catch (err) {
+                console.error(err);
+                setError('Fehler beim Laden des Events');
+                setLoading(false);
+            }
+        };
+        load();
+    }, [artist, tour, event]);
+
+    const currentCat = categories.find((c) => c.id === selectedCat) || {};
+    const total = (qty * (currentCat.price || 0)).toFixed(2).replace('.', ',');
+
+    if (loading) return <div>Loading …</div>;
+    if (error) return <div>{error}</div>;
+    if (!eventData) return <div>Event nicht gefunden</div>;
+
+    const formatDate = (d) =>
+        new Date(d).toLocaleDateString('de-DE', {
+            weekday: 'long',
+            day: '2-digit',
+            month: '2-digit',
+            year: 'numeric',
+        });
+    const formatTime = (d) =>
+        new Date(d).toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' });
 
     return (
         <div className="event-container">
             {/* ————— HEADER ————— */}
             <header className="event-header">
                 <div className="header-info">
-                    <h1 className="event-title">{sampleEvent.title}</h1>
+                    <h1 className="event-title">{eventData.tourTitle}</h1>
                     <div className="event-meta">
                         <div className="meta-item">
-                            <span className="icon-calendar" /> {sampleEvent.date} | {sampleEvent.time}
+                            <span className="icon-calendar" /> {formatDate(eventData.start_time)} | {formatTime(eventData.start_time)}
                         </div>
                         <div className="meta-item">
-                            <span className="icon-location" /> {sampleEvent.location} |{' '}
-                            <a href="#" className="venue-link">{sampleEvent.venue}</a>
+                            <span className="icon-location" /> {eventData.cityName} |{' '}
+                            <a href="#" className="venue-link">{eventData.venueName}</a>
                         </div>
                     </div>
                 </div>
                 <div className="event-hero">
-                    <img src={sampleEvent.imageUrl} alt={sampleEvent.title} />
+                    <img
+                        src={
+                            eventData.tourImage
+                                ? `${API_BASE_URL}/image/${eventData.tourImage}`
+                                : '/placeholder-tour.png'
+                        }
+                        alt={eventData.tourTitle || 'Event'}
+                    />
                 </div>
             </header>
 
@@ -61,9 +93,9 @@ export default function EventPage() {
                     <div className="card-row">
                         <div className="row-label">1. Bitte wähle die Anzahl der Tickets:</div>
                         <div className="row-control">
-                            <button onClick={() => setQty(q => Math.max(1, q - 1))}>−</button>
+                            <button onClick={() => setQty((q) => Math.max(1, q - 1))}>−</button>
                             <span className="qty-value">{qty}</span>
-                            <button onClick={() => setQty(q => q + 1)}>+</button>
+                            <button onClick={() => setQty((q) => q + 1)}>+</button>
                         </div>
                     </div>
 
@@ -73,7 +105,7 @@ export default function EventPage() {
                     </div>
 
                     {/* Kategorien */}
-                    {sampleEvent.categories.map(cat => (
+                    {categories.map((cat) => (
                         <div
                             key={cat.id}
                             className={`category-item${selectedCat === cat.id ? ' selected' : ''}`}
@@ -81,9 +113,9 @@ export default function EventPage() {
                         >
                             <div className="col name">
                                 <div className="cat-name">{cat.name}</div>
-                                <div className="cat-desc">{cat.description}</div>
+                                <div className="cat-desc" />
                             </div>
-                            <div className="col type">{cat.type}</div>
+                            <div className="col type">{cat.disability_support_for || 'Normalpreis'}</div>
                             <div className="col price">
                                 <span>€ {cat.price.toFixed(2).replace('.', ',')}</span>
                                 <input
@@ -106,7 +138,8 @@ export default function EventPage() {
                     {/* Note */}
                     <div className="note">
                         Angezeigte Preise inkl. der gesetzl. MwSt., Vorverkaufsgebühr,
-                        <a href="#"> Buchungsgebühr von max. € 0,00</a><br/>
+                        <a href="#"> Buchungsgebühr von max. € 0,00</a>
+                        <br />
                         zzgl. <a href="#">Versandkosten</a>.
                     </div>
                 </div>
