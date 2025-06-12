@@ -1766,57 +1766,6 @@ app.get('/event-accessibility', async (req, res) => {
     }
 });
 
-// Liefert Detailinformationen zu einem Event inklusive Kategorien und zugehörigen Künstler-IDs
-app.get('/event-details/:id', async (req, res) => {
-    const eventId = req.params.id;
-    try {
-        const { rows } = await client.query(
-            `SELECT
-                e.id,
-                e.tour_id,
-                e.venue_id,
-                e.description,
-                e.start_time,
-                e.end_time,
-                e.door_time,
-                v.name  AS "venueName",
-                c.name  AS "cityName",
-                t.title AS "tourTitle",
-                t.tour_image AS "tourImage"
-             FROM events e
-                JOIN tours t   ON t.id = e.tour_id
-                JOIN venues v  ON v.id = e.venue_id
-                JOIN cities c  ON c.id = v.city_id
-             WHERE e.id = $1`,
-            [eventId]
-        );
-
-        if (rows.length === 0) {
-            return res.status(404).json({ message: 'Event nicht gefunden' });
-        }
-        const event = rows[0];
-
-        const { rows: artistRows } = await client.query(
-            'SELECT artist_id FROM tour_artists WHERE tour_id = $1',
-            [event.tour_id]
-        );
-        const artistIds = artistRows.map((r) => r.artist_id);
-
-        const { rows: catRows } = await client.query(
-            `SELECT id, name, price, disability_support_for
-             FROM event_categories
-             WHERE event_id = $1
-             ORDER BY name`,
-            [eventId]
-        );
-
-        return res.status(200).json({ event, categories: catRows, artistIds });
-    } catch (err) {
-        console.error('Error in /event-details:', err);
-        return res.status(500).json({ message: 'Fehler beim Laden des Events' });
-    }
-});
-
 
 const client = new Client(credentials);
 client.connect()
