@@ -42,7 +42,7 @@ export default function EventPage() {
     }, [artist, tour, event]);
 
     const currentCat = categories.find((c) => c.id === selectedCat) || {};
-    const total = (qty * (currentCat.price || 0)).toFixed(2).replace('.', ',');
+    const total = (qty * Number(currentCat.price || 0)).toFixed(2).replace('.', ',');
 
     if (loading) return <div>Loading …</div>;
     if (error) return <div>{error}</div>;
@@ -117,7 +117,7 @@ export default function EventPage() {
                             </div>
                             <div className="col type">{cat.disability_support_for || 'Normalpreis'}</div>
                             <div className="col price">
-                                <span>€ {cat.price.toFixed(2).replace('.', ',')}</span>
+                                <span>€ {Number(cat.price).toFixed(2).replace('.', ',')}</span>
                                 <input
                                     type="radio"
                                     name="category"

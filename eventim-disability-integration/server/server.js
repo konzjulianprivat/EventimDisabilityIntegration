@@ -1810,7 +1810,12 @@ app.get('/event-details/:id', async (req, res) => {
             [eventId]
         );
 
-        return res.status(200).json({ event, categories: catRows, artistIds });
+        const categories = catRows.map((c) => ({
+            ...c,
+            price: c.price !== null ? parseFloat(c.price) : null,
+        }));
+
+        return res.status(200).json({ event, categories, artistIds });
     } catch (err) {
         console.error('Error in /event-details:', err);
         return res.status(500).json({ message: 'Fehler beim Laden des Events' });
