@@ -12,6 +12,7 @@ import '../styles/footer.css';
 import '../styles/scroller.css';
 import '../styles/smallTourCard.css';
 import '../styles/navBar.css';
+import '../styles/events.css';
 
 import NavBar from '../components/nav-bar.jsx';
 import Footer from '../components/footer.jsx';

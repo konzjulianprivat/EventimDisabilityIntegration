@@ -1,0 +1,207 @@
+/* 1) Reset & globals */
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: Arial, sans-serif; color: #333; }
+
+/* 2) Container */
+.event-container {
+    width:  100%;
+    background: #fff;
+}
+
+/* 3) HEADER: full-width black with white text */
+.event-header {
+    width: 100%;
+    background: #000;
+    color: #fff;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 24px 20px;
+}
+.header-info { display: flex; flex-direction: column; gap: 12px; margin-left: 10%}
+.event-title { font-size: 2rem; color: white; }
+.event-meta { display: flex; flex-direction: column; gap: 6px; font-size: 1rem; }
+.meta-item { display: flex; align-items: center; gap: 6px; }
+.meta-item .icon-calendar::before { content: '📅'; }
+.meta-item .icon-location::before { content: '📍'; }
+.venue-link {
+    color: #fff;
+    text-decoration: none;
+    border-bottom: 1px solid rgba(255,255,255,0.5);
+}
+.venue-link:hover { border-color: #fff; }
+.event-hero {margin-right: 10%;}
+.event-hero img {
+    width: 300px;
+    height: 300px;
+    border-radius: 4px;
+}
+
+/* 4) Ticket section */
+.ticket-section {
+    padding: 24px 20px;
+    margin-left: 10%;
+    margin-right: 10%;
+}
+
+/* 5) Card wrapper */
+.ticket-card {
+    border: 1px solid #eee;
+    border-radius: 8px;
+    overflow: hidden;
+    background: #fff;
+}
+
+/* 6) Rows 1 & 2 */
+.card-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 16px 20px;
+    border-bottom: 1px solid #eee;
+}
+.card-row:last-of-type {
+    /* keep border-bottom beneath “2.”; categories handle their own borders */
+}
+.row-label { font-size: 1.2rem; font-weight: 500; }
+
+/* 7) Quantity control */
+.row-control {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+.row-control button {
+    width: 40px;
+    height: 40px;
+    background: #FFC400;
+    border: none;
+    border-radius: 4px;
+    font-size: 1.5rem;
+    color: #fff;
+    cursor: pointer;
+}
+.qty-value {
+    width: 32px;
+    text-align: center;
+    font-size: 1.1rem;
+}
+
+/* 8) Category items as grid */
+.category-item {
+    display: grid;
+    grid-template-columns: 1fr 1fr auto;
+    align-items: center;
+    padding: 16px 20px;
+    border-top: 1px solid #eee;
+    cursor: pointer;
+}
+.category-item.selected {
+    /* optionally highlight */
+}
+.col.name { display: flex; flex-direction: column; gap: 4px; }
+.cat-name { font-weight: 600; }
+.cat-desc { font-size: 0.9rem; color: #666; }
+.col.type {
+    text-align: center;
+    font-size: 0.95rem;
+    color: #666;
+}
+.col.price {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    justify-content: flex-end;
+}
+.col.price input[type="radio"] {
+    accent-color: #28a745;
+    width: 1.2rem;
+    height: 1.2rem;
+}
+
+/* 9) Action row (cart button) */
+.action-row {
+    display: flex;
+    justify-content: flex-end;
+    padding: 16px 20px;
+}
+.total-button {
+    background: #009ee3;
+    color: #fff;
+    border: none;
+    border-radius: 24px;
+    padding: 12px 24px;
+    font-size: 1rem;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+}
+.total-button .icon-cart::before { content: '🛒'; }
+
+/* 10) Note (right-aligned) */
+.note {
+    font-size: 0.75rem;
+    color: #777;
+    text-align: right;
+    padding: 0 20px 20px;
+    line-height: 1.4;
+}
+.note a {
+    color: #009ee3;
+    text-decoration: none;
+    border-bottom: 1px solid transparent;
+}
+.note a:hover { border-color: #009ee3; }
+
+/* 11) Accordions (same as before) */
+.accordion details { border-top: 1px solid #eee; }
+.accordion details:first-child { border-top: none; }
+.accordion summary {
+    list-style: none;
+    cursor: pointer;
+    padding: 12px 20px;
+    position: relative;
+    font-weight: 600;
+}
+.accordion summary::-webkit-details-marker { display: none; }
+.accordion summary:after {
+    content: '▼';
+    position: absolute;
+    right: 20px;
+    top: 50%;
+    transform: translateY(-50%);
+}
+.accordion details[open] summary:after { content: '▲'; }
+.accordion div {
+    padding: 12px 20px;
+    font-size: 0.9rem;
+    color: #555;
+    border-bottom: 1px solid #eee;
+}
+
+/* 12) Responsive tweaks */
+@media (max-width: 700px) {
+    .event-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 16px;
+    }
+    .event-hero img {
+        width: 100%;
+        max-width: 300px;
+    }
+    .card-row,
+    .action-row,
+    .note {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+    .action-row {
+        justify-content: flex-start;
+    }
+    .total-button {
+        width: 100%;
+        justify-content: center;
+    }
+}

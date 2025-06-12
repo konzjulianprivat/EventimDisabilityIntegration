@@ -25,8 +25,7 @@ body, html {
 }
 
 .content {
-    padding: 0.5rem;
-    margin-top: 2%; /* Account for fixed navbar height */
+    margin-top: 4%; /* Account for fixed navbar height */
     flex: 1;
     overflow: hidden;
 }

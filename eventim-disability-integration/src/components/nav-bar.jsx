@@ -148,19 +148,6 @@ export default function NavBar() {
                 </div>
 
                 <div className="icons">
-                    <Image
-                        src="/pictures/language_icon.png"
-                        alt="Language"
-                        width={24}
-                        height={24}
-                    />
-                    <Image
-                        src="/pictures/favourites_icon.png"
-                        alt="Favorites"
-                        width={24}
-                        height={24}
-                    />
-
                     {loading ? null : loggedIn ? (
                         <div
                             className={`dropdown profile ${

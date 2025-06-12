@@ -1,95 +1,132 @@
 import React, { useState } from 'react';
 
-const eventDetailsPage = {
-    title: 'Clueso - Weihnachten zu Hause',
-    date: 'Montag, 29.12.2025 | 19:30',
-    location: 'ERFURT | Messehalle Erfurt',
+const sampleEvent = {
+    title: 'AB/CD',
+    date: 'Samstag, 27.09.2025',
+    time: '20:30',
+    location: 'KAISERSLAUTERN',
+    venue: 'Irish House',
+    imageUrl: '/pictures/sample-event.jpg',
     categories: [
-        { id: 1, name: 'Kategorie 1', type: 'Sitzplatz', price: 85.0, available: true },
-        { id: 2, name: 'Kategorie 2', type: 'Sitzplatz', price: 75.0, available: false },
-        { id: 3, name: 'Kategorie 3', type: 'Stehplatz', price: 66.0, available: true },
-        { id: 4, name: 'Disabled', type: 'Sitzplatz', price: 45.0, available: true, show: true },
+        {
+            id: 1,
+            name: 'Kategorie 1',
+            description: 'Eintrittskarte',
+            type: 'Normalpreis',
+            price: 23.69,
+        },
+        {
+            id: 2,
+            name: 'Kategorie 2',
+            description: 'Eintrittskarte',
+            type: 'Normalpreis',
+            price: 28.50,
+        },
+        // …add more if you need
     ],
 };
 
-export default function EventDetailsPage() {
-    const [quantity, setQuantity] = useState(2);
-    const [selectedCategory, setSelectedCategory] = useState(null);
+export default function EventPage() {
+    const [qty, setQty] = useState(1);
+    const [selectedCat, setSelectedCat] = useState(sampleEvent.categories[0].id);
 
-    const handleQuantity = (delta) => {
-        setQuantity((prev) => Math.max(1, prev + delta));
-    };
-
-    const total = selectedCategory
-        ? (eventDetailsPage.categories.find((c) => c.id === selectedCategory)?.price || 0) * quantity
-        : 0;
+    const currentCat = sampleEvent.categories.find(c => c.id === selectedCat);
+    const total = (qty * currentCat.price).toFixed(2).replace('.', ',');
 
     return (
-        <div className="page">
-            <div className="content">
-                <div className="event-header">
-                    <div className="event-info">
-                        <h1>{eventDetailsPage.title}</h1>
-                        <p><strong>{eventDetailsPage.date}</strong></p>
-                        <p>{eventDetailsPage.location}</p>
-                    </div>
-                    <div className="event-image">
-                        <img
-                            src="/pictures/TestPictures/Test-Picture-EventCard.jpg"
-                            alt="Event Banner"
-                            className="banner-img"
-                        />
-                    </div>
-                </div>
-
-                <div className="ticket-section">
-                    <div className="ticket-box">
-                        <h3>Bestplatzbuchung</h3>
-                        <p>Du wählst den Preis - wir die besten verfügbaren Plätze</p>
-                    </div>
-
-                    <h4 className="ticket-heading">1. Bitte wähle die Anzahl der Tickets:</h4>
-                    <div className="quantity-selector">
-                        <button onClick={() => handleQuantity(-1)}>-</button>
-                        <span>{quantity}</span>
-                        <button onClick={() => handleQuantity(1)}>+</button>
-                    </div>
-
-                    <h4 className="ticket-heading">2. Bitte wähle die Platzkategorie:</h4>
-                    <div className="categories">
-                        {eventDetailsPage.categories.map((cat) =>
-                            cat.show !== false ? (
-                                <div
-                                    key={cat.id}
-                                    className={`category-card ${cat.available ? 'available' : 'unavailable'}`}
-                                >
-                                    <div>
-                                        <strong>{cat.name}</strong> <br />
-                                        <span>{cat.type}</span>
-                                    </div>
-                                    <div>
-                                        <span>€ {cat.price.toFixed(2)}</span>
-                                        <input
-                                            type="radio"
-                                            name="ticket-category"
-                                            disabled={!cat.available}
-                                            checked={selectedCategory === cat.id}
-                                            onChange={() => setSelectedCategory(cat.id)}
-                                            className="radio-btn"
-                                        />
-                                    </div>
-                                </div>
-                            ) : null
-                        )}
-                    </div>
-
-                    {selectedCategory && (
-                        <div className="summary-box">
-                            <strong>{quantity} Ticket(s), € {total.toFixed(2)}</strong>
+        <div className="event-container">
+            {/* ————— HEADER ————— */}
+            <header className="event-header">
+                <div className="header-info">
+                    <h1 className="event-title">{sampleEvent.title}</h1>
+                    <div className="event-meta">
+                        <div className="meta-item">
+                            <span className="icon-calendar" /> {sampleEvent.date} | {sampleEvent.time}
                         </div>
-                    )}
+                        <div className="meta-item">
+                            <span className="icon-location" /> {sampleEvent.location} |{' '}
+                            <a href="#" className="venue-link">{sampleEvent.venue}</a>
+                        </div>
+                    </div>
                 </div>
-            </div>
+                <div className="event-hero">
+                    <img src={sampleEvent.imageUrl} alt={sampleEvent.title} />
+                </div>
+            </header>
+
+            {/* ————— TICKET PICKER ————— */}
+            <section className="ticket-section">
+                <div className="ticket-card">
+                    {/* 1. Anzahl */}
+                    <div className="card-row">
+                        <div className="row-label">1. Bitte wähle die Anzahl der Tickets:</div>
+                        <div className="row-control">
+                            <button onClick={() => setQty(q => Math.max(1, q - 1))}>−</button>
+                            <span className="qty-value">{qty}</span>
+                            <button onClick={() => setQty(q => q + 1)}>+</button>
+                        </div>
+                    </div>
+
+                    {/* 2. Kategorie */}
+                    <div className="card-row">
+                        <div className="row-label">2. Bitte wähle die Platzkategorie:</div>
+                    </div>
+
+                    {/* Kategorien */}
+                    {sampleEvent.categories.map(cat => (
+                        <div
+                            key={cat.id}
+                            className={`category-item${selectedCat === cat.id ? ' selected' : ''}`}
+                            onClick={() => setSelectedCat(cat.id)}
+                        >
+                            <div className="col name">
+                                <div className="cat-name">{cat.name}</div>
+                                <div className="cat-desc">{cat.description}</div>
+                            </div>
+                            <div className="col type">{cat.type}</div>
+                            <div className="col price">
+                                <span>€ {cat.price.toFixed(2).replace('.', ',')}</span>
+                                <input
+                                    type="radio"
+                                    name="category"
+                                    checked={selectedCat === cat.id}
+                                    readOnly
+                                />
+                            </div>
+                        </div>
+                    ))}
+
+                    {/* Action row */}
+                    <div className="action-row">
+                        <button className="total-button">
+                            <span className="icon-cart" /> {qty} Ticket{qty > 1 ? 's' : ''}, € {total}
+                        </button>
+                    </div>
+
+                    {/* Note */}
+                    <div className="note">
+                        Angezeigte Preise inkl. der gesetzl. MwSt., Vorverkaufsgebühr,
+                        <a href="#"> Buchungsgebühr von max. € 0,00</a><br/>
+                        zzgl. <a href="#">Versandkosten</a>.
+                    </div>
+                </div>
+
+                {/* ————— ACCORDIONS ————— */}
+                <div className="accordion">
+                    <details>
+                        <summary>Versandmöglichkeiten</summary>
+                        <div>Hier stehen Ihre Versandoptionen …</div>
+                    </details>
+                    <details>
+                        <summary>Informationen zur Buchung</summary>
+                        <div>Buchungsinformationen …</div>
+                    </details>
+                    <details>
+                        <summary>Informationen zum Veranstalter</summary>
+                        <div>Veranstalter-Infos …</div>
+                    </details>
+                </div>
+            </section>
         </div>
     );
 }
