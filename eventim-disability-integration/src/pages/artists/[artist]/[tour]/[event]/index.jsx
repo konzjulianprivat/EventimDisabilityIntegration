@@ -1,6 +1,6 @@
-import React, { useEffect, useState } from 'react';
+import React, {Fragment, useEffect, useState} from 'react';
 import { useRouter } from 'next/router';
-import { API_BASE_URL } from '../../../../config';
+import { API_BASE_URL } from '../../../../../config';
 
 export default function EventPage() {
     const router = useRouter();
@@ -42,7 +42,7 @@ export default function EventPage() {
     }, [artist, tour, event]);
 
     const currentCat = categories.find((c) => c.id === selectedCat) || {};
-    const total = (qty * Number(currentCat.price || 0)).toFixed(2).replace('.', ',');
+    const total = (qty * (currentCat.price || 0)).toFixed(2).replace('.', ',');
 
     if (loading) return <div>Loading …</div>;
     if (error) return <div>{error}</div>;
@@ -86,8 +86,74 @@ export default function EventPage() {
                 </div>
             </header>
 
+            <section className="ticket-section">
+                <label className="new-label">NEW</label>
+                <h2 className="section-title">Ticketbuchung für Menschen mit Schwerbehinderung</h2>
+                <div className="ticket-card" style={{borderColor: "purple"}}>
+                    {/* 1. Anzahl */}
+                    <div className="card-row">
+                        <div className="row-label">
+                            1. Bitte wähle die Anzahl der Tickets:
+                            <div className="row-note"> Bitte beachte, dass du nur Tickets für dich selbst buchen kannst.</div>
+                        </div>
+                        <div className="row-control">
+                            <button onClick={() => setQty((q) => Math.max(1, q - 1))}>−</button>
+                            <span className="qty-value">{qty}</span>
+                            <button onClick={() => setQty((q) => q + 1)}>+</button>
+                        </div>
+                    </div>
+
+                    {/* 2. Kategorie */}
+                    <div className="card-row">
+                        <div className="row-label">2. Bitte wähle die Platzkategorie:</div>
+                    </div>
+
+                    {/* Kategorien */}
+                    {categories
+                        .filter((cat) => cat.disability_support_for != null)
+                        .map((cat) => (
+                            <div
+                                key={cat.id}
+                                className={`category-item${selectedCat === cat.id ? ' selected' : ''}`}
+                                onClick={() => setSelectedCat(cat.id)}
+                            >
+                                <div className="col name">
+                                    <div className="cat-name">{cat.name} ({cat.disability_support_for.trim()})</div>
+                                    <div className="cat-desc" >ADD AREAS.DESCRIPTION HERE</div>
+                                </div>
+                                <div className="col type">{cat.disability_support_for == null ? 'Normalpreis': 'Reduzierter Preis'}</div>
+                                <div className="col price">
+                                    <span>€ {cat.price.toFixed(2).replace('.', ',')}</span>
+                                    <input
+                                        type="radio"
+                                        name="category"
+                                        checked={selectedCat === cat.id}
+                                        readOnly
+                                    />
+                                </div>
+                            </div>
+                    ))}
+
+                    {/* Action row */}
+                    <div className="action-row">
+                        <button className="total-button">
+                            <span className="icon-cart" /> {qty} Ticket{qty > 1 ? 's' : ''}, € {total}
+                        </button>
+                    </div>
+
+                    {/* Note */}
+                    <div className="note">
+                        Angezeigte Preise inkl. der gesetzl. MwSt., Vorverkaufsgebühr,
+                        <a href="#"> Buchungsgebühr von max. € 0,00</a>
+                        <br />
+                        zzgl. <a href="#">Versandkosten</a>.
+                    </div>
+                </div>
+            </section>
+
             {/* ————— TICKET PICKER ————— */}
             <section className="ticket-section">
+            <h2 className="section-title">Tickets buchen</h2>
                 <div className="ticket-card">
                     {/* 1. Anzahl */}
                     <div className="card-row">
@@ -105,27 +171,29 @@ export default function EventPage() {
                     </div>
 
                     {/* Kategorien */}
-                    {categories.map((cat) => (
-                        <div
-                            key={cat.id}
-                            className={`category-item${selectedCat === cat.id ? ' selected' : ''}`}
-                            onClick={() => setSelectedCat(cat.id)}
-                        >
-                            <div className="col name">
-                                <div className="cat-name">{cat.name}</div>
-                                <div className="cat-desc" />
+                    {categories
+                        .filter((cat) => cat.disability_support_for == null)
+                        .map((cat) => (
+                            <div
+                                key={cat.id}
+                                className={`category-item${selectedCat === cat.id ? ' selected' : ''}`}
+                                onClick={() => setSelectedCat(cat.id)}
+                            >
+                                <div className="col name">
+                                    <div className="cat-name">{cat.name}</div>
+                                    <div className="cat-desc">ADD ALL VENUE_AREAS.NAME FOR THAT CATEGORY HERE</div>
+                                </div>
+                                <div className="col type">{cat.disability_support_for || 'Normalpreis'}</div>
+                                <div className="col price">
+                                    <span>€ {cat.price.toFixed(2).replace('.', ',')}</span>
+                                    <input
+                                        type="radio"
+                                        name="category"
+                                        checked={selectedCat === cat.id}
+                                        readOnly
+                                    />
+                                </div>
                             </div>
-                            <div className="col type">{cat.disability_support_for || 'Normalpreis'}</div>
-                            <div className="col price">
-                                <span>€ {Number(cat.price).toFixed(2).replace('.', ',')}</span>
-                                <input
-                                    type="radio"
-                                    name="category"
-                                    checked={selectedCat === cat.id}
-                                    readOnly
-                                />
-                            </div>
-                        </div>
                     ))}
 
                     {/* Action row */}

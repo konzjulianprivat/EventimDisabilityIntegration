@@ -32,8 +32,9 @@ body { font-family: Arial, sans-serif; color: #333; }
 .venue-link:hover { border-color: #fff; }
 .event-hero {margin-right: 10%;}
 .event-hero img {
-    width: 300px;
-    height: 300px;
+    height: 200px;
+    width: 200px;
+    object-fit: cover;
     border-radius: 4px;
 }
 
@@ -43,7 +44,6 @@ body { font-family: Arial, sans-serif; color: #333; }
     margin-left: 10%;
     margin-right: 10%;
 }
-
 /* 5) Card wrapper */
 .ticket-card {
     border: 1px solid #eee;
@@ -147,6 +147,15 @@ body { font-family: Arial, sans-serif; color: #333; }
     padding: 0 20px 20px;
     line-height: 1.4;
 }
+
+.row-note {
+    font-size: 0.75rem;
+    color: #777;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
 .note a {
     color: #009ee3;
     text-decoration: none;
