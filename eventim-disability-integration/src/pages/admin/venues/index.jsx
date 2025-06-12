@@ -160,6 +160,22 @@ export default function VenuesContent() {
                     entityName="Venue"
                     entityRoute="venues"
                     filterFields={filterFields}
+                    filterCategories={[]}
+                    setFilterCategories={() => {}}
+                    categoryOptions={[]}
+                    filterStartDate={''}
+                    setFilterStartDate={() => {}}
+                    filterEndDate={''}
+                    setFilterEndDate={() => {}}
+                    filterVenue={''}
+                    setFilterVenue={() => {}}
+                    venueOptions={[]}
+                    filterCity={''}
+                    setFilterCity={() => {}}
+                    cityOptions={cities.map((c) => c.name)}
+                    filterArtists={[]}
+                    setFilterArtists={() => {}}
+                    artistOptions={[]}
                 />
             </div>
 
