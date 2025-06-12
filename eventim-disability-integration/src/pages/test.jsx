@@ -21,7 +21,7 @@ const eventData = [
     },
     {
         date: '14',
-        month: 'Feb.',
+        month: 'Jan.',
         year: '2026',
         weekday: 'Mi.',
         time: '20:00',
@@ -59,19 +59,21 @@ const EventCard = ({ event, title }) => (
             {event.available ? (
                 <>
                     <span className="tourPage-price">ab € {event.price}</span>
-                    <button className="btn btn-goOn">Weiter</button>
+                    <button className="btn btn-blue">Weiter</button>
                 </>
             ) : (
                 <>
                     <span className="tourPage-not-available">zur Zeit nicht verfügbar</span>
-                    <button className="btn btn-not-available">Infos anzeigen</button>
+                    <a href="/notImplemented">
+                        <button className="btn btn-outline">Infos anzeigen</button>
+                    </a>
                 </>
             )}
         </div>
     </div>
 );
 
-const WinterConcerts = () => {
+const tourContent = () => {
     return (
         <div className="tour-page-container">
             <div className="tour-page-header-flex">
@@ -86,16 +88,12 @@ const WinterConcerts = () => {
             </div>
 
             <div className="events-list">
-                {eventData.map((event) => (
-                    <EventCard 
-                        key={`${event.date}-${event.time}-${event.location}`} 
-                        event={event} 
-                        title={tourData.title} 
-                    />
+                {eventData.map((event, index) => (
+                    <EventCard event={event} title={tourData.title} />
                 ))}
             </div>
         </div>
     );
 };
 
-export default WinterConcerts;
+export default tourContent;
