@@ -20,10 +20,12 @@ export function useAuth() {
                     loading: false,
                     loggedIn: true,
                     user: {
-                        userId:    u.userId,
-                        email:     u.email,
-                        firstName: u.firstName,
-                        lastName:  u.lastName,
+                        userId:          u.userId,
+                        email:           u.email,
+                        firstName:       u.firstName,
+                        lastName:        u.lastName,
+                        disabilityCheck: u.disabilityCheck,
+                        disabilityMarks: u.disabilityMarks || [],
                     },
                 });
             } catch {
@@ -44,19 +46,23 @@ export function useAuth() {
                         loading: false,
                         loggedIn: true,
                         user: {
-                            userId:    data.user.userId,
-                            email:     data.user.email,
-                            firstName: data.user.firstName,
-                            lastName:  data.user.lastName,
+                            userId:          data.user.userId,
+                            email:           data.user.email,
+                            firstName:       data.user.firstName,
+                            lastName:        data.user.lastName,
+                            disabilityCheck: data.user.disabilityCheck,
+                            disabilityMarks: data.user.disabilityMarks || [],
                         },
                     });
                     localStorage.setItem(
                         'user',
                         JSON.stringify({
-                            userId:    data.user.userId,
-                            email:     data.user.email,
-                            firstName: data.user.firstName,
-                            lastName:  data.user.lastName,
+                            userId:          data.user.userId,
+                            email:           data.user.email,
+                            firstName:       data.user.firstName,
+                            lastName:        data.user.lastName,
+                            disabilityCheck: data.user.disabilityCheck,
+                            disabilityMarks: data.user.disabilityMarks || [],
                         })
                     );
                 } else {
