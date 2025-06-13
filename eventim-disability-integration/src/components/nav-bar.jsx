@@ -199,12 +199,15 @@ export default function NavBar() {
                                     className="login-button dropdown-logout"
                                     onClick={async () => {
                                         try {
+                                            const current =
+                                                window.location.pathname +
+                                                window.location.search;
                                             await fetch(`${API_BASE_URL}/logout`, {
                                                 method: 'POST',
                                                 credentials: 'include',
                                             });
                                             localStorage.removeItem('user');
-                                            window.location.href = '/';
+                                            window.location.href = current || '/';
                                         } catch (err) {
                                             console.error('Logout fehlgeschlagen:', err);
                                         }

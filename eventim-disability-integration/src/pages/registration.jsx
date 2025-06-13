@@ -5,6 +5,7 @@ import { useRouter } from 'next/router';
 
 export default function Registration() {
     const router = useRouter();
+    const { redirect } = router.query;
 
     const [formData, setFormData] = useState({
         firstName: '',
@@ -153,7 +154,13 @@ export default function Registration() {
 
             if (response.ok) {
                 setMessage('Registrierung erfolgreich! Weiterleitung...');
-                setTimeout(() => router.push('/login'), 2000);
+                const redirectParam = redirect
+                    ? `?redirect=${encodeURIComponent(redirect)}`
+                    : '';
+                setTimeout(
+                    () => router.push(`/login${redirectParam}`),
+                    2000
+                );
             } else {
                 setMessage(data.message || 'Registrierung fehlgeschlagen');
             }
