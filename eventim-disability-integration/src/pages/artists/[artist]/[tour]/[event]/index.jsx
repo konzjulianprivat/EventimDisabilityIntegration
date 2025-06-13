@@ -80,11 +80,10 @@ export default function EventPage() {
         disabledCategories.find((c) => c.id === selectedCat) || {};
     // determine which section is live
     const isDisabledCatSelected = Boolean(currentCat_disabled.id);
-    const isRegularCatSelected = !isDisabledCatSelected;
-
-    // only show real total when that section is active
-    const total = isRegularCatSelected ? (qty * (currentCat.price || 0)).toFixed(2).replace('.', ',') : '0,00';
-    const total_disabled = isDisabledCatSelected ? (qty_disabled * (currentCat_disabled.price || 0)).toFixed(2).replace('.', ',') : '0,00';
+    const regularTotal = qty * (currentCat.price || 0);
+    const disabledTotal = isDisabledCatSelected ? qty_disabled * (currentCat_disabled.price || 0) : 0;
+    const totalTickets = qty + (isDisabledCatSelected ? qty_disabled : 0);
+    const totalPriceFormatted = (regularTotal + disabledTotal).toFixed(2).replace('.', ',');
 
     if (loading) return <div>Loading …</div>;
     if (error) return <div>{error}</div>;
@@ -182,16 +181,7 @@ export default function EventPage() {
                                 </div>
                             </div>
                     ))}
-                    {/* Action row */}
-                    <div className="action-row">
-                        <button
-                            className="total-button"
-                            disabled={!isDisabledCatSelected}
-                        >
-                            <span className="icon-cart" />{' '}
-                            {isDisabledCatSelected ? `${qty_disabled} Ticket${qty_disabled > 1 ? 's' : ''}` : '1 Ticket'}, € {total_disabled}
-                        </button>
-                    </div>
+
 
                     {/* Note */}
                     <div className="note">
@@ -217,14 +207,14 @@ export default function EventPage() {
                         <div className="row-control">
                             <button
                                 onClick={() => setQty((q) => Math.max(1, q - 1))}
-                                disabled={!isRegularCatSelected || qty <= 1}
+                                disabled={qty <= 1}
                             >−</button>
                                 <span className="qty-value">
-                                    {isRegularCatSelected ? qty : 1}
+                                    {qty}
                                 </span>
                             <button
                                 onClick={() => setQty((q) => Math.min(8, q + 1))}
-                                disabled={!isRegularCatSelected || qty >= 8}
+                                disabled={qty >= 8}
                             >+</button>
                         </div>
                     </div>
@@ -262,16 +252,7 @@ export default function EventPage() {
                             </div>
                     ))}
 
-                    {/* Action row */}
-                    <div className="action-row">
-                        <button
-                            className="total-button"
-                             disabled={!isRegularCatSelected}
-                        >
-                            <span className="icon-cart" />{' '}
-                             {isRegularCatSelected ? `${qty} Ticket${qty > 1 ? 's' : ''}` : '1 Ticket'}, € {total}
-                        </button>
-                    </div>
+
 
                     {/* Note */}
                     <div className="note">
@@ -280,6 +261,13 @@ export default function EventPage() {
                         <br />
                         zzgl. <a href="#">Versandkosten</a>.
                     </div>
+                </div>
+
+                <div className="action-row">
+                    <button className="total-button">
+                        <span className="icon-cart" />{' '}
+                        {`${totalTickets} Ticket${totalTickets > 1 ? 's' : ''}, € ${totalPriceFormatted}`}
+                    </button>
                 </div>
 
                 {/* ————— ACCORDIONS ————— */}
