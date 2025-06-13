@@ -119,7 +119,7 @@ export default function EventPage() {
                             >
                                 <div className="col name">
                                     <div className="cat-name">{cat.name} ({cat.disability_support_for.trim()})</div>
-                                    <div className="cat-desc" >ADD AREAS.DESCRIPTION HERE</div>
+                                    <div className="cat-desc" >{cat.area_description}</div>
                                 </div>
                                 <div className="col type">{cat.disability_support_for == null ? 'Normalpreis': 'Reduzierter Preis'}</div>
                                 <div className="col price">
@@ -181,7 +181,11 @@ export default function EventPage() {
                             >
                                 <div className="col name">
                                     <div className="cat-name">{cat.name}</div>
-                                    <div className="cat-desc">ADD ALL VENUE_AREAS.NAME FOR THAT CATEGORY HERE</div>
+                                    <div className="cat-desc">
+                                        {cat.venue_area_names
+                                            .map((n) => n.split(' - ').join(' '))
+                                            .join(', ')}
+                                    </div>
                                 </div>
                                 <div className="col type">{cat.disability_support_for || 'Normalpreis'}</div>
                                 <div className="col price">
