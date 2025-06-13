@@ -225,6 +225,7 @@ app.post('/login-user', async (req, res) => {
                     password,
                     first_name,
                     last_name,
+                    disability_check,
                     created_at,
                     updated_at
                 FROM users
@@ -247,6 +248,11 @@ app.post('/login-user', async (req, res) => {
         req.session.userId = user.user_id;
         req.session.email = user.email;
 
+        const { rows: markRows } = await client.query(
+            'SELECT mark_code FROM user_disability_marks WHERE user_id = $1',
+            [user.user_id]
+        );
+
         return res.status(200).json({
             message: 'Login erfolgreich',
             user: {
@@ -254,6 +260,8 @@ app.post('/login-user', async (req, res) => {
                 email: user.email,
                 firstName: user.first_name,
                 lastName: user.last_name,
+                disabilityCheck: user.disability_check,
+                disabilityMarks: markRows.map((m) => m.mark_code && m.mark_code.trim()),
             },
         });
     } catch (err) {
@@ -274,7 +282,7 @@ app.get('/session-status', async (req, res) => {
     try {
         // Hole first_name + last_name + email aus der DB via userId
         const { rows } = await client.query(
-            `SELECT first_name, last_name, email
+            `SELECT first_name, last_name, email, disability_check
        FROM users
        WHERE user_id = $1
        LIMIT 1`,
@@ -286,7 +294,13 @@ app.get('/session-status', async (req, res) => {
             return res.status(200).json({ loggedIn: false });
         }
 
-        const { first_name, last_name, email } = rows[0];
+        const { first_name, last_name, email, disability_check } = rows[0];
+
+        const { rows: markRows } = await client.query(
+            'SELECT mark_code FROM user_disability_marks WHERE user_id = $1',
+            [req.session.userId]
+        );
+
         return res.status(200).json({
             loggedIn: true,
             user: {
@@ -294,6 +308,8 @@ app.get('/session-status', async (req, res) => {
                 email:     email,
                 firstName: first_name,
                 lastName:  last_name,
+                disabilityCheck: disability_check,
+                disabilityMarks: markRows.map((m) => m.mark_code && m.mark_code.trim()),
             },
         });
     } catch (err) {

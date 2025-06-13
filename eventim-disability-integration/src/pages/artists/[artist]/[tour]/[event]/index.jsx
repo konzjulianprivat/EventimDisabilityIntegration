@@ -1,10 +1,13 @@
 import React, {Fragment, useEffect, useState} from 'react';
 import { useRouter } from 'next/router';
 import { API_BASE_URL } from '../../../../../config';
+import { useAuth } from '../../../../../hooks/useAuth';
 
 export default function EventPage() {
     const router = useRouter();
     const { artist, tour, event } = router.query;
+
+    const { loading: authLoading, loggedIn, user } = useAuth();
 
     const [eventData, setEventData] = useState(null);
     const [categories, setCategories] = useState([]);
@@ -42,8 +45,39 @@ export default function EventPage() {
         load();
     }, [artist, tour, event]);
 
+    const userMarks = (user && user.disabilityMarks) || [];
+    const showDisabledSection =
+        loggedIn && user?.disabilityCheck && categories.some((c) =>
+            c.disability_support_for &&
+            userMarks.includes(c.disability_support_for.trim())
+        );
+
+    const disabledCategories = categories.filter(
+        (c) =>
+            c.disability_support_for != null &&
+            loggedIn &&
+            user?.disabilityCheck &&
+            userMarks.includes(c.disability_support_for.trim())
+    );
+
+    const regularCategories = categories.filter(
+        (c) => c.disability_support_for == null
+    );
+
+    useEffect(() => {
+        if (categories.length === 0) return;
+        const allCats = [
+            ...(showDisabledSection ? disabledCategories : []),
+            ...regularCategories,
+        ];
+        if (!selectedCat || !allCats.some((c) => c.id === selectedCat)) {
+            setSelectedCat(allCats[0]?.id || null);
+        }
+    }, [categories, showDisabledSection, loggedIn, authLoading]);
+
     const currentCat = categories.find((c) => c.id === selectedCat) || {};
-    const currentCat_disabled = categories.find((c) => c.id === selectedCat && c.disability_support_for != null) || {};
+    const currentCat_disabled =
+        disabledCategories.find((c) => c.id === selectedCat) || {};
     // determine which section is live
     const isDisabledCatSelected = Boolean(currentCat_disabled.id);
     const isRegularCatSelected = !isDisabledCatSelected;
@@ -94,6 +128,7 @@ export default function EventPage() {
                 </div>
             </header>
 
+            {showDisabledSection && (
             <section className="ticket-section">
                 <label className="new-label">NEW</label>
                 <h2 className="section-title">Ticketbuchung für Menschen mit Schwerbehinderung</h2>
@@ -125,9 +160,7 @@ export default function EventPage() {
                     </div>
 
                     {/* Kategorien */}
-                    {categories
-                        .filter((cat) => cat.disability_support_for != null)
-                        .map((cat) => (
+                    {disabledCategories.map((cat) => (
                             <div
                                 key={cat.id}
                                 className={`category-item${selectedCat === cat.id ? ' selected' : ''}`}
@@ -169,6 +202,7 @@ export default function EventPage() {
                     </div>
                 </div>
             </section>
+            )}
 
             {/* ————— TICKET PICKER ————— */}
             <section className="ticket-section">
@@ -201,9 +235,7 @@ export default function EventPage() {
                     </div>
 
                     {/* Kategorien */}
-                    {categories
-                        .filter((cat) => cat.disability_support_for == null)
-                        .map((cat) => (
+                    {regularCategories.map((cat) => (
                             <div
                                 key={cat.id}
                                 className={`category-item${selectedCat === cat.id ? ' selected' : ''}`}
