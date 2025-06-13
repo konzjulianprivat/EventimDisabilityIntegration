@@ -86,7 +86,10 @@ export default function LoginPage() {
         }
         sessionStorage.setItem('preRegEmail', registerEmail.trim());
         sessionStorage.setItem('preRegPassword', registerPassword);
-        router.push('/registration');
+        const redirectParam = redirect
+            ? `?redirect=${encodeURIComponent(redirect)}`
+            : '';
+        router.push(`/registration${redirectParam}`);
     };
 
     return (
