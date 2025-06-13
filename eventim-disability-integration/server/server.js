@@ -1803,16 +1803,28 @@ app.get('/event-details/:id', async (req, res) => {
         const artistIds = artistRows.map((r) => r.artist_id);
 
         const { rows: catRows } = await client.query(
-            `SELECT id, name, price, disability_support_for
-             FROM event_categories
-             WHERE event_id = $1
-             ORDER BY name`,
+            `SELECT
+                 ec.id,
+                 ec.name,
+                 ec.price,
+                 ec.disability_support_for,
+                 ARRAY_REMOVE(ARRAY_AGG(a.name ORDER BY a.name), NULL) AS venue_area_names,
+                 MIN(a.description) AS area_description
+             FROM event_categories ec
+                  LEFT JOIN event_venue_areas eva ON eva.category_id = ec.id
+                  LEFT JOIN venue_areas va ON va.id = eva.venue_area_id
+                  LEFT JOIN areas a ON a.id = va.area_id
+             WHERE ec.event_id = $1
+             GROUP BY ec.id, ec.name, ec.price, ec.disability_support_for
+             ORDER BY ec.name`,
             [eventId]
         );
 
         const categories = catRows.map((c) => ({
             ...c,
             price: c.price !== null ? parseFloat(c.price) : null,
+            venue_area_names: c.venue_area_names || [],
+            area_description: c.area_description || null,
         }));
 
         return res.status(200).json({ event, categories, artistIds });
