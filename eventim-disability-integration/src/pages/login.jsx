@@ -4,6 +4,7 @@ import { useRouter } from 'next/router';
 
 export default function LoginPage() {
     const router = useRouter();
+    const { redirect } = router.query;
     const [activeTab, setActiveTab] = useState('login');
 
     // Login‐Form
@@ -56,7 +57,7 @@ export default function LoginPage() {
                         lastName:  data.user.lastName,
                     })
                 );
-                router.push('/').then(() => window.location.reload());
+                router.push(redirect || '/').then(() => window.location.reload());
             } else {
                 setLoginError(data.message || 'Ungültige Anmeldedaten.');
             }
