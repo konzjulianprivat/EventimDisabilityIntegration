@@ -81,6 +81,12 @@ body { font-family: Arial, sans-serif; color: #333; }
     color: #fff;
     cursor: pointer;
 }
+
+.row-control button:disabled {
+   background: #FFEB80;
+   cursor: default;
+}
+
 .qty-value {
     width: 32px;
     text-align: center;
@@ -137,6 +143,15 @@ body { font-family: Arial, sans-serif; color: #333; }
     gap: 8px;
     cursor: pointer;
 }
+.total-button:disabled {
+   opacity: 0.6;
+   cursor: default;
+}
+
+.total-button:hover {
+    background: #007bb5;
+}
+
 .total-button .icon-cart::before { content: '🛒'; }
 
 /* 10) Note (right-aligned) */

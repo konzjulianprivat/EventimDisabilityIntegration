@@ -12,6 +12,7 @@ export default function EventPage() {
     const [loading, setLoading] = useState(true);
 
     const [qty, setQty] = useState(1);
+    const [qty_disabled, setQty_disabled] = useState(1);
     const [selectedCat, setSelectedCat] = useState(null);
 
     useEffect(() => {
@@ -42,7 +43,14 @@ export default function EventPage() {
     }, [artist, tour, event]);
 
     const currentCat = categories.find((c) => c.id === selectedCat) || {};
-    const total = (qty * (currentCat.price || 0)).toFixed(2).replace('.', ',');
+    const currentCat_disabled = categories.find((c) => c.id === selectedCat && c.disability_support_for != null) || {};
+    // determine which section is live
+    const isDisabledCatSelected = Boolean(currentCat_disabled.id);
+    const isRegularCatSelected = !isDisabledCatSelected;
+
+    // only show real total when that section is active
+    const total = isRegularCatSelected ? (qty * (currentCat.price || 0)).toFixed(2).replace('.', ',') : '0,00';
+    const total_disabled = isDisabledCatSelected ? (qty_disabled * (currentCat_disabled.price || 0)).toFixed(2).replace('.', ',') : '0,00';
 
     if (loading) return <div>Loading …</div>;
     if (error) return <div>{error}</div>;
@@ -97,9 +105,17 @@ export default function EventPage() {
                             <div className="row-note"> Bitte beachte, dass du nur Tickets für dich selbst buchen kannst.</div>
                         </div>
                         <div className="row-control">
-                            <button onClick={() => setQty((q) => Math.max(1, q - 1))}>−</button>
-                            <span className="qty-value">{qty}</span>
-                            <button onClick={() => setQty((q) => q + 1)}>+</button>
+                            <button
+                                onClick={() => setQty_disabled((q) => Math.max(1, q - 1))}
+                                disabled={!isDisabledCatSelected || qty_disabled <= 1}
+                            >−</button>
+                                <span className="qty-value">
+                                    {isDisabledCatSelected ? qty_disabled : 1}
+                                </span>
+                            <button
+                                onClick={() => setQty_disabled((q) => Math.min(1, q + 1))}
+                                disabled={!isDisabledCatSelected || qty_disabled >= 1}
+                            >+</button>
                         </div>
                     </div>
 
@@ -133,11 +149,14 @@ export default function EventPage() {
                                 </div>
                             </div>
                     ))}
-
                     {/* Action row */}
                     <div className="action-row">
-                        <button className="total-button">
-                            <span className="icon-cart" /> {qty} Ticket{qty > 1 ? 's' : ''}, € {total}
+                        <button
+                            className="total-button"
+                            disabled={!isDisabledCatSelected}
+                        >
+                            <span className="icon-cart" />{' '}
+                            {isDisabledCatSelected ? `${qty_disabled} Ticket${qty_disabled > 1 ? 's' : ''}` : '1 Ticket'}, € {total_disabled}
                         </button>
                     </div>
 
@@ -153,15 +172,23 @@ export default function EventPage() {
 
             {/* ————— TICKET PICKER ————— */}
             <section className="ticket-section">
-            <h2 className="section-title">Tickets buchen</h2>
+            <h2 className="section-title">Reguläre Tickets buchen</h2>
                 <div className="ticket-card">
                     {/* 1. Anzahl */}
                     <div className="card-row">
                         <div className="row-label">1. Bitte wähle die Anzahl der Tickets:</div>
                         <div className="row-control">
-                            <button onClick={() => setQty((q) => Math.max(1, q - 1))}>−</button>
-                            <span className="qty-value">{qty}</span>
-                            <button onClick={() => setQty((q) => q + 1)}>+</button>
+                            <button
+                                onClick={() => setQty((q) => Math.max(1, q - 1))}
+                                disabled={!isRegularCatSelected || qty <= 1}
+                            >−</button>
+                                <span className="qty-value">
+                                    {isRegularCatSelected ? qty : 1}
+                                </span>
+                            <button
+                                onClick={() => setQty((q) => Math.min(8, q + 1))}
+                                disabled={!isRegularCatSelected || qty >= 8}
+                            >+</button>
                         </div>
                     </div>
 
@@ -202,8 +229,12 @@ export default function EventPage() {
 
                     {/* Action row */}
                     <div className="action-row">
-                        <button className="total-button">
-                            <span className="icon-cart" /> {qty} Ticket{qty > 1 ? 's' : ''}, € {total}
+                        <button
+                            className="total-button"
+                             disabled={!isRegularCatSelected}
+                        >
+                            <span className="icon-cart" />{' '}
+                             {isRegularCatSelected ? `${qty} Ticket${qty > 1 ? 's' : ''}` : '1 Ticket'}, € {total}
                         </button>
                     </div>
 
