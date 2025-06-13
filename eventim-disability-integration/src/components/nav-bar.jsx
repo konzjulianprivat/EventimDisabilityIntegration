@@ -219,7 +219,9 @@ export default function NavBar() {
                             type="button"
                             className="login-button"
                             onClick={() => {
-                                window.location.href = '/login';
+                                const current = window.location.pathname + window.location.search;
+                                const redirect = current !== '/' ? `?redirect=${encodeURIComponent(current)}` : '';
+                                window.location.href = `/login${redirect}`;
                             }}
                         >
                             Anmelden
