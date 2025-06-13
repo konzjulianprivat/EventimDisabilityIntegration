@@ -176,7 +176,10 @@ export default function EventPage() {
                 <div className="ticket-card">
                     {/* 1. Anzahl */}
                     <div className="card-row">
-                        <div className="row-label">1. Bitte wähle die Anzahl der Tickets:</div>
+                        <div className="row-label">
+                            1. Bitte wähle die Anzahl der Tickets:
+                            <div className="row-note"> Bitte beachte, dass du nur maximal 8 Tickets buchen auf einmal buchen kannst.</div>
+                        </div>
                         <div className="row-control">
                             <button
                                 onClick={() => setQty((q) => Math.max(1, q - 1))}
