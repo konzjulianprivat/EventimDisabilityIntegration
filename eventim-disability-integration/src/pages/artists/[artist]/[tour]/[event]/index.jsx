@@ -18,6 +18,29 @@ export default function EventPage() {
     const [qty_disabled, setQty_disabled] = useState(1);
     const [selectedCat, setSelectedCat] = useState(null);
 
+// Track category IDs already in cart
+    const [inCartItems, setInCartItems] = useState({});
+    const [successMessage, setSuccessMessage] = useState('');
+    const [errorMessage, setErrorMessage] = useState('');
+    const [lastClickedSection, setLastClickedSection] = useState(null);  // 'disabled' or 'regular'
+
+// Fetch existing cart items when logged in
+    useEffect(() => {
+        if (!loggedIn) return;
+        (async () => {
+            const res = await fetch(`${API_BASE_URL}/cart-items`, { credentials: 'include' });
+            if (!res.ok) return;
+            const { items } = await res.json();
+            // build a lookup by category
+            const map = {};
+            items.forEach(i => {
+                map[i.event_category_id] = { id: i.id, quantity: i.quantity };
+            });
+            setInCartItems(map);
+        })();
+    }, [loggedIn]);
+
+
     useEffect(() => {
         if (!artist || !tour || !event) return;
         const load = async () => {
@@ -85,6 +108,98 @@ export default function EventPage() {
     // only show real total when that section is active
     const total = isRegularCatSelected ? (qty * (currentCat.price || 0)).toFixed(2).replace('.', ',') : '0,00';
     const total_disabled = isDisabledCatSelected ? (qty_disabled * (currentCat_disabled.price || 0)).toFixed(2).replace('.', ',') : '0,00';
+
+    // Handler to add selected item to cart
+    const handleAddToCart = async () => {
+        if (!loggedIn) {
+            const redirect = encodeURIComponent(router.asPath);
+            router.push(`/login?redirect=${redirect}`);
+            return;
+        }
+
+        const existing = inCartItems[selectedCat];
+
+        // If regular and already in cart, PATCH new quantity
+        if (existing && isRegularCatSelected) {
+            const newQty = existing.quantity + qty;
+            if (newQty > 8) {
+                setLastClickedSection('regular');
+                setErrorMessage(`Maximal ${8 - existing.quantity} weitere Tickets möglich.`);
+                setTimeout(() => setErrorMessage(''), 3000);
+                return;
+            }
+            const res = await fetch(
+                `${API_BASE_URL}/cart-items/${existing.id}`,
+                {
+                    method: 'PATCH',
+                    credentials: 'include',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ quantity: newQty }),
+                }
+            );
+            if (res.ok) {
+                setInCartItems(prev => ({
+                    ...prev,
+                    [selectedCat]: { ...existing, quantity: newQty },
+                }));
+                setLastClickedSection('regular');
+                setSuccessMessage('Warenkorb aktualisiert!');
+                setTimeout(() => setSuccessMessage(''), 3000);
+            } else {
+                setLastClickedSection('regular');
+                setErrorMessage('Aktualisierung fehlgeschlagen.');
+                setTimeout(() => setErrorMessage(''), 3000);
+            }
+            return;
+        }
+
+        // Otherwise (new item OR disabled), do POST
+        const payload = {
+            eventId: event,
+            eventCategoryId: selectedCat,
+            quantity: isDisabledCatSelected ? qty_disabled : qty,
+            price: Number(
+                ((isDisabledCatSelected ? currentCat_disabled.price : currentCat.price) || 0)
+                    .toFixed(2)
+            ),
+        };
+        try {
+            const res = await fetch(`${API_BASE_URL}/cart-items`, {
+                method: 'POST',
+                credentials: 'include',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload),
+            });
+            if (res.status === 201) {
+                const newItem = await res.json(); // { id, event_category_id, quantity }
+                setInCartItems(prev => ({
+                    ...prev,
+                    [selectedCat]: { id: newItem.id, quantity: newItem.quantity },
+                }));
+                setLastClickedSection(isDisabledCatSelected ? 'disabled' : 'regular');
+                setSuccessMessage('Erfolgreich zum Warenkorb hinzugefügt!');
+                setErrorMessage('');
+                setTimeout(() => setSuccessMessage(''), 3000);
+            } else if (res.status === 409) {
+                setLastClickedSection(isDisabledCatSelected ? 'disabled' : 'regular');
+                setErrorMessage('Dieser Artikel ist bereits im Warenkorb.');
+                setSuccessMessage('');
+                setTimeout(() => setErrorMessage(''), 3000);
+            } else {
+                setLastClickedSection(isDisabledCatSelected ? 'disabled' : 'regular');
+                setErrorMessage('Fehler beim Hinzufügen zum Warenkorb.');
+                setSuccessMessage('');
+                setTimeout(() => setErrorMessage(''), 3000);
+            }
+        } catch (err) {
+            console.error('Error adding to cart:', err);
+            setLastClickedSection(isDisabledCatSelected ? 'disabled' : 'regular');
+            setErrorMessage('Fehler beim Hinzufügen zum Warenkorb.');
+            setSuccessMessage('');
+            setTimeout(() => setErrorMessage(''), 3000);
+        }
+    };
+
 
     if (loading) return <div>Loading …</div>;
     if (error) return <div>{error}</div>;
@@ -184,11 +299,21 @@ export default function EventPage() {
                     ))}
                     {/* Action row */}
                     <div className="action-row">
+                        {lastClickedSection === 'disabled' && successMessage && (
+                            <div className="success-message">{successMessage}</div>
+                        )}
+                        {lastClickedSection === 'disabled' && errorMessage && (
+                            <div className="error-message">{errorMessage}</div>
+                        )}
                         <button
                             className="total-button"
-                            disabled={!isDisabledCatSelected}
+                            disabled={
+                                !isDisabledCatSelected ||
+                                Boolean(inCartItems[selectedCat])
+                            }
+                            onClick={handleAddToCart}
                         >
-                            <span className="icon-cart" />{' '}
+                        <span className="icon-cart" />{' '}
                             {isDisabledCatSelected ? `${qty_disabled} Ticket${qty_disabled > 1 ? 's' : ''}` : '1 Ticket'}, € {total_disabled}
                         </button>
                     </div>
@@ -264,11 +389,21 @@ export default function EventPage() {
 
                     {/* Action row */}
                     <div className="action-row">
+                        {lastClickedSection === 'regular' && successMessage && (
+                            <div className="success-message">{successMessage}</div>
+                        )}
+                        {lastClickedSection === 'regular' && errorMessage && (
+                            <div className="error-message">{errorMessage}</div>
+                        )}
                         <button
                             className="total-button"
-                             disabled={!isRegularCatSelected}
+                            disabled={
+                                !isRegularCatSelected ||
+                                Boolean(inCartItems[selectedCat])
+                            }
+                            onClick={handleAddToCart}
                         >
-                            <span className="icon-cart" />{' '}
+                        <span className="icon-cart" />{' '}
                              {isRegularCatSelected ? `${qty} Ticket${qty > 1 ? 's' : ''}` : '1 Ticket'}, € {total}
                         </button>
                     </div>

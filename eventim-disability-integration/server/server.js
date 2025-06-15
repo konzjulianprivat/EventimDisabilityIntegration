@@ -1852,6 +1852,71 @@ app.get('/event-details/:id', async (req, res) => {
     }
 });
 
+// ── just after your session / client setup ──
+
+// Helper to find-or-create a cart
+async function getOrCreateCart(userId) {
+    // 1) Try to find
+    const { rows } = await client.query(
+        'SELECT id FROM carts WHERE user_id = $1',
+        [userId]
+    );
+    if (rows.length) return rows[0].id;
+
+    // 2) Otherwise create
+    const cartId = uuidv4();
+    await client.query(
+        'INSERT INTO carts (id, user_id) VALUES ($1, $2)',
+        [cartId, userId]
+    );
+    return cartId;
+}
+
+/**
+ * POST /cart-items
+ * Body: { eventId, eventCategoryId, quantity, price }
+ */
+app.post('/cart-items', async (req, res) => {
+    const userId = req.session.userId;
+    if (!userId) {
+        return res.status(401).json({ message: 'Not logged in' });
+    }
+
+    const { eventId, eventCategoryId, quantity, price } = req.body;
+    if (!eventId || !eventCategoryId || !quantity || !price) {
+        return res.status(400).json({ message: 'Missing parameters' });
+    }
+
+    try {
+        // ensure cart
+        const cartId = await getOrCreateCart(userId);
+
+        // reject duplicate
+        const dup = await client.query(
+            `SELECT 1 FROM cart_items
+       WHERE cart_id = $1 AND event_category_id = $2`,
+            [cartId, eventCategoryId]
+        );
+        if (dup.rows.length) {
+            return res.status(409).json({ message: 'Item already in cart' });
+        }
+
+        // insert snapshot
+        await client.query(
+            `INSERT INTO cart_items
+         (id, cart_id, event_id, event_category_id, quantity, price)
+       VALUES
+         ($1, $2, $3, $4, $5, $6)`,
+            [uuidv4(), cartId, eventId, eventCategoryId, quantity, price]
+        );
+
+        return res.status(201).json({ message: 'Added to cart' });
+    } catch (err) {
+        console.error('Error adding to cart:', err);
+        return res.status(500).json({ message: 'Server error' });
+    }
+});
+
 
 const client = new Client(credentials);
 client.connect()

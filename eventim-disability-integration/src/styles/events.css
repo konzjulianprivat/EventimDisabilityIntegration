@@ -130,6 +130,8 @@ body { font-family: Arial, sans-serif; color: #333; }
     display: flex;
     justify-content: flex-end;
     padding: 16px 20px;
+    align-items:  center;
+    gap: 1rem;
 }
 .total-button {
     background: #009ee3;
@@ -228,4 +230,20 @@ body { font-family: Arial, sans-serif; color: #333; }
         width: 100%;
         justify-content: center;
     }
+}
+.success-message {
+    color: #28a745;
+    background: #e6f4ea;
+    padding: 0.5rem 1rem;
+    border-radius: 4px;
+    font-size: 0.9rem;
+}
+
+/* Error box */
+.error-message {
+    color: #dc3545;
+    background: #f8d7da;
+    padding: 0.5rem 1rem;
+    border-radius: 4px;
+    font-size: 0.9rem;
 }
