@@ -148,6 +148,14 @@ export default function NavBar() {
                 </div>
 
                 <div className="icons">
+                    <a href="/cart" className="cart-icon">
+                        <Image
+                            src="/pictures/cart_icon.png"
+                            alt="Warenkorb"
+                            width={24}
+                            height={24}
+                        />
+                    </a>
                     {loading ? null : loggedIn ? (
                         <div
                             className={`dropdown profile ${

@@ -1403,7 +1403,7 @@ app.get('/tours-detailed', async (req, res) => {
                 // 2e) Künstler-Liste für diese Tour
                 const { rows: artistRows } = await client.query(
                     `
-                        SELECT a.name
+                        SELECT a.id, a.name
                         FROM tour_artists ta
                                  JOIN artists a ON a.id = ta.artist_id
                         WHERE ta.tour_id = $1
@@ -1412,6 +1412,7 @@ app.get('/tours-detailed', async (req, res) => {
                     [tour.id]
                 );
                 const artistsList = artistRows.map((r) => r.name);
+                const artistIds = artistRows.map((r) => r.id);
 
                 // 2f) Genres mit Subgenres:
                 const { rows: genreRows } = await client.query(
@@ -1452,6 +1453,7 @@ app.get('/tours-detailed', async (req, res) => {
                     eventCount,
                     cheapestPrice,
                     artistsList,
+                    artistIds,
                     genresWithSubs,
                     events: eventsWithAccess,
                 };
