@@ -250,3 +250,81 @@ nav-bar .dropdown-menu .dropdown-item:hover > .sub-menu {
 .nav-bar .dropdown.profile .dropdown-menu .dropdown-item {
     color: #333 !important;
 }
+
+/* NavBar.css additions at the bottom */
+
+.nav-bar .dropdown.cart .cart-menu {
+    width: 320px;           /* adjust to taste */
+    padding: 1rem;
+}
+
+.nav-bar .dropdown.cart .dropdown-menu {
+    /* override default left:0 */
+    left: auto;
+    right: 0;
+    /* give it a sensible width and allow it to scroll if it's too tall */
+    width: 470px;
+    max-height: calc(100vh - 100px);
+    overflow-y: auto;
+}
+
+/* ────────────── Mobile / small screens ────────────── */
+@media (max-width: 480px) {
+    .nav-bar .dropdown.cart .dropdown-menu {
+        /* take almost the full screen width on tiny devices */
+        width: calc(100vw - 2rem);
+        right: 1rem;
+        left: 1rem;
+    }
+}
+
+.nav-bar .cart-row {
+    display: flex;
+    align-items: center;
+    margin-bottom: 0.75rem;
+}
+
+.nav-bar .cart-info {
+    flex: 2;
+    display: flex;
+    flex-direction: column;
+}
+
+.nav-bar .cart-title {
+    font-weight: 600;
+    color: #333;
+}
+
+.nav-bar .cart-subtitle {
+    font-size: 0.85rem;
+    color: #666;
+}
+
+.nav-bar .cart-qty {
+    flex: 1;
+    text-align: center;
+    font-size: 1rem;
+    color: #333;
+}
+
+.nav-bar .cart-line-price {
+    flex: 1;
+    text-align: right;
+    font-size: 1rem;
+    color: #333;
+}
+
+.nav-bar .cart-summary {
+    display: flex;
+    justify-content: space-between;
+    padding: 0.5rem 0;
+    font-size: 0.95rem;
+    color: #333;
+}
+
+.nav-bar .dropdown.cart .cart-menu .dropdown-divider {
+    margin: 0.5rem 0;
+    border-top: 1px solid #e0e0e0;
+}
+
+/* reuse .login-button.dropdown-logout for the "Weiter" button */

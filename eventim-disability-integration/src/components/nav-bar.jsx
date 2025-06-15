@@ -15,8 +15,19 @@ export default function NavBar() {
     const eventsRef = useRef(null);
     const placesRef = useRef(null);
     const profileRef = useRef(null);
+    const cartRef = useRef(null);
 
     const { loading, loggedIn, user } = useAuth();
+
+    const [cartItems] = useState([
+        { id: 1, title: 'Rock Legends Tour', category: 'VIP', quantity: 2, price: 120.00 },
+        { id: 2, title: 'Acoustic Evenings', category: 'Standard', quantity: 3, price: 45.50 },
+        { id: 3, title: 'Electronic Fest', category: 'Early Bird', quantity: 1, price: 75.00 },
+    ]);
+    const totalQuantity = cartItems.reduce((sum, i) => sum + i.quantity, 0);
+    const totalPrice = cartItems
+        .reduce((sum, i) => sum + i.quantity * i.price, 0)
+        .toFixed(2);
 
     useEffect(() => {
         async function fetchGenres() {
@@ -148,14 +159,60 @@ export default function NavBar() {
                 </div>
 
                 <div className="icons">
-                    <a href="/cart" className="cart-icon">
-                        <Image
-                            src="/pictures/cart_icon.png"
-                            alt="Warenkorb"
-                            width={24}
-                            height={24}
-                        />
-                    </a>
+                    {/* CART DROPDOWN */}
+                    <div
+                        className={`dropdown cart ${openDropdown === 'cart' ? 'show' : ''}`}
+                        ref={cartRef}
+                    >
+                        <a
+                            href="#"
+                            className="dropdown-toggle cart-icon"
+                            onClick={(e) => {
+                                e.preventDefault();
+                                setOpenDropdown(prev => (prev === 'cart' ? null : 'cart'));
+                            }}
+                        >
+                            <Image
+                                src="/pictures/cart_icon.png"
+                                alt="Warenkorb"
+                                width={24}
+                                height={24}
+                            />
+                        </a>
+                        <div className="dropdown-menu cart-menu">
+                            {cartItems.map(item => (
+                                <div key={item.id} className="cart-row">
+                                    <div className="cart-info">
+                                        <span className="cart-title">{item.title}</span>
+                                        <span className="cart-subtitle">{item.category}</span>
+                                    </div>
+                                    <div className="cart-qty">{item.quantity}</div>
+                                    <div className="cart-line-price">
+                                        {(item.quantity * item.price).toFixed(2)} €
+                                    </div>
+                                </div>
+                            ))}
+
+                            <div className="dropdown-divider" />
+
+                            <div className="cart-summary">
+                    <span>
+                      Gesamt ({totalQuantity} Tickets):
+                    </span>
+                                <strong>
+                                    {totalPrice} €
+                                </strong>
+                            </div>
+
+                            <button
+                                type="button"
+                                className="login-button dropdown-logout"
+                                onClick={() => { /* handle continue */ }}
+                            >
+                                Weiter
+                            </button>
+                        </div>
+                    </div>
                     {loading ? null : loggedIn ? (
                         <div
                             className={`dropdown profile ${
