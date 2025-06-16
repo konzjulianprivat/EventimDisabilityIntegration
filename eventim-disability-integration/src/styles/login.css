@@ -8,6 +8,7 @@
 
 /* 2. Hauptüberschrift */
 .login-title {
+    padding-top: 2rem;
     font-size: 2rem;         /* Groß genug, aber nicht zu riesig */
     font-weight: 600;
     color: #1d3058;

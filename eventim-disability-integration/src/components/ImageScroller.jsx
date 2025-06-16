@@ -6,7 +6,7 @@ import React, { useState, useEffect } from "react";
 const ImageScroller = ({ tour }) => {
     // `tour` ist ein Array von { imageId, title, link }
     // Verdoppeln für Endlosschleife
-    const loopedTours = [...tour, ...tour];
+    const loopedTours = [...tour, ...tour, ...tour, ...tour, ...tour, ...tour, ...tour];
 
     // Hier speichern wir die gemappten Object-URLs
     const [urls, setUrls] = useState({}); // { [imageId]: objectURL }

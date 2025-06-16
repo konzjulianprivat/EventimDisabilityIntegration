@@ -1,7 +1,7 @@
 node_modules
-!/eventim-disability-integration/server/credentials.json
+*.json
 *.gz
-
+/eventim-disability-integration/server/credentials.json
 # Ignore all log files
 *.log
 # Ignore all npm debug files

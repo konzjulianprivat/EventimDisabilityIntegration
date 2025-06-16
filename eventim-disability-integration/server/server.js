@@ -225,6 +225,7 @@ app.post('/login-user', async (req, res) => {
                     password,
                     first_name,
                     last_name,
+                    disability_check,
                     created_at,
                     updated_at
                 FROM users
@@ -247,6 +248,11 @@ app.post('/login-user', async (req, res) => {
         req.session.userId = user.user_id;
         req.session.email = user.email;
 
+        const { rows: markRows } = await client.query(
+            'SELECT mark_code FROM user_disability_marks WHERE user_id = $1',
+            [user.user_id]
+        );
+
         return res.status(200).json({
             message: 'Login erfolgreich',
             user: {
@@ -254,6 +260,8 @@ app.post('/login-user', async (req, res) => {
                 email: user.email,
                 firstName: user.first_name,
                 lastName: user.last_name,
+                disabilityCheck: user.disability_check,
+                disabilityMarks: markRows.map((m) => m.mark_code && m.mark_code.trim()),
             },
         });
     } catch (err) {
@@ -274,7 +282,7 @@ app.get('/session-status', async (req, res) => {
     try {
         // Hole first_name + last_name + email aus der DB via userId
         const { rows } = await client.query(
-            `SELECT first_name, last_name, email
+            `SELECT first_name, last_name, email, disability_check
        FROM users
        WHERE user_id = $1
        LIMIT 1`,
@@ -286,7 +294,13 @@ app.get('/session-status', async (req, res) => {
             return res.status(200).json({ loggedIn: false });
         }
 
-        const { first_name, last_name, email } = rows[0];
+        const { first_name, last_name, email, disability_check } = rows[0];
+
+        const { rows: markRows } = await client.query(
+            'SELECT mark_code FROM user_disability_marks WHERE user_id = $1',
+            [req.session.userId]
+        );
+
         return res.status(200).json({
             loggedIn: true,
             user: {
@@ -294,6 +308,8 @@ app.get('/session-status', async (req, res) => {
                 email:     email,
                 firstName: first_name,
                 lastName:  last_name,
+                disabilityCheck: disability_check,
+                disabilityMarks: markRows.map((m) => m.mark_code && m.mark_code.trim()),
             },
         });
     } catch (err) {
@@ -1387,7 +1403,7 @@ app.get('/tours-detailed', async (req, res) => {
                 // 2e) Künstler-Liste für diese Tour
                 const { rows: artistRows } = await client.query(
                     `
-                        SELECT a.name
+                        SELECT a.id, a.name
                         FROM tour_artists ta
                                  JOIN artists a ON a.id = ta.artist_id
                         WHERE ta.tour_id = $1
@@ -1396,6 +1412,7 @@ app.get('/tours-detailed', async (req, res) => {
                     [tour.id]
                 );
                 const artistsList = artistRows.map((r) => r.name);
+                const artistIds = artistRows.map((r) => r.id);
 
                 // 2f) Genres mit Subgenres:
                 const { rows: genreRows } = await client.query(
@@ -1436,6 +1453,7 @@ app.get('/tours-detailed', async (req, res) => {
                     eventCount,
                     cheapestPrice,
                     artistsList,
+                    artistIds,
                     genresWithSubs,
                     events: eventsWithAccess,
                 };
@@ -1763,6 +1781,335 @@ app.get('/event-accessibility', async (req, res) => {
     } catch (err) {
         console.error('Error in /event-accessibility:', err);
         return res.status(500).json({ message: 'Fehler beim Abrufen der Accessibility-Labels' });
+    }
+});
+
+// Liefert Detailinformationen zu einem Event inklusive Kategorien und zugehörigen Künstler-IDs
+app.get('/event-details/:id', async (req, res) => {
+    const eventId = req.params.id;
+    try {
+        const { rows } = await client.query(
+            `SELECT
+                e.id,
+                e.tour_id,
+                e.venue_id,
+                e.description,
+                e.start_time,
+                e.end_time,
+                e.door_time,
+                v.name  AS "venueName",
+                c.name  AS "cityName",
+                t.title AS "tourTitle",
+                t.tour_image AS "tourImage"
+             FROM events e
+                JOIN tours t   ON t.id = e.tour_id
+                JOIN venues v  ON v.id = e.venue_id
+                JOIN cities c  ON c.id = v.city_id
+             WHERE e.id = $1`,
+            [eventId]
+        );
+
+        if (rows.length === 0) {
+            return res.status(404).json({ message: 'Event nicht gefunden' });
+        }
+        const event = rows[0];
+
+        const { rows: artistRows } = await client.query(
+            'SELECT artist_id FROM tour_artists WHERE tour_id = $1',
+            [event.tour_id]
+        );
+        const artistIds = artistRows.map((r) => r.artist_id);
+
+        const { rows: catRows } = await client.query(
+            `SELECT
+                 ec.id,
+                 ec.name,
+                 ec.price,
+                 ec.disability_support_for,
+                 ARRAY_REMOVE(ARRAY_AGG(a.name ORDER BY a.name), NULL) AS venue_area_names,
+                 MIN(a.description) AS area_description
+             FROM event_categories ec
+                  LEFT JOIN event_venue_areas eva ON eva.category_id = ec.id
+                  LEFT JOIN venue_areas va ON va.id = eva.venue_area_id
+                  LEFT JOIN areas a ON a.id = va.area_id
+             WHERE ec.event_id = $1
+             GROUP BY ec.id, ec.name, ec.price, ec.disability_support_for
+             ORDER BY ec.name`,
+            [eventId]
+        );
+
+        const categories = catRows.map((c) => ({
+            ...c,
+            price: c.price !== null ? parseFloat(c.price) : null,
+            venue_area_names: c.venue_area_names || [],
+            area_description: c.area_description || null,
+        }));
+
+        return res.status(200).json({ event, categories, artistIds });
+    } catch (err) {
+        console.error('Error in /event-details:', err);
+        return res.status(500).json({ message: 'Fehler beim Laden des Events' });
+    }
+});
+
+// ── just after your session / client setup ──
+
+// Helper to find-or-create a cart
+async function getOrCreateCart(userId) {
+    const { rows } = await client.query(
+        'SELECT id FROM carts WHERE user_id = $1',
+        [userId]
+    );
+    if (rows.length) return rows[0].id;
+
+    const cartId = uuidv4();
+    await client.query(
+        'INSERT INTO carts (id, user_id) VALUES ($1, $2)',
+        [cartId, userId]
+    );
+    return cartId;
+}
+
+/**
+ * POST /cart-items
+ * Body: { eventId, eventCategoryId, quantity, price }
+ */
+app.post('/cart-items', async (req, res) => {
+    const userId = req.session.userId;
+    if (!userId) {
+        return res.status(401).json({ message: 'Not logged in' });
+    }
+
+    let { eventId, eventCategoryId, quantity, price } = req.body;
+    if (!eventId || !eventCategoryId || !quantity || !price) {
+        return res.status(400).json({ message: 'Missing parameters' });
+    }
+
+    try {
+        // ensure cart exists
+        const cartId = await getOrCreateCart(userId);
+
+        // reject duplicate
+        const dup = await client.query(
+            `SELECT 1 FROM cart_items
+             WHERE cart_id = $1 AND event_category_id = $2`,
+            [cartId, eventCategoryId]
+        );
+        if (dup.rows.length) {
+            return res.status(409).json({ message: 'Item already in cart' });
+        }
+
+        // gather category info
+        const { rows: catInfo } = await client.query(
+            'SELECT event_id, disability_support_for FROM event_categories WHERE id = $1',
+            [eventCategoryId]
+        );
+        if (catInfo.length === 0) {
+            return res.status(400).json({ message: 'Invalid category' });
+        }
+        const catEventId = catInfo[0].event_id;
+        const isDisabledCat = catInfo[0].disability_support_for !== null;
+
+        // verify eventId from body matches category's event_id
+        eventId = catEventId;
+
+        // quantity limits
+        if (isDisabledCat) {
+            // only one disabled ticket per event across all categories
+            const { rows: dRows } = await client.query(
+                `SELECT COALESCE(SUM(ci.quantity),0) AS qty
+                 FROM cart_items ci
+                         JOIN event_categories ec ON ec.id = ci.event_category_id
+                 WHERE ci.cart_id = $1 AND ec.event_id = $2 AND ec.disability_support_for IS NOT NULL`,
+                [cartId, catEventId]
+            );
+            const disabledQty = Number(dRows[0].qty) || 0;
+            if (disabledQty >= 1) {
+                return res.status(400).json({ message: 'Disabled ticket already in cart' });
+            }
+            quantity = 1; // enforce
+        } else {
+            // total regular tickets across event may not exceed 8
+            const { rows: rRows } = await client.query(
+                `SELECT COALESCE(SUM(ci.quantity),0) AS qty
+                 FROM cart_items ci
+                         JOIN event_categories ec ON ec.id = ci.event_category_id
+                 WHERE ci.cart_id = $1 AND ec.event_id = $2 AND ec.disability_support_for IS NULL`,
+                [cartId, catEventId]
+            );
+            const regularQty = Number(rRows[0].qty) || 0;
+            if (regularQty + Number(quantity) > 8) {
+                return res.status(400).json({ message: 'Regular ticket limit exceeded' });
+            }
+        }
+
+        // insert and return the new id & quantity
+        const { rows } = await client.query(
+            `INSERT INTO cart_items
+         (id, cart_id, event_id, event_category_id, quantity, price)
+       VALUES
+         ($1, $2, $3, $4, $5, $6)
+       RETURNING id, quantity;`,
+            [uuidv4(), cartId, eventId, eventCategoryId, quantity, price]
+        );
+
+        const newItem = rows[0];
+        return res.status(201).json({
+            id: newItem.id,
+            quantity: newItem.quantity
+        });
+    } catch (err) {
+        console.error('Error adding to cart:', err);
+        return res.status(500).json({ message: 'Server error' });
+    }
+});
+
+// GET /cart-items
+app.get('/cart-items', async (req, res) => {
+    const userId = req.session.userId;
+    if (!userId) return res.status(401).json({ message: 'Not logged in' });
+
+    try {
+        // 1) Find existing cart
+        const { rows: cartRows } = await client.query(
+            'SELECT id FROM carts WHERE user_id = $1',
+            [userId]
+        );
+        if (cartRows.length === 0) {
+            return res.json({ items: [] });
+        }
+        const cartId = cartRows[0].id;
+
+        // 2) Fetch items, ordered by the correct timestamp column
+        const { rows } = await client.query(
+            `
+                SELECT
+                    ci.id,
+                    ci.event_id,
+                    ec.id      AS event_category_id,
+                    ec.disability_support_for,
+                    t.title    AS title,
+                    ec.name    AS category,
+                    ci.quantity,
+                    ci.price
+                FROM cart_items ci
+                         JOIN events e            ON e.id = ci.event_id
+                         JOIN tours t             ON t.id = e.tour_id
+                         JOIN event_categories ec ON ec.id = ci.event_category_id
+                WHERE ci.cart_id = $1
+                ORDER BY ci.added_at
+            `,
+            [cartId]
+        );
+
+        return res.json({ items: rows });
+    } catch (err) {
+        console.error('Error fetching cart items:', err);
+        return res.status(500).json({ message: 'Server error' });
+    }
+});
+
+
+
+// PATCH /cart-items/:id
+app.patch('/cart-items/:id', async (req, res) => {
+    const userId = req.session.userId;
+    if (!userId) return res.status(401).json({ message: 'Not logged in' });
+
+    const cartItemId = req.params.id;
+    const { quantity } = req.body;
+    if (typeof quantity !== 'number') {
+        return res.status(400).json({ message: 'Missing quantity' });
+    }
+
+    try {
+        // ensure that this item actually belongs to user’s cart
+        const cartId = await getOrCreateCart(userId);
+
+        // get item details
+        const { rows: itemRows } = await client.query(
+            `SELECT ci.quantity, ec.event_id, ec.disability_support_for
+             FROM cart_items ci
+                      JOIN event_categories ec ON ec.id = ci.event_category_id
+             WHERE ci.id = $1 AND ci.cart_id = $2`,
+            [cartItemId, cartId]
+        );
+        if (itemRows.length === 0) {
+            return res.status(404).json({ message: 'Item not found' });
+        }
+        const oldQty = itemRows[0].quantity;
+        const eventId = itemRows[0].event_id;
+        const isDisabled = itemRows[0].disability_support_for !== null;
+
+        if (isDisabled) {
+            if (quantity > 1) {
+                return res.status(400).json({ message: 'Disabled ticket limit exceeded' });
+            }
+        } else {
+            const { rows: rRows } = await client.query(
+                `SELECT COALESCE(SUM(ci.quantity),0) AS qty
+                 FROM cart_items ci
+                          JOIN event_categories ec ON ec.id = ci.event_category_id
+                 WHERE ci.cart_id = $1 AND ec.event_id = $2 AND ec.disability_support_for IS NULL`,
+                [cartId, eventId]
+            );
+            const total = Number(rRows[0].qty) || 0;
+            const newTotal = total - oldQty + quantity;
+            if (newTotal > 8) {
+                return res.status(400).json({ message: 'Regular ticket limit exceeded' });
+            }
+        }
+
+        const result = await client.query(
+            `UPDATE cart_items
+         SET quantity = $1
+       WHERE id = $2 AND cart_id = $3
+       RETURNING id, quantity`,
+            [quantity, cartItemId, cartId]
+        );
+        res.json(result.rows[0]);
+    } catch (err) {
+        console.error('Error patching cart item:', err);
+        res.status(500).json({ message: 'Server error' });
+    }
+});
+
+// DELETE one cart‐item
+app.delete('/cart-items/:id', async (req, res) => {
+    const userId = req.session.userId;
+    if (!userId) return res.status(401).json({ message: 'Not logged in' });
+
+    const cartItemId = req.params.id;
+    try {
+        // 1) Fetch the cart_id for this item
+        const { rows } = await client.query(
+            'SELECT cart_id FROM cart_items WHERE id = $1',
+            [cartItemId]
+        );
+        if (rows.length === 0) {
+            return res.status(404).json({ message: 'Item not found' });
+        }
+
+        // 2) Verify it belongs to the user
+        const cartId = rows[0].cart_id;
+        const { rows: ownerCheck } = await client.query(
+            'SELECT 1 FROM carts WHERE id = $1 AND user_id = $2',
+            [cartId, userId]
+        );
+        if (ownerCheck.length === 0) {
+            return res.status(403).json({ message: 'Forbidden' });
+        }
+
+        // 3) Delete it
+        await client.query(
+            'DELETE FROM cart_items WHERE id = $1',
+            [cartItemId]
+        );
+
+        return res.status(200).json({ message: 'Deleted' });
+    } catch (err) {
+        console.error('Error deleting cart item:', err);
+        return res.status(500).json({ message: 'Server error' });
     }
 });
 

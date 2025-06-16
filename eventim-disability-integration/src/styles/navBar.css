@@ -1,0 +1,421 @@
+.nav-bar {
+    display: block;
+    font-family: sans-serif;
+    background-color: #002b55;
+    color: white;
+    width: 98%; /* Match the content width (100% - 2*1% margins) */
+    position: fixed;
+    top: 0;
+    left: 1%;
+    right: 1%;
+    z-index: 1000;
+    box-sizing: border-box;
+    margin: 0;
+}
+
+/* inner wrapper */
+.nav-bar .nav-wrapper {
+    width: 100%;
+    padding: 0 3rem;
+    display: flex;
+    align-items: center;
+    height: 80px;
+    gap: 2rem;
+    justify-content: space-between;
+    box-sizing: border-box;
+}
+
+.nav-bar .logo {
+    display: flex;
+    align-items: center;
+    height: 100%;
+    flex: 0 0 auto;
+}
+
+.nav-bar .logo img {
+    height: 60px;
+    width: auto;
+    max-width: 200px;
+}
+
+.nav-bar .menu {
+    display: flex;
+    margin-left: 1rem;
+    gap: 2rem;
+    justify-content: center;
+}
+
+.nav-bar .login-button {
+    background-color: #007bff;
+    color: #ffffff;
+    font-size: 1rem;
+    font-weight: 600;
+    padding: 0.75rem 1.5rem;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.nav-bar .menu a {
+    color: white;
+    text-decoration: none;
+    font-size: 0.9rem;
+    white-space: nowrap;
+}
+
+.nav-bar .dropdown {
+    position: relative;
+    display: inline-block;
+}
+
+.nav-bar .dropdown-toggle {
+    cursor: pointer;
+    padding: 0.5rem 0;
+    display: inline-block;
+}
+
+.nav-bar .dropdown-toggle::after {
+    content: '';
+    display: inline-block;
+    margin-left: 0.3em;
+    vertical-align: middle;
+    border-top: 0.3em solid;
+    border-right: 0.3em solid transparent;
+    border-left: 0.3em solid transparent;
+}
+
+.nav-bar .dropdown-menu {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    background-color: white;
+    border-radius: 4px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+    min-width: 150px;
+    display: none;
+    z-index: 1100;
+}
+
+.nav-bar .dropdown.show .dropdown-menu,
+.nav-bar .dropdown:hover > .dropdown-menu {
+    display: block;
+}
+
+.nav-bar .dropdown-item {
+    display: block;
+    padding: 0.5rem 1rem;
+    color: #333 !important;
+    text-decoration: none;
+    white-space: nowrap;
+    position: relative; /* for sub-menu positioning */
+}
+
+.nav-bar .dropdown-item:hover {
+    background-color: #f5f5f5;
+}
+
+.nav-bar .sub-menu {
+    display: none;
+    position: absolute;
+    top: 0;
+    left: 100%;
+    background-color: white;
+    border-radius: 4px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+    min-width: 200px;
+    z-index: 1100;
+}
+
+.nav-bar .dropdown-menu .dropdown-item:hover > .sub-menu {
+    display: block;
+}
+
+.nav-bar .search {
+    flex: 1;
+    margin-left: 1rem;
+}
+
+.nav-bar .search input[type="search"] {
+    padding: 8px 12px;
+    border-radius: 4px;
+    border: none;
+    font-size: 1rem;
+    width: 100%;
+    height: 36px;
+}
+
+.nav-bar .icons {
+    display: flex;
+    gap: 2rem;
+    height: 100%;
+    margin-left: 1rem;
+    justify-content: flex-end;
+    align-items: center;
+}
+
+.nav-bar .icons img {
+    height: 30px;
+    width: auto;
+    cursor: pointer;
+}
+
+/* ——— New hover‐activated sub‐menu rules ——— */
+
+/* Show top‐level dropdown on hover */
+nav-bar .dropdown:hover > .dropdown-menu {
+    display: block;
+}
+
+/* Ensure each dropdown‐item can hold a sub‐menu */
+nav-bar .dropdown-menu .dropdown-item {
+    position: relative;
+}
+
+/* Sub‐menu styling */
+nav-bar .sub-menu {
+    display: none;
+    position: absolute;
+    top: 0;
+    left: 100%;
+    background-color: white;
+    border-radius: 4px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+    min-width: 200px;
+    z-index: 1100;
+}
+
+/* Show sub‐menu when hovering its parent */
+nav-bar .dropdown-menu .dropdown-item:hover > .sub-menu {
+    display: block;
+}
+
+.nav-bar .dropdown.profile .dropdown-menu {
+    left: auto;
+    right: 1%;
+    min-width: 200px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+    background-color: #fff;
+    z-index: 2000;
+}
+
+.nav-bar .dropdown.profile .dropdown-toggle::after {
+    content: none;
+}
+
+.nav-bar .dropdown-menu .dropdown-footer {
+    color: #333;
+    font-size: 0.9rem;
+    text-align: center;
+    border-top: 1px solid #e0e0e0;
+    margin-top: 0.5rem;
+}
+
+.nav-bar .dropdown-menu .dropdown-footer-name {
+    margin: 1rem 1rem;
+}
+
+.nav-bar .dropdown-menu .dropdown-footer-name p {
+    margin: 0.5rem 0;
+    line-height: 1;
+}
+
+.nav-bar .dropdown-menu .dropdown-footer-name h3 {
+    margin: 0.25rem 0;
+    line-height: 1;
+    margin-bottom: 0.5rem;
+}
+
+.nav-bar .dropdown-logout {
+    display: block;
+    width: calc(100% - 2rem);
+    margin: 0.5rem 1rem 1rem;
+    text-align: center;
+    font-size: 1rem;
+    font-weight: 600;
+    background-color: #007bff;
+    color: #ffffff;
+    padding: 0.5rem 0;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.nav-bar .dropdown-logout:hover,
+.nav-bar .dropdown-logout:focus {
+    background-color: #0056b3;
+}
+
+.nav-bar .dropdown.profile .dropdown-menu .dropdown-item {
+    color: #333 !important;
+}
+
+/* NavBar.css additions at the bottom */
+
+.nav-bar .dropdown.cart .cart-menu {
+    width: 320px;           /* adjust to taste */
+    padding: 1rem;
+}
+
+.nav-bar .dropdown.cart .dropdown-menu {
+    /* override default left:0 */
+    left: auto;
+    right: 0;
+    /* give it a sensible width and allow it to scroll if it's too tall */
+    width: 470px;
+    max-height: calc(100vh - 100px);
+    overflow-y: auto;
+}
+
+.nav-bar .dropdown.cart .dropdown-toggle::after {
+    content: none;
+}
+
+.nav-bar .dropdown.cart .dropdown-toggle .badge {
+    display: inline-block;        /* so padding and width/height apply */
+    min-width: 1.4em;             /* ensure it’s at least this wide */
+    height: 1.4em;                /* equal height for a perfect circle */
+    line-height: 1.4em;           /* vertically center the number */
+    padding: 0;                   /* remove extra padding */
+    border-radius: 50%;           /* turn it into a circle */
+    background-color: #007bff;    /* red circle (or whatever you choose) */
+    color: #fff;                  /* white number */
+    font-weight: 700;             /* bold */
+    text-align: center;           /* center horizontally */
+    font-size: 0.85rem;           /* adjust size if you like */     /* small gap from the icon */
+}
+
+
+/* ────────────── Mobile / small screens ────────────── */
+@media (max-width: 480px) {
+    .nav-bar .dropdown.cart .dropdown-menu {
+        /* take almost the full screen width on tiny devices */
+        width: calc(100vw - 2rem);
+        right: 1rem;
+        left: 1rem;
+    }
+}
+
+.nav-bar .cart-row {
+    display: flex;
+    align-items: center;
+    margin-bottom: 0.75rem;
+}
+
+.nav-bar .cart-info {
+    flex: 2;
+    display: flex;
+    flex-direction: column;
+}
+
+.nav-bar .cart-title {
+    font-weight: 600;
+    color: #333;
+}
+
+.nav-bar .cart-subtitle {
+    font-size: 0.85rem;
+    color: #666;
+}
+
+.nav-bar .cart-qty {
+    flex: 1;
+    text-align: center;
+    font-size: 1rem;
+    color: #333;
+}
+
+.nav-bar .cart-line-price {
+    flex: 1;
+    text-align: right;
+    font-size: 1rem;
+    color: #333;
+}
+
+.nav-bar .cart-summary {
+    display: flex;
+    justify-content: space-between;
+    padding: 0.5rem 0;
+    font-size: 0.95rem;
+    color: #333;
+}
+
+.nav-bar .dropdown.cart .cart-menu .dropdown-divider {
+    margin: 0.5rem 0;
+    border-top: 1px solid #e0e0e0;
+}
+
+/* ── Redesigned Empty-Cart Panel ── */
+.nav-bar .dropdown.cart .dropdown-menu .cart-empty-panel {
+    padding: 1.5rem;
+    background-color: #fffbe6;      /* light Eventim yellow tint */
+    border: 1px dashed #ffc107;     /* subtle dashed outline */
+    border-radius: 6px;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.nav-bar .dropdown.cart .dropdown-menu .cart-empty-panel h4 {
+    margin: 0 0 0.5rem;
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: #002b55;                 /* dark blue headline */
+}
+
+.nav-bar .dropdown.cart .dropdown-menu .cart-empty-panel p {
+    margin: 0 0 1rem;
+    font-size: 1rem;
+    color: #333;                    /* dark grey text */
+}
+
+.nav-bar .dropdown.cart .dropdown-menu .cart-empty-panel .btn-discover {
+    padding: 0.5rem 1.25rem;
+    background-color: #ffcc00;      /* Eventim yellow */
+    color: #002b55;                 /* Eventim dark blue */
+    font-size: 0.95rem;
+    font-weight: 600;
+    border: none;
+    border-radius: 4px;
+    text-decoration: none;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.nav-bar .dropdown.cart .dropdown-menu .cart-empty-panel .btn-discover:hover {
+    background-color: #e6b800;
+}
+
+/* ensure divider sits just below the panel when items exist */
+.nav-bar .dropdown.cart .dropdown-menu .cart-empty-panel + .dropdown-divider {
+    margin-top: 0.75rem;
+    margin-bottom: 0.75rem;
+}
+
+/* ── delete-button in cart rows ── */
+.nav-bar .dropdown.cart .cart-row {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.nav-bar .dropdown.cart .cart-delete-btn {
+    margin-left: auto;
+    background: transparent;
+    border: none;
+    font-size: 1.25rem;
+    line-height: 1;
+    color: #d32f2f;      /* nice red */
+    cursor: pointer;
+    padding: 0 0.25rem;
+}
+
+.nav-bar .dropdown.cart .cart-delete-btn:hover {
+    color: #b71c1c;
+}
+
+
+
+/* reuse .login-button.dropdown-logout for the "Weiter" button */
