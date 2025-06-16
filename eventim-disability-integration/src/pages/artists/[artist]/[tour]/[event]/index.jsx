@@ -109,6 +109,11 @@ export default function EventPage() {
     const isDisabledCatSelected = Boolean(currentCat_disabled.id);
     const isRegularCatSelected = !isDisabledCatSelected;
 
+    const disabledInCartQty = disabledCategories.reduce((sum, cat) => {
+        const entry = inCartItems[cat.id];
+        return sum + (entry?.quantity || 0);
+    }, 0);
+
     // only show real total when that section is active
     const total = isRegularCatSelected ? (qty * (currentCat.price || 0)).toFixed(2).replace('.', ',') : '0,00';
     const total_disabled = isDisabledCatSelected ? (qty_disabled * (currentCat_disabled.price || 0)).toFixed(2).replace('.', ',') : '0,00';
@@ -122,6 +127,14 @@ export default function EventPage() {
         if (!loggedIn) {
             const redirect = encodeURIComponent(router.asPath);
             router.push(`/login?redirect=${redirect}`);
+            return;
+        }
+
+        // enforce only one disabled ticket ever
+        if (isDisabledCatSelected && disabledInCartQty >= 1) {
+            setLastClickedSection('disabled');
+            setErrorMessage('Nur ein Ticket möglich.');
+            setTimeout(() => setErrorMessage(''), 3000);
             return;
         }
 
@@ -317,16 +330,14 @@ export default function EventPage() {
                         )}
                         <button
                             className="total-button"
-                            disabled={
-                                !isDisabledCatSelected ||
-                                Boolean(inCartItems[selectedCat])
-                            }
+                            disabled={addDisabled || !isDisabledCatSelected}
                             onClick={handleAddToCart}
                         >
-                        <span className="icon-cart" />{' '}
-                            {isDisabledCatSelected ? `${qty_disabled} Ticket${qty_disabled > 1 ? 's' : ''}` : '1 Ticket'}, € {total_disabled}
+                            <span className="icon-cart" />{' '}
+                            {isDisabledCatSelected ? '1 Ticket' : '1 Ticket'}, € {total_disabled}
                         </button>
                     </div>
+
 
                     {/* Note */}
                     <div className="note">
