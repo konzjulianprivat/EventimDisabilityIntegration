@@ -9,6 +9,7 @@ export function CartProvider({ children }) {
     const { loading: authLoading, loggedIn } = useAuth();
     const [items, setItems] = useState([]);
     const [loading, setLoading] = useState(false);
+    const [counts, setCounts] = useState({});
 
     const fetchCart = useCallback(async () => {
         if (authLoading) return;
@@ -22,11 +23,22 @@ export function CartProvider({ children }) {
             if (res.ok) {
                 const { items } = await res.json();
                 setItems(items || []);
+                const agg = {};
+                (items || []).forEach((it) => {
+                    const eid = it.event_id;
+                    const isDisabled = it.disability_support_for !== null && it.disability_support_for !== undefined;
+                    if (!agg[eid]) agg[eid] = { regular: 0, disabled: 0 };
+                    if (isDisabled) agg[eid].disabled += Number(it.quantity);
+                    else agg[eid].regular += Number(it.quantity);
+                });
+                setCounts(agg);
             } else {
                 setItems([]);
+                setCounts({});
             }
         } catch {
             setItems([]);
+            setCounts({});
         } finally {
             setLoading(false);
         }
@@ -40,7 +52,7 @@ export function CartProvider({ children }) {
     const reload = useCallback(fetchCart, [fetchCart]);
 
     return (
-        <CartContext.Provider value={{ items, loading, reload }}>
+        <CartContext.Provider value={{ items, loading, reload, counts }}>
             {children}
         </CartContext.Provider>
     );
