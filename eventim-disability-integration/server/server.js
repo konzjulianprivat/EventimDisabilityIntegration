@@ -1880,7 +1880,7 @@ app.post('/cart-items', async (req, res) => {
         return res.status(401).json({ message: 'Not logged in' });
     }
 
-    const { eventId, eventCategoryId, quantity, price } = req.body;
+    let { eventId, eventCategoryId, quantity, price } = req.body;
     if (!eventId || !eventCategoryId || !quantity || !price) {
         return res.status(400).json({ message: 'Missing parameters' });
     }
@@ -1897,6 +1897,50 @@ app.post('/cart-items', async (req, res) => {
         );
         if (dup.rows.length) {
             return res.status(409).json({ message: 'Item already in cart' });
+        }
+
+        // gather category info
+        const { rows: catInfo } = await client.query(
+            'SELECT event_id, disability_support_for FROM event_categories WHERE id = $1',
+            [eventCategoryId]
+        );
+        if (catInfo.length === 0) {
+            return res.status(400).json({ message: 'Invalid category' });
+        }
+        const catEventId = catInfo[0].event_id;
+        const isDisabledCat = catInfo[0].disability_support_for !== null;
+
+        // verify eventId from body matches category's event_id
+        eventId = catEventId;
+
+        // quantity limits
+        if (isDisabledCat) {
+            // only one disabled ticket per event across all categories
+            const { rows: dRows } = await client.query(
+                `SELECT COALESCE(SUM(ci.quantity),0) AS qty
+                 FROM cart_items ci
+                         JOIN event_categories ec ON ec.id = ci.event_category_id
+                 WHERE ci.cart_id = $1 AND ec.event_id = $2 AND ec.disability_support_for IS NOT NULL`,
+                [cartId, catEventId]
+            );
+            const disabledQty = Number(dRows[0].qty) || 0;
+            if (disabledQty >= 1) {
+                return res.status(400).json({ message: 'Disabled ticket already in cart' });
+            }
+            quantity = 1; // enforce
+        } else {
+            // total regular tickets across event may not exceed 8
+            const { rows: rRows } = await client.query(
+                `SELECT COALESCE(SUM(ci.quantity),0) AS qty
+                 FROM cart_items ci
+                         JOIN event_categories ec ON ec.id = ci.event_category_id
+                 WHERE ci.cart_id = $1 AND ec.event_id = $2 AND ec.disability_support_for IS NULL`,
+                [cartId, catEventId]
+            );
+            const regularQty = Number(rRows[0].qty) || 0;
+            if (regularQty + Number(quantity) > 8) {
+                return res.status(400).json({ message: 'Regular ticket limit exceeded' });
+            }
         }
 
         // insert and return the new id & quantity
@@ -1941,8 +1985,11 @@ app.get('/cart-items', async (req, res) => {
             `
                 SELECT
                     ci.id,
-                    t.title        AS title,
-                    ec.name        AS category,
+                    ci.event_id,
+                    ec.id      AS event_category_id,
+                    ec.disability_support_for,
+                    t.title    AS title,
+                    ec.name    AS category,
                     ci.quantity,
                     ci.price
                 FROM cart_items ci
@@ -1978,6 +2025,41 @@ app.patch('/cart-items/:id', async (req, res) => {
     try {
         // ensure that this item actually belongs to user’s cart
         const cartId = await getOrCreateCart(userId);
+
+        // get item details
+        const { rows: itemRows } = await client.query(
+            `SELECT ci.quantity, ec.event_id, ec.disability_support_for
+             FROM cart_items ci
+                      JOIN event_categories ec ON ec.id = ci.event_category_id
+             WHERE ci.id = $1 AND ci.cart_id = $2`,
+            [cartItemId, cartId]
+        );
+        if (itemRows.length === 0) {
+            return res.status(404).json({ message: 'Item not found' });
+        }
+        const oldQty = itemRows[0].quantity;
+        const eventId = itemRows[0].event_id;
+        const isDisabled = itemRows[0].disability_support_for !== null;
+
+        if (isDisabled) {
+            if (quantity > 1) {
+                return res.status(400).json({ message: 'Disabled ticket limit exceeded' });
+            }
+        } else {
+            const { rows: rRows } = await client.query(
+                `SELECT COALESCE(SUM(ci.quantity),0) AS qty
+                 FROM cart_items ci
+                          JOIN event_categories ec ON ec.id = ci.event_category_id
+                 WHERE ci.cart_id = $1 AND ec.event_id = $2 AND ec.disability_support_for IS NULL`,
+                [cartId, eventId]
+            );
+            const total = Number(rRows[0].qty) || 0;
+            const newTotal = total - oldQty + quantity;
+            if (newTotal > 8) {
+                return res.status(400).json({ message: 'Regular ticket limit exceeded' });
+            }
+        }
+
         const result = await client.query(
             `UPDATE cart_items
          SET quantity = $1
@@ -1985,9 +2067,6 @@ app.patch('/cart-items/:id', async (req, res) => {
        RETURNING id, quantity`,
             [quantity, cartItemId, cartId]
         );
-        if (!result.rows.length) {
-            return res.status(404).json({ message: 'Item not found' });
-        }
         res.json(result.rows[0]);
     } catch (err) {
         console.error('Error patching cart item:', err);

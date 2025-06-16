@@ -21,28 +21,25 @@ export default function EventPage() {
 
 // Track category IDs already in cart
     const [inCartItems, setInCartItems] = useState({});
-    const { reload: reloadCart } = useCart();
+    const { reload: reloadCart, items: cartItems, counts } = useCart();
 
     const [successMessage, setSuccessMessage] = useState('');
     const [errorMessage, setErrorMessage] = useState('');
     const [lastClickedSection, setLastClickedSection] = useState(null);  // 'disabled' or 'regular'
     const [addDisabled, setAddDisabled] = useState(false);
 
-// Fetch existing cart items when logged in
+// Build lookup table for items currently in cart
     useEffect(() => {
-        if (!loggedIn) return;
-        (async () => {
-            const res = await fetch(`${API_BASE_URL}/cart-items`, { credentials: 'include' });
-            if (!res.ok) return;
-            const { items } = await res.json();
-            // build a lookup by category
-            const map = {};
-            items.forEach(i => {
-                map[i.event_category_id] = { id: i.id, quantity: i.quantity };
-            });
-            setInCartItems(map);
-        })();
-    }, [loggedIn]);
+        if (!loggedIn) {
+            setInCartItems({});
+            return;
+        }
+        const map = {};
+        (cartItems || []).forEach((i) => {
+            map[i.event_category_id] = { id: i.id, quantity: i.quantity };
+        });
+        setInCartItems(map);
+    }, [loggedIn, cartItems]);
 
 
     useEffect(() => {
@@ -91,6 +88,8 @@ export default function EventPage() {
         (c) => c.disability_support_for == null
     );
 
+    const eventCounts = counts[event] || { regular: 0, disabled: 0 };
+
     useEffect(() => {
         if (categories.length === 0) return;
         const allCats = [
@@ -109,11 +108,6 @@ export default function EventPage() {
     const isDisabledCatSelected = Boolean(currentCat_disabled.id);
     const isRegularCatSelected = !isDisabledCatSelected;
 
-    const disabledInCartQty = disabledCategories.reduce((sum, cat) => {
-        const entry = inCartItems[cat.id];
-        return sum + (entry?.quantity || 0);
-    }, 0);
-
     // only show real total when that section is active
     const total = isRegularCatSelected ? (qty * (currentCat.price || 0)).toFixed(2).replace('.', ',') : '0,00';
     const total_disabled = isDisabledCatSelected ? (qty_disabled * (currentCat_disabled.price || 0)).toFixed(2).replace('.', ',') : '0,00';
@@ -130,22 +124,15 @@ export default function EventPage() {
             return;
         }
 
-        // enforce only one disabled ticket ever
-        if (isDisabledCatSelected && disabledInCartQty >= 1) {
-            setLastClickedSection('disabled');
-            setErrorMessage('Nur ein Ticket möglich.');
-            setTimeout(() => setErrorMessage(''), 3000);
-            return;
-        }
-
         const existing = inCartItems[selectedCat];
 
         // If regular and already in cart, PATCH new quantity
         if (existing && isRegularCatSelected) {
             const newQty = existing.quantity + qty;
-            if (newQty > 8) {
+            const newTotal = eventCounts.regular - existing.quantity + newQty;
+            if (newTotal > 8) {
                 setLastClickedSection('regular');
-                setErrorMessage(`Maximal ${8 - existing.quantity} weitere Tickets möglich.`);
+                setErrorMessage(`Maximal ${8 - (eventCounts.regular - existing.quantity)} weitere Tickets möglich.`);
                 setTimeout(() => setErrorMessage(''), 3000);
                 return;
             }
@@ -176,6 +163,18 @@ export default function EventPage() {
         }
 
         // Otherwise (new item OR disabled), do POST
+        if (isDisabledCatSelected && eventCounts.disabled >= 1) {
+            setLastClickedSection('disabled');
+            setErrorMessage('Es kann nur ein Behinderten-Ticket gebucht werden.');
+            setTimeout(() => setErrorMessage(''), 3000);
+            return;
+        }
+        if (isRegularCatSelected && eventCounts.regular + qty > 8) {
+            setLastClickedSection('regular');
+            setErrorMessage(`Maximal ${8 - eventCounts.regular} weitere Tickets möglich.`);
+            setTimeout(() => setErrorMessage(''), 3000);
+            return;
+        }
         const payload = {
             eventId: event,
             eventCategoryId: selectedCat,
@@ -330,14 +329,17 @@ export default function EventPage() {
                         )}
                         <button
                             className="total-button"
-                            disabled={addDisabled || !isDisabledCatSelected}
+                            disabled={
+                                !isDisabledCatSelected ||
+                                Boolean(inCartItems[selectedCat]) ||
+                                eventCounts.disabled >= 1
+                            }
                             onClick={handleAddToCart}
                         >
-                            <span className="icon-cart" />{' '}
-                            {isDisabledCatSelected ? '1 Ticket' : '1 Ticket'}, € {total_disabled}
+                        <span className="icon-cart" />{' '}
+                            {isDisabledCatSelected ? `${qty_disabled} Ticket${qty_disabled > 1 ? 's' : ''}` : '1 Ticket'}, € {total_disabled}
                         </button>
                     </div>
-
 
                     {/* Note */}
                     <div className="note">
@@ -369,8 +371,8 @@ export default function EventPage() {
                                     {isRegularCatSelected ? qty : 1}
                                 </span>
                             <button
-                                onClick={() => setQty((q) => Math.min(8, q + 1))}
-                                disabled={!isRegularCatSelected || qty >= 8}
+                                onClick={() => setQty((q) => Math.min(8 - eventCounts.regular, q + 1))}
+                                disabled={!isRegularCatSelected || qty >= (8 - eventCounts.regular)}
                             >+</button>
                         </div>
                     </div>
@@ -418,7 +420,7 @@ export default function EventPage() {
                         )}
                         <button
                             className="total-button"
-                            disabled={addDisabled || !isRegularCatSelected}
+                            disabled={addDisabled || !isRegularCatSelected || eventCounts.regular >= 8}
                             onClick={handleAddToCart}
                         >
                         <span className="icon-cart" />{' '}
