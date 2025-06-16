@@ -268,6 +268,25 @@ nav-bar .dropdown-menu .dropdown-item:hover > .sub-menu {
     overflow-y: auto;
 }
 
+.nav-bar .dropdown.cart .dropdown-toggle::after {
+    content: none;
+}
+
+.nav-bar .dropdown.cart .dropdown-toggle .badge {
+    display: inline-block;        /* so padding and width/height apply */
+    min-width: 1.4em;             /* ensure it’s at least this wide */
+    height: 1.4em;                /* equal height for a perfect circle */
+    line-height: 1.4em;           /* vertically center the number */
+    padding: 0;                   /* remove extra padding */
+    border-radius: 50%;           /* turn it into a circle */
+    background-color: #007bff;    /* red circle (or whatever you choose) */
+    color: #fff;                  /* white number */
+    font-weight: 700;             /* bold */
+    text-align: center;           /* center horizontally */
+    font-size: 0.85rem;           /* adjust size if you like */     /* small gap from the icon */
+}
+
+
 /* ────────────── Mobile / small screens ────────────── */
 @media (max-width: 480px) {
     .nav-bar .dropdown.cart .dropdown-menu {
@@ -326,5 +345,77 @@ nav-bar .dropdown-menu .dropdown-item:hover > .sub-menu {
     margin: 0.5rem 0;
     border-top: 1px solid #e0e0e0;
 }
+
+/* ── Redesigned Empty-Cart Panel ── */
+.nav-bar .dropdown.cart .dropdown-menu .cart-empty-panel {
+    padding: 1.5rem;
+    background-color: #fffbe6;      /* light Eventim yellow tint */
+    border: 1px dashed #ffc107;     /* subtle dashed outline */
+    border-radius: 6px;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.nav-bar .dropdown.cart .dropdown-menu .cart-empty-panel h4 {
+    margin: 0 0 0.5rem;
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: #002b55;                 /* dark blue headline */
+}
+
+.nav-bar .dropdown.cart .dropdown-menu .cart-empty-panel p {
+    margin: 0 0 1rem;
+    font-size: 1rem;
+    color: #333;                    /* dark grey text */
+}
+
+.nav-bar .dropdown.cart .dropdown-menu .cart-empty-panel .btn-discover {
+    padding: 0.5rem 1.25rem;
+    background-color: #ffcc00;      /* Eventim yellow */
+    color: #002b55;                 /* Eventim dark blue */
+    font-size: 0.95rem;
+    font-weight: 600;
+    border: none;
+    border-radius: 4px;
+    text-decoration: none;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.nav-bar .dropdown.cart .dropdown-menu .cart-empty-panel .btn-discover:hover {
+    background-color: #e6b800;
+}
+
+/* ensure divider sits just below the panel when items exist */
+.nav-bar .dropdown.cart .dropdown-menu .cart-empty-panel + .dropdown-divider {
+    margin-top: 0.75rem;
+    margin-bottom: 0.75rem;
+}
+
+/* ── delete-button in cart rows ── */
+.nav-bar .dropdown.cart .cart-row {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.nav-bar .dropdown.cart .cart-delete-btn {
+    margin-left: auto;
+    background: transparent;
+    border: none;
+    font-size: 1.25rem;
+    line-height: 1;
+    color: #d32f2f;      /* nice red */
+    cursor: pointer;
+    padding: 0 0.25rem;
+}
+
+.nav-bar .dropdown.cart .cart-delete-btn:hover {
+    color: #b71c1c;
+}
+
+
 
 /* reuse .login-button.dropdown-logout for the "Weiter" button */

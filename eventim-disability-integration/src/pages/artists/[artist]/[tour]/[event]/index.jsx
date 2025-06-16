@@ -2,6 +2,7 @@ import React, {Fragment, useEffect, useState} from 'react';
 import { useRouter } from 'next/router';
 import { API_BASE_URL } from '../../../../../config';
 import { useAuth } from '../../../../../hooks/useAuth';
+import { useCart } from "../../../../../hooks/useCart";
 
 export default function EventPage() {
     const router = useRouter();
@@ -20,9 +21,12 @@ export default function EventPage() {
 
 // Track category IDs already in cart
     const [inCartItems, setInCartItems] = useState({});
+    const { reload: reloadCart } = useCart();
+
     const [successMessage, setSuccessMessage] = useState('');
     const [errorMessage, setErrorMessage] = useState('');
     const [lastClickedSection, setLastClickedSection] = useState(null);  // 'disabled' or 'regular'
+    const [addDisabled, setAddDisabled] = useState(false);
 
 // Fetch existing cart items when logged in
     useEffect(() => {
@@ -111,6 +115,10 @@ export default function EventPage() {
 
     // Handler to add selected item to cart
     const handleAddToCart = async () => {
+        // prevent spamming: disable button for 3s
+        setAddDisabled(true);
+        setTimeout(() => setAddDisabled(false), 3000);
+
         if (!loggedIn) {
             const redirect = encodeURIComponent(router.asPath);
             router.push(`/login?redirect=${redirect}`);
@@ -144,6 +152,7 @@ export default function EventPage() {
                 }));
                 setLastClickedSection('regular');
                 setSuccessMessage('Warenkorb aktualisiert!');
+                reloadCart();
                 setTimeout(() => setSuccessMessage(''), 3000);
             } else {
                 setLastClickedSection('regular');
@@ -179,6 +188,7 @@ export default function EventPage() {
                 setLastClickedSection(isDisabledCatSelected ? 'disabled' : 'regular');
                 setSuccessMessage('Erfolgreich zum Warenkorb hinzugefügt!');
                 setErrorMessage('');
+                reloadCart();
                 setTimeout(() => setSuccessMessage(''), 3000);
             } else if (res.status === 409) {
                 setLastClickedSection(isDisabledCatSelected ? 'disabled' : 'regular');
@@ -397,10 +407,7 @@ export default function EventPage() {
                         )}
                         <button
                             className="total-button"
-                            disabled={
-                                !isRegularCatSelected ||
-                                Boolean(inCartItems[selectedCat])
-                            }
+                            disabled={addDisabled || !isRegularCatSelected}
                             onClick={handleAddToCart}
                         >
                         <span className="icon-cart" />{' '}

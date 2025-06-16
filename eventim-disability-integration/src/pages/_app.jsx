@@ -17,10 +17,11 @@ import '../styles/events.css';
 import NavBar from '../components/nav-bar.jsx';
 import Footer from '../components/footer.jsx';
 import Head from 'next/head';
+import { CartProvider } from '../hooks/useCart';
 
 export default function MyApp({ Component, pageProps }) {
     return (
-        <>
+        <CartProvider>
             <Head>
                 <link rel="icon" href="/pictures/favicon.png" />
                 <title>Eventim</title>
@@ -32,6 +33,6 @@ export default function MyApp({ Component, pageProps }) {
                 </div>
                 <Footer />
             </div>
-        </>
+        </CartProvider>
     );
 }

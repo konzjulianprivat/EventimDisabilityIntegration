@@ -128,13 +128,13 @@
     width: 100%;
     padding: 0.4rem;
     margin-bottom: 0.75rem;
-    border: 1px solid #ccc;
+    border: 1px solid #eee;
     border-radius: 4px;
 }
 .input-date {
     width: 100%;
     padding: 0.4rem;
-    border: 1px solid #ccc;
+    border: 1px solid #eee;
     border-radius: 4px;
 }
 .date-row {
@@ -239,7 +239,7 @@
     cursor: pointer;
 }
 .hoverable:hover {
-    background-color: #ddd;
+    background-color: #eee;
 }
 
 /* Tour header */

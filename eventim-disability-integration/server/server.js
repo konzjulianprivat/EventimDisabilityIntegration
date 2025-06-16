@@ -1856,14 +1856,12 @@ app.get('/event-details/:id', async (req, res) => {
 
 // Helper to find-or-create a cart
 async function getOrCreateCart(userId) {
-    // 1) Try to find
     const { rows } = await client.query(
         'SELECT id FROM carts WHERE user_id = $1',
         [userId]
     );
     if (rows.length) return rows[0].id;
 
-    // 2) Otherwise create
     const cartId = uuidv4();
     await client.query(
         'INSERT INTO carts (id, user_id) VALUES ($1, $2)',
@@ -1888,31 +1886,150 @@ app.post('/cart-items', async (req, res) => {
     }
 
     try {
-        // ensure cart
+        // ensure cart exists
         const cartId = await getOrCreateCart(userId);
 
         // reject duplicate
         const dup = await client.query(
             `SELECT 1 FROM cart_items
-       WHERE cart_id = $1 AND event_category_id = $2`,
+             WHERE cart_id = $1 AND event_category_id = $2`,
             [cartId, eventCategoryId]
         );
         if (dup.rows.length) {
             return res.status(409).json({ message: 'Item already in cart' });
         }
 
-        // insert snapshot
-        await client.query(
+        // insert and return the new id & quantity
+        const { rows } = await client.query(
             `INSERT INTO cart_items
          (id, cart_id, event_id, event_category_id, quantity, price)
        VALUES
-         ($1, $2, $3, $4, $5, $6)`,
+         ($1, $2, $3, $4, $5, $6)
+       RETURNING id, quantity;`,
             [uuidv4(), cartId, eventId, eventCategoryId, quantity, price]
         );
 
-        return res.status(201).json({ message: 'Added to cart' });
+        const newItem = rows[0];
+        return res.status(201).json({
+            id: newItem.id,
+            quantity: newItem.quantity
+        });
     } catch (err) {
         console.error('Error adding to cart:', err);
+        return res.status(500).json({ message: 'Server error' });
+    }
+});
+
+// GET /cart-items
+app.get('/cart-items', async (req, res) => {
+    const userId = req.session.userId;
+    if (!userId) return res.status(401).json({ message: 'Not logged in' });
+
+    try {
+        // 1) Find existing cart
+        const { rows: cartRows } = await client.query(
+            'SELECT id FROM carts WHERE user_id = $1',
+            [userId]
+        );
+        if (cartRows.length === 0) {
+            return res.json({ items: [] });
+        }
+        const cartId = cartRows[0].id;
+
+        // 2) Fetch items, ordered by the correct timestamp column
+        const { rows } = await client.query(
+            `
+                SELECT
+                    ci.id,
+                    t.title        AS title,
+                    ec.name        AS category,
+                    ci.quantity,
+                    ci.price
+                FROM cart_items ci
+                         JOIN events e            ON e.id = ci.event_id
+                         JOIN tours t             ON t.id = e.tour_id
+                         JOIN event_categories ec ON ec.id = ci.event_category_id
+                WHERE ci.cart_id = $1
+                ORDER BY ci.added_at
+            `,
+            [cartId]
+        );
+
+        return res.json({ items: rows });
+    } catch (err) {
+        console.error('Error fetching cart items:', err);
+        return res.status(500).json({ message: 'Server error' });
+    }
+});
+
+
+
+// PATCH /cart-items/:id
+app.patch('/cart-items/:id', async (req, res) => {
+    const userId = req.session.userId;
+    if (!userId) return res.status(401).json({ message: 'Not logged in' });
+
+    const cartItemId = req.params.id;
+    const { quantity } = req.body;
+    if (typeof quantity !== 'number') {
+        return res.status(400).json({ message: 'Missing quantity' });
+    }
+
+    try {
+        // ensure that this item actually belongs to user’s cart
+        const cartId = await getOrCreateCart(userId);
+        const result = await client.query(
+            `UPDATE cart_items
+         SET quantity = $1
+       WHERE id = $2 AND cart_id = $3
+       RETURNING id, quantity`,
+            [quantity, cartItemId, cartId]
+        );
+        if (!result.rows.length) {
+            return res.status(404).json({ message: 'Item not found' });
+        }
+        res.json(result.rows[0]);
+    } catch (err) {
+        console.error('Error patching cart item:', err);
+        res.status(500).json({ message: 'Server error' });
+    }
+});
+
+// DELETE one cart‐item
+app.delete('/cart-items/:id', async (req, res) => {
+    const userId = req.session.userId;
+    if (!userId) return res.status(401).json({ message: 'Not logged in' });
+
+    const cartItemId = req.params.id;
+    try {
+        // 1) Fetch the cart_id for this item
+        const { rows } = await client.query(
+            'SELECT cart_id FROM cart_items WHERE id = $1',
+            [cartItemId]
+        );
+        if (rows.length === 0) {
+            return res.status(404).json({ message: 'Item not found' });
+        }
+
+        // 2) Verify it belongs to the user
+        const cartId = rows[0].cart_id;
+        const { rows: ownerCheck } = await client.query(
+            'SELECT 1 FROM carts WHERE id = $1 AND user_id = $2',
+            [cartId, userId]
+        );
+        if (ownerCheck.length === 0) {
+            return res.status(403).json({ message: 'Forbidden' });
+        }
+
+        // 3) Delete it
+        await client.query(
+            'DELETE FROM cart_items WHERE id = $1',
+            [cartItemId]
+        );
+
+        return res.status(200).json({ message: 'Deleted' });
+    } catch (err) {
+        console.error('Error deleting cart item:', err);
         return res.status(500).json({ message: 'Server error' });
     }
 });
