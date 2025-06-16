@@ -291,7 +291,10 @@ export default function NavBar() {
                         <button
                             type="button"
                             className="login-button"
-                            onClick={() => (window.location.href = '/login')}
+                            onClick={() => {
+                                const returnTo = window.location.pathname + window.location.search
+                                window.location.href = `/login?redirect=${encodeURIComponent(returnTo)}`
+                            }}
                         >
                             Anmelden
                         </button>
