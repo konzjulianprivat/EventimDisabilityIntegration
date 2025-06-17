@@ -2,7 +2,6 @@
 "use client";
 
 import React, { useState, useEffect, useRef } from 'react';
-import Image from 'next/image';
 import { API_BASE_URL } from '../../config'; // adjust path if needed
 
 export default function Checkout() {
@@ -113,7 +112,7 @@ export default function Checkout() {
                     return (
                         <div key={id} className="checkoutPage__item">
                             <div className="checkoutPage__item-header">
-                                <Image
+                                <img
                                     src={
                                         image
                                             ? `${API_BASE_URL}/image/${image}`

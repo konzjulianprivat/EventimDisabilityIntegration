@@ -2276,7 +2276,7 @@ app.delete('/checkout-items/:id', async (req, res) => {
     const itemId = req.params.id;
     try {
         // ensure this belongs to the user’s checkout
-        const { rows } = await client.query(
+        const result = await client.query(
             `DELETE FROM checkout_items ci
          USING checkouts co
         WHERE ci.id = $1
@@ -2286,7 +2286,7 @@ app.delete('/checkout-items/:id', async (req, res) => {
         );
 
         // rowCount===0 ⇒ not found or forbidden
-        if (rows.length === 0) {
+        if (result.rowCount === 0) {
             return res.status(404).json({ message: 'Item not found' });
         }
 
@@ -2300,12 +2300,38 @@ app.delete('/checkout-items/:id', async (req, res) => {
 const client = new Client(credentials);
 client.connect()
     .then(() => {
-        console.log('DB connected');            // ← did this print?
+        console.log('DB connected');
         app.listen(4000, () => console.log('Server listening on http://localhost:4000'));
+
+        // cleanup: remove expired checkouts and stale cart items every minute
+        setInterval(async () => {
+            try {
+                // drop cart items referencing removed events or categories
+                await client.query(`
+                    DELETE FROM cart_items ci
+                    WHERE NOT EXISTS (SELECT 1 FROM events e WHERE e.id = ci.event_id)
+                       OR NOT EXISTS (SELECT 1 FROM event_categories ec WHERE ec.id = ci.event_category_id)
+                `);
+
+                // delete checkout items older than 15 minutes
+                await client.query(`
+                    DELETE FROM checkout_items ci
+                    USING checkouts co
+                    WHERE ci.checkout_id = co.id
+                      AND co.created_at < NOW() - INTERVAL '15 minutes'
+                `);
+
+                // delete the checkout records themselves
+                await client.query(`
+                    DELETE FROM checkouts
+                    WHERE created_at < NOW() - INTERVAL '15 minutes'
+                `);
+            } catch (err) {
+                console.error('Periodic cleanup error:', err);
+            }
+        }, 60 * 1000);
     })
     .catch(err => {
         console.error('Failed to connect to DB, exiting.', err);
         process.exit(1);
     });
-
-app.listen(4000, () => console.log('Server on port 4000'));
