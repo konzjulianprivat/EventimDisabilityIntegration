@@ -217,7 +217,25 @@ export default function NavBar() {
                                         <button
                                             type="button"
                                             className="login-button dropdown-logout"
-                                            onClick={() => (window.location.href = '/checkout')}
+                                            onClick={async () => {
+                                                try {
+                                                    const res = await fetch(`${API_BASE_URL}/checkout`, {
+                                                        method: 'POST',
+                                                        credentials: 'include',
+                                                    });
+                                                    if (res.ok) {
+                                                        // success! send them on to the checkout page
+                                                        window.location.href = '/checkout';
+                                                    } else if (res.status === 409) {
+                                                        alert('Sie haben bereits einen offenen Checkout.');
+                                                    } else {
+                                                        alert('Fehler beim Erstellen des Checkouts.');
+                                                    }
+                                                } catch (err) {
+                                                    console.error(err);
+                                                    alert('Netzwerkfehler beim Checkout.');
+                                                }
+                                            }}
                                         >
                                             Weiter
                                         </button>

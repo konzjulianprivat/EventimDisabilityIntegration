@@ -1874,34 +1874,39 @@ async function getOrCreateCart(userId) {
  * POST /cart-items
  * Body: { eventId, eventCategoryId, quantity, price }
  */
+// POST /cart-items
 app.post('/cart-items', async (req, res) => {
     const userId = req.session.userId;
     if (!userId) {
         return res.status(401).json({ message: 'Not logged in' });
     }
 
-    let { eventId, eventCategoryId, quantity, price } = req.body;
-    if (!eventId || !eventCategoryId || !quantity || !price) {
+    const { eventCategoryId, quantity } = req.body;
+    if (!eventCategoryId || quantity == null) {
         return res.status(400).json({ message: 'Missing parameters' });
     }
 
     try {
-        // ensure cart exists
+        // 1) ensure cart exists
         const cartId = await getOrCreateCart(userId);
 
-        // reject duplicate
-        const dup = await client.query(
-            `SELECT 1 FROM cart_items
-             WHERE cart_id = $1 AND event_category_id = $2`,
+        // 2) reject duplicate
+        const { rows: dup } = await client.query(
+            `SELECT 1
+             FROM cart_items
+             WHERE cart_id = $1
+               AND event_category_id = $2`,
             [cartId, eventCategoryId]
         );
-        if (dup.rows.length) {
+        if (dup.length) {
             return res.status(409).json({ message: 'Item already in cart' });
         }
 
-        // gather category info
+        // 3) fetch category info (including event_id and disability flag)
         const { rows: catInfo } = await client.query(
-            'SELECT event_id, disability_support_for FROM event_categories WHERE id = $1',
+            `SELECT event_id, disability_support_for
+             FROM event_categories
+             WHERE id = $1`,
             [eventCategoryId]
         );
         if (catInfo.length === 0) {
@@ -1910,54 +1915,48 @@ app.post('/cart-items', async (req, res) => {
         const catEventId = catInfo[0].event_id;
         const isDisabledCat = catInfo[0].disability_support_for !== null;
 
-        // verify eventId from body matches category's event_id
-        eventId = catEventId;
-
-        // quantity limits
+        // 4) enforce quantity limits
         if (isDisabledCat) {
-            // only one disabled ticket per event across all categories
+            // one disabled ticket per event max
             const { rows: dRows } = await client.query(
                 `SELECT COALESCE(SUM(ci.quantity),0) AS qty
                  FROM cart_items ci
-                         JOIN event_categories ec ON ec.id = ci.event_category_id
-                 WHERE ci.cart_id = $1 AND ec.event_id = $2 AND ec.disability_support_for IS NOT NULL`,
+                 JOIN event_categories ec ON ec.id = ci.event_category_id
+                 WHERE ci.cart_id = $1
+                   AND ec.event_id = $2
+                   AND ec.disability_support_for IS NOT NULL`,
                 [cartId, catEventId]
             );
-            const disabledQty = Number(dRows[0].qty) || 0;
-            if (disabledQty >= 1) {
-                return res.status(400).json({ message: 'Disabled ticket already in cart' });
+            if (Number(dRows[0].qty) >= 1 || quantity > 1) {
+                return res.status(400).json({ message: 'Disabled ticket limit exceeded' });
             }
-            quantity = 1; // enforce
         } else {
-            // total regular tickets across event may not exceed 8
+            // up to 8 regular tickets per event
             const { rows: rRows } = await client.query(
                 `SELECT COALESCE(SUM(ci.quantity),0) AS qty
                  FROM cart_items ci
-                         JOIN event_categories ec ON ec.id = ci.event_category_id
-                 WHERE ci.cart_id = $1 AND ec.event_id = $2 AND ec.disability_support_for IS NULL`,
+                 JOIN event_categories ec ON ec.id = ci.event_category_id
+                 WHERE ci.cart_id = $1
+                   AND ec.event_id = $2
+                   AND ec.disability_support_for IS NULL`,
                 [cartId, catEventId]
             );
-            const regularQty = Number(rRows[0].qty) || 0;
-            if (regularQty + Number(quantity) > 8) {
+            if (Number(rRows[0].qty) + Number(quantity) > 8) {
                 return res.status(400).json({ message: 'Regular ticket limit exceeded' });
             }
         }
 
-        // insert and return the new id & quantity
+        // 5) insert the new cart_item (no price column!)
         const { rows } = await client.query(
             `INSERT INTO cart_items
-         (id, cart_id, event_id, event_category_id, quantity, price)
-       VALUES
-         ($1, $2, $3, $4, $5, $6)
-       RETURNING id, quantity;`,
-            [uuidv4(), cartId, eventId, eventCategoryId, quantity, price]
+               (id, cart_id, event_id, event_category_id, quantity)
+             VALUES
+               ($1, $2, $3, $4, $5)
+             RETURNING id, quantity`,
+            [uuidv4(), cartId, catEventId, eventCategoryId, quantity]
         );
 
-        const newItem = rows[0];
-        return res.status(201).json({
-            id: newItem.id,
-            quantity: newItem.quantity
-        });
+        return res.status(201).json(rows[0]);
     } catch (err) {
         console.error('Error adding to cart:', err);
         return res.status(500).json({ message: 'Server error' });
@@ -1965,14 +1964,19 @@ app.post('/cart-items', async (req, res) => {
 });
 
 // GET /cart-items
+// GET /cart-items
 app.get('/cart-items', async (req, res) => {
     const userId = req.session.userId;
-    if (!userId) return res.status(401).json({ message: 'Not logged in' });
+    if (!userId) {
+        return res.status(401).json({ message: 'Not logged in' });
+    }
 
     try {
-        // 1) Find existing cart
+        // 1) find existing cart
         const { rows: cartRows } = await client.query(
-            'SELECT id FROM carts WHERE user_id = $1',
+            `SELECT id
+             FROM carts
+             WHERE user_id = $1`,
             [userId]
         );
         if (cartRows.length === 0) {
@@ -1980,21 +1984,21 @@ app.get('/cart-items', async (req, res) => {
         }
         const cartId = cartRows[0].id;
 
-        // 2) Fetch items, ordered by the correct timestamp column
+        // 2) fetch items, pulling price from event_categories.price
         const { rows } = await client.query(
             `
                 SELECT
                     ci.id,
                     ci.event_id,
-                    ec.id      AS event_category_id,
+                    ec.id AS event_category_id,
                     ec.disability_support_for,
-                    t.title    AS title,
-                    ec.name    AS category,
+                    t.title AS title,
+                    ec.name AS category,
                     ci.quantity,
-                    ci.price
+                    ec.price AS price
                 FROM cart_items ci
-                         JOIN events e            ON e.id = ci.event_id
-                         JOIN tours t             ON t.id = e.tour_id
+                         JOIN events e ON e.id = ci.event_id
+                         JOIN tours t ON t.id = e.tour_id
                          JOIN event_categories ec ON ec.id = ci.event_category_id
                 WHERE ci.cart_id = $1
                 ORDER BY ci.added_at
@@ -2009,9 +2013,6 @@ app.get('/cart-items', async (req, res) => {
     }
 });
 
-
-
-// PATCH /cart-items/:id
 app.patch('/cart-items/:id', async (req, res) => {
     const userId = req.session.userId;
     if (!userId) return res.status(401).json({ message: 'Not logged in' });
@@ -2113,6 +2114,188 @@ app.delete('/cart-items/:id', async (req, res) => {
     }
 });
 
+// helper: find existing checkout for this user
+async function getCheckoutIdForUser(userId) {
+    const { rows } = await client.query(
+        `SELECT id FROM checkouts WHERE user_id = $1`,
+        [userId]
+    );
+    return rows[0] && rows[0].id;
+}
+
+// POST /checkout
+// – creates a checkout + copies all cart_items → checkout_items
+app.post('/checkout', async (req, res) => {
+    const userId = req.session.userId;
+    if (!userId) return res.status(401).json({ message: 'Not logged in' });
+
+    try {
+        // 1) Guard: no double‐checkout
+        const existing = await getCheckoutIdForUser(userId);
+        if (existing) {
+            return res.status(409).json({ message: 'Checkout already exists' });
+        }
+
+        await client.query('BEGIN');
+
+        // 2) Create checkout
+        const checkoutId = uuidv4();
+        await client.query(
+            `INSERT INTO checkouts (id, user_id) VALUES ($1, $2)`,
+            [checkoutId, userId]
+        );
+
+        // 3) Grab all cart_items for user (with their current price)
+        const { rows: cartItems } = await client.query(
+            `
+      SELECT
+        ci.event_category_id,
+        ci.quantity,
+        ec.price
+      FROM cart_items ci
+      JOIN carts c              ON ci.cart_id = c.id
+      JOIN event_categories ec  ON ci.event_category_id = ec.id
+      WHERE c.user_id = $1
+      `,
+            [userId]
+        );
+
+        // 4) Insert them into checkout_items
+        for (const item of cartItems) {
+            await client.query(
+                `INSERT INTO checkout_items
+           (id, checkout_id, event_category_id, quantity, price)
+         VALUES ($1,$2,$3,$4,$5)`,
+                [uuidv4(), checkoutId, item.event_category_id, item.quantity, item.price]
+            );
+        }
+
+        // 5) (optional) clear the cart now that items are in checkout:
+        await client.query(
+            `DELETE FROM cart_items
+         USING carts
+        WHERE cart_items.cart_id = carts.id
+          AND carts.user_id = $1`,
+            [userId]
+        );
+
+        await client.query('COMMIT');
+        return res.status(201).json({ checkoutId });
+    } catch (err) {
+        await client.query('ROLLBACK');
+        console.error('Error creating checkout:', err);
+        return res.status(500).json({ message: 'Server error' });
+    }
+});
+
+// GET /checkout-items
+// – returns everything you need to render the checkout page
+app.get('/checkout-items', async (req, res) => {
+    const userId = req.session.userId;
+    if (!userId) {
+        return res.status(401).json({ message: 'Not logged in' });
+    }
+
+    try {
+        // 1) find checkout for this user
+        const { rows: coRows } = await client.query(
+            'SELECT id, created_at FROM checkouts WHERE user_id = $1',
+            [userId]
+        );
+        if (coRows.length === 0) {
+            return res.status(404).json({ message: 'No active checkout' });
+        }
+        const { id: checkoutId, created_at } = coRows[0];
+
+        // 2) fetch items with all needed fields
+        const { rows: items } = await client.query(
+            `
+                SELECT
+                    ci.id,
+                    ec.name        AS category,
+                    t.title        AS eventTitle,
+                    v.name         AS venueName,
+                    e.start_time   AS eventTime,
+                    t.tour_image   AS image,
+                    ci.quantity,
+                    ci.price
+                FROM checkout_items ci
+                         JOIN event_categories ec  ON ec.id = ci.event_category_id
+                         JOIN events e             ON e.id = ec.event_id
+                         JOIN tours t              ON t.id = e.tour_id
+                         JOIN venues v             ON v.id = e.venue_id
+                WHERE ci.checkout_id = $1
+                ORDER BY ci.added_at
+            `,
+            [checkoutId]
+        );
+
+        // 3) return createdAt + items array
+        return res.json({
+            createdAt: created_at,
+            items
+        });
+    } catch (err) {
+        console.error('Error fetching checkout items:', err);
+        return res.status(500).json({ message: 'Server error' });
+    }
+});
+
+app.delete('/checkout', async (req, res) => {
+    const userId = req.session.userId;
+    if (!userId) return res.status(401).json({ message: 'Not logged in' });
+
+    try {
+        // 1) find checkout
+        const { rows } = await client.query(
+            'SELECT id FROM checkouts WHERE user_id = $1',
+            [userId]
+        );
+        if (!rows.length) return res.status(404).json({ message: 'No checkout to delete' });
+        const checkoutId = rows[0].id;
+
+        // 2) delete in a transaction
+        await client.query('BEGIN');
+        await client.query('DELETE FROM checkout_items WHERE checkout_id = $1', [checkoutId]);
+        await client.query('DELETE FROM checkouts WHERE id = $1', [checkoutId]);
+        await client.query('COMMIT');
+
+        return res.json({ message: 'Checkout cleared' });
+    } catch (err) {
+        await client.query('ROLLBACK');
+        console.error('Error deleting checkout:', err);
+        return res.status(500).json({ message: 'Server error' });
+    }
+});
+
+// DELETE /checkout-items/:id
+app.delete('/checkout-items/:id', async (req, res) => {
+    const userId = req.session.userId;
+    if (!userId) return res.status(401).json({ message: 'Not logged in' });
+
+    const itemId = req.params.id;
+    try {
+        // ensure this belongs to the user’s checkout
+        const { rows } = await client.query(
+            `DELETE FROM checkout_items ci
+         USING checkouts co
+        WHERE ci.id = $1
+          AND ci.checkout_id = co.id
+          AND co.user_id = $2`,
+            [itemId, userId]
+        );
+
+        // rowCount===0 ⇒ not found or forbidden
+        if (rows.length === 0) {
+            return res.status(404).json({ message: 'Item not found' });
+        }
+
+        return res.json({ message: 'Item removed' });
+    } catch (err) {
+        console.error('Error deleting checkout item:', err);
+        return res.status(500).json({ message: 'Server error' });
+    }
+});
 
 const client = new Client(credentials);
 client.connect()
