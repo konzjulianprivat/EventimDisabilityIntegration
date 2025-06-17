@@ -93,6 +93,16 @@ export default function Checkout() {
     // guard against undefined
     const subtotal = (items || []).reduce((sum, t) => sum + t.price * t.quantity, 0);
 
+    const formatDate = (d) =>
+        new Date(d).toLocaleDateString('de-DE', {
+            weekday: 'long',
+            day: '2-digit',
+            month: '2-digit',
+            year: 'numeric',
+        });
+    const formatTime = (d) =>
+        new Date(d).toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' });
+
     return (
         <div className="checkoutPage__container">
             <div className="checkoutPage__cart-details">
@@ -100,11 +110,11 @@ export default function Checkout() {
                 {items.map(t => {
                     const {
                         id,
+                        eventId,
+                        startTime,
                         category,
                         eventTitle,
                         eventVenue,
-                        eventDate,
-                        eventStartTime,
                         image,
                         quantity,
                         price
@@ -126,14 +136,9 @@ export default function Checkout() {
                                 <div className="checkoutPage__item-info">
                                     <h2>{quantity} × {eventTitle} [{category}]</h2>
                                     <p>{eventVenue}</p>
-                                    <p>{new Date(`${eventDate}T${eventStartTime}`).toLocaleString('de-DE', {
-                                        weekday: 'long',
-                                        day: '2-digit',
-                                        month: '2-digit',
-                                        year: 'numeric',
-                                        hour: '2-digit',
-                                        minute: '2-digit'
-                                    })}</p>
+                                    <p>
+                                        {formatDate(startTime)} | {formatTime(startTime)}
+                                    </p>
                                 </div>
                             </div>
                             <button

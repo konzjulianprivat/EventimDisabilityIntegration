@@ -2213,9 +2213,11 @@ app.get('/checkout-items', async (req, res) => {
             `
                 SELECT
                     ci.id,
+                    ci.event_id   AS "eventId",
                     ec.name        AS category,
                     t.title        AS "eventTitle",
                     v.name         AS "eventVenue",
+                    e.start_time   AS "startTime",
                     e.start_time::date AS "eventDate",
                     e.start_time::time AS "eventStartTime",
                     t.tour_image   AS image,
