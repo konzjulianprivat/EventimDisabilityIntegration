@@ -2214,17 +2214,17 @@ app.get('/checkout-items', async (req, res) => {
                 SELECT
                     ci.id,
                     ec.name        AS category,
-                    t.title        AS eventTitle,
+                    t.title        AS title,         -- was eventTitle
                     v.name         AS venueName,
-                    e.start_time   AS eventTime,
+                    e.start_time   AS startTime,     -- was eventTime
                     t.tour_image   AS image,
                     ci.quantity,
                     ci.price
                 FROM checkout_items ci
-                         JOIN event_categories ec  ON ec.id = ci.event_category_id
-                         JOIN events e             ON e.id = ci.event_id
-                         JOIN tours t              ON t.id = e.tour_id
-                         JOIN venues v             ON v.id = e.venue_id
+                         JOIN event_categories ec ON ec.id        = ci.event_category_id
+                         JOIN events            e  ON e.id         = ci.event_id
+                         JOIN tours             t  ON t.id         = e.tour_id
+                         JOIN venues            v  ON v.id         = e.venue_id
                 WHERE ci.checkout_id = $1
                 ORDER BY ci.added_at
             `,
