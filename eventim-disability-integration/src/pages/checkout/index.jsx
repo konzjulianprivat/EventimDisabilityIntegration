@@ -102,8 +102,9 @@ export default function Checkout() {
                         id,
                         category,
                         eventTitle,
-                        venueName,
-                        eventTime,
+                        eventVenue,
+                        eventDate,
+                        eventStartTime,
                         image,
                         quantity,
                         price
@@ -124,8 +125,8 @@ export default function Checkout() {
                                 />
                                 <div className="checkoutPage__item-info">
                                     <h2>{quantity} × {eventTitle} [{category}]</h2>
-                                    <p>{venueName}</p>
-                                    <p>{new Date(eventTime).toLocaleString('de-DE', {
+                                    <p>{eventVenue}</p>
+                                    <p>{new Date(`${eventDate}T${eventStartTime}`).toLocaleString('de-DE', {
                                         weekday: 'long',
                                         day: '2-digit',
                                         month: '2-digit',
