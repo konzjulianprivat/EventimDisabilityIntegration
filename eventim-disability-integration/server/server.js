@@ -2151,7 +2151,8 @@ app.post('/checkout', async (req, res) => {
       SELECT
         ci.event_category_id,
         ci.quantity,
-        ec.price
+        ec.price,
+        ec.event_id
       FROM cart_items ci
       JOIN carts c              ON ci.cart_id = c.id
       JOIN event_categories ec  ON ci.event_category_id = ec.id
@@ -2164,9 +2165,9 @@ app.post('/checkout', async (req, res) => {
         for (const item of cartItems) {
             await client.query(
                 `INSERT INTO checkout_items
-           (id, checkout_id, event_category_id, quantity, price)
-         VALUES ($1,$2,$3,$4,$5)`,
-                [uuidv4(), checkoutId, item.event_category_id, item.quantity, item.price]
+           (id, checkout_id, event_category_id, quantity, price, event_id)
+         VALUES ($1,$2,$3,$4,$5,$6)`,
+                [uuidv4(), checkoutId, item.event_category_id, item.quantity, item.price, item.event_id]
             );
         }
 
@@ -2221,7 +2222,7 @@ app.get('/checkout-items', async (req, res) => {
                     ci.price
                 FROM checkout_items ci
                          JOIN event_categories ec  ON ec.id = ci.event_category_id
-                         JOIN events e             ON e.id = ec.event_id
+                         JOIN events e             ON e.id = ci.event_id
                          JOIN tours t              ON t.id = e.tour_id
                          JOIN venues v             ON v.id = e.venue_id
                 WHERE ci.checkout_id = $1
