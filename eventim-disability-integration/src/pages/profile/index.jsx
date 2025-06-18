@@ -1,4 +1,4 @@
-// pages/profile/index.jsx
+// pages/profile/shopping-cart.jsx
 "use client";
 
 import React, { useState } from "react";

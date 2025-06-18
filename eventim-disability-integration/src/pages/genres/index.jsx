@@ -1,12 +1,12 @@
-import { useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+export async function getServerSideProps(context) {
+    return {
+        redirect: {
+            destination: '/',   // where to send them
+            permanent: false,    // 307 redirect (not cached as permanent)
+        },
+    };
+}
 
-export default function HomepagePush() {
-    const navigate = useNavigate();
-
-    useEffect(() => {
-        navigate('/', { replace: true });
-    }, [navigate]);
-
+export default function Index() {
     return null;
 }

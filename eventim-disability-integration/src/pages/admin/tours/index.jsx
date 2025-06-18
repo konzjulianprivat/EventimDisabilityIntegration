@@ -1,4 +1,4 @@
-// pages/admin/tours/index.jsx
+// pages/admin/tours/shopping-cart.jsx
 
 import React, { useEffect, useState } from 'react';
 import FilterBar from '../../../components/filter-bar';

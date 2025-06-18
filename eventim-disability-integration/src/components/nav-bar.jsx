@@ -225,7 +225,7 @@ export default function NavBar() {
                                                     });
                                                     if (res.ok) {
                                                         // success! send them on to the checkout page
-                                                        window.location.href = '/checkout';
+                                                        window.location.href = '/checkout/shopping-cart';
                                                     } else if (res.status === 409) {
                                                         alert('Sie haben bereits einen offenen Checkout.');
                                                     } else {
