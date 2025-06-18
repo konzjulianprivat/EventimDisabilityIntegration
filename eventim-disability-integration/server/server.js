@@ -1083,9 +1083,19 @@ app.get('/cities-with-venues', async (req, res) => {
 app.get("/tours-with-images", async (req, res) => {
     try {
         const { rows } = await client.query(
-            `SELECT id, title, tour_image
-       FROM tours
-       ORDER BY title`
+            `
+                SELECT DISTINCT ON (t.id)
+                    t.id,
+                    t.title,
+                    t.tour_image,
+                    ta.artist_id
+                FROM tours AS t
+                     JOIN tour_artists AS ta
+                          ON ta.tour_id = t.id
+                ORDER BY
+                    t.id,
+                    ta.artist_id;
+            `
         );
         res.status(200).json({ tours: rows });
     } catch (err) {
@@ -2213,10 +2223,11 @@ app.get('/checkout-items', async (req, res) => {
             `
                 SELECT
                     ci.id,
-                    ci.event_id   AS "eventId",
+                    ci.event_id    AS "eventId",
                     ec.name        AS category,
                     t.title        AS "eventTitle",
                     v.name         AS "eventVenue",
+                    c.name         AS "eventCity",
                     e.start_time   AS "startTime",
                     e.start_time::date AS "eventDate",
                     e.start_time::time AS "eventStartTime",
@@ -2228,6 +2239,7 @@ app.get('/checkout-items', async (req, res) => {
                          JOIN events            e  ON e.id         = ci.event_id
                          JOIN tours             t  ON t.id         = e.tour_id
                          JOIN venues            v  ON v.id         = e.venue_id
+                         JOIN cities            c  ON c.id         = v.city_id   
                 WHERE ci.checkout_id = $1
                 ORDER BY ci.added_at
             `,
@@ -2299,6 +2311,10 @@ app.delete('/checkout-items/:id', async (req, res) => {
         console.error('Error deleting checkout item:', err);
         return res.status(500).json({ message: 'Server error' });
     }
+});
+
+app.get(/.*/, (req, res) => {
+    res.redirect(301, 'http://localhost:3000');
 });
 
 const client = new Client(credentials);

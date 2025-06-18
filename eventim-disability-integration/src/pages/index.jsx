@@ -53,7 +53,7 @@ export default function HomePage() {
                 tour={tours.map((t) => ({
                     imageId: t.tour_image,
                     title: t.title,
-                    link: `/tour/${t.id}`,
+                    link: `/artists/${t.artist_id}/${t.id}`,
                 }))}
             />
             <div className="highlights-section">
@@ -64,7 +64,7 @@ export default function HomePage() {
                             key={tour.id}
                             imageId={tour.tour_image}
                             title={tour.title}
-                            link={`/tour/${tour.id}`}
+                            link={`/artists/${tour.artist_id}/${tour.id}`}
                         />
                     ))}
                 </div>
@@ -78,7 +78,7 @@ export default function HomePage() {
                             key={artist.id}
                             imageId={artist.artist_image}
                             title={artist.name}
-                            link={`/artist/${artist.id}`}
+                            link={`/artists/${artist.id}`}
                         />
                     ))}
                 </div>

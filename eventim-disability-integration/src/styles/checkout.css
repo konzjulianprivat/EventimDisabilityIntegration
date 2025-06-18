@@ -2,8 +2,9 @@
 
 .checkoutPage__container {
     display: flex;
-    margin: 0 8%;
-    padding: 24px 0;
+    margin-left: 10%;
+    margin-right: 10%;
+    padding: 15px;
     font-family: Arial, sans-serif;
     color: #22303C;
     background: #F7F7F7;
@@ -89,7 +90,7 @@
     display: flex;
     flex-direction: column;
     gap: 24px;
-    padding: 15px;
+    padding-left: 15px;
 }
 
 .checkoutPage__reservation-box {

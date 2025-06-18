@@ -104,8 +104,8 @@ export default function Checkout() {
         new Date(d).toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' });
 
     return (
-        <div className="checkoutPage__container">
-            <div className="checkoutPage__cart-details">
+        <div className="checkoutPage__container" >
+            <div className="checkoutPage__item" style={{paddingLeft: '15px'}}>
                 <div className="checkoutPage__header">Bestellübersicht</div>
                 {items.map(t => {
                     const {
@@ -115,6 +115,7 @@ export default function Checkout() {
                         category,
                         eventTitle,
                         eventVenue,
+                        eventCity,
                         image,
                         quantity,
                         price
@@ -134,11 +135,15 @@ export default function Checkout() {
                                     height={120}
                                 />
                                 <div className="checkoutPage__item-info">
-                                    <h2>{quantity} × {eventTitle} [{category}]</h2>
-                                    <p>{eventVenue}</p>
-                                    <p>
-                                        {formatDate(startTime)} | {formatTime(startTime)}
-                                    </p>
+                                    <h2 style={{fontWeight: "bold"}}>{quantity} × <a className="venue-link" href="#" style={{color: "black"}}>{eventTitle}</a> — {category}</h2>
+                                    <div className="meta-item">
+                                        <span className="icon-location" /> {eventCity} |{' '}
+                                        <a href="#" className="venue-link" style={{color: "black"}}>{eventVenue}</a>
+                                    </div>
+                                    <div className="meta-item">
+                                        <span className="icon-calendar" />
+                                        {formatDate(startTime)} | {formatTime(startTime)} Uhr
+                                    </div>
                                 </div>
                             </div>
                             <button
