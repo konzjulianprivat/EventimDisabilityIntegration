@@ -330,6 +330,38 @@ app.post('/logout', (req, res) => {
         return res.status(200).json({ message: 'Erfolgreich ausgeloggt.' });
     });
 });
+
+// Liefert die in der Nutzertabelle hinterlegte Standardadresse
+app.get('/user-address', async (req, res) => {
+    if (!req.session.userId) {
+        return res.status(401).json({ message: 'Not logged in' });
+    }
+
+    try {
+        const { rows } = await client.query(
+            `SELECT salutation, first_name, last_name, company, street_address, postal_code, city, country
+             FROM users WHERE user_id = $1`,
+            [req.session.userId]
+        );
+        if (!rows.length) {
+            return res.status(404).json({ message: 'User not found' });
+        }
+        return res.json({ address: rows[0] });
+    } catch (err) {
+        console.error('Error fetching user address:', err);
+        return res.status(500).json({ message: 'Server error' });
+    }
+});
+
+// Temporäres Speichern der Versandinformationen in der Session (wird später in der DB gespeichert)
+app.post('/checkout-shipping', (req, res) => {
+    if (!req.session.userId) {
+        return res.status(401).json({ message: 'Not logged in' });
+    }
+
+    req.session.shippingInfo = req.body || {};
+    return res.status(200).json({ message: 'OK' });
+});
 app.post('/create-country', async (req, res) => {
     try {
         const { name, code } = req.body;

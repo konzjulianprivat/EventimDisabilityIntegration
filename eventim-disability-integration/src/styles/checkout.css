@@ -191,3 +191,37 @@
     max-width: 60px;
     height: auto;
 }
+
+/* Shipping information form */
+.checkoutPage__checkbox {
+    display: block;
+    margin-bottom: 1rem;
+    font-size: 14px;
+}
+
+.shipping-form {
+    margin-bottom: 1rem;
+}
+
+.checkoutPage__form-field {
+    margin-bottom: 0.75rem;
+}
+
+.checkoutPage__form-field label {
+    display: block;
+    margin-bottom: 0.25rem;
+    font-weight: bold;
+}
+
+.checkoutPage__form-field input {
+    width: 100%;
+    padding: 0.5rem;
+    border: 1px solid #D1D1D1;
+    border-radius: 4px;
+}
+
+.checkoutPage__shipping-options label {
+    display: block;
+    margin-bottom: 0.5rem;
+    font-size: 14px;
+}
