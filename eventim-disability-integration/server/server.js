@@ -2,7 +2,8 @@ const express = require('express');
 const session = require('express-session');
 const cors = require('cors');
 const path = require('path');
-const { Client } = require('pg');
+const db = require('./db');
+const client = db;
 const bcrypt = require('bcrypt');
 const multer = require('multer');
 const crypto = require('crypto');
@@ -2349,41 +2350,47 @@ app.get(/.*/, (req, res) => {
     res.redirect(301, 'http://localhost:3000');
 });
 
-const client = new Client(credentials);
-client.connect()
-    .then(() => {
-        console.log('DB connected');
-        app.listen(4000, () => console.log('Server listening on http://localhost:4000'));
+async function startServer() {
+    while (true) {
+        try {
+            await db.query('SELECT 1');
+            console.log('DB connected');
+            break;
+        } catch (err) {
+            console.error('Failed to connect to DB, retrying in 5s...', err);
+            await new Promise(res => setTimeout(res, 5000));
+        }
+    }
 
-        // cleanup: remove expired checkouts and stale cart items every minute
-        setInterval(async () => {
-            try {
-                // drop cart items referencing removed events or categories
-                await client.query(`
-                    DELETE FROM cart_items ci
-                    WHERE NOT EXISTS (SELECT 1 FROM events e WHERE e.id = ci.event_id)
-                       OR NOT EXISTS (SELECT 1 FROM event_categories ec WHERE ec.id = ci.event_category_id)
-                `);
+    app.listen(4000, () => console.log('Server listening on http://localhost:4000'));
 
-                // delete checkout items older than 15 minutes
-                await client.query(`
-                    DELETE FROM checkout_items ci
-                    USING checkouts co
-                    WHERE ci.checkout_id = co.id
-                      AND co.created_at < NOW() - INTERVAL '15 minutes'
-                `);
+    // cleanup: remove expired checkouts and stale cart items every minute
+    setInterval(async () => {
+        try {
+            // drop cart items referencing removed events or categories
+            await db.query(`
+                DELETE FROM cart_items ci
+                WHERE NOT EXISTS (SELECT 1 FROM events e WHERE e.id = ci.event_id)
+                   OR NOT EXISTS (SELECT 1 FROM event_categories ec WHERE ec.id = ci.event_category_id)
+            `);
 
-                // delete the checkout records themselves
-                await client.query(`
-                    DELETE FROM checkouts
-                    WHERE created_at < NOW() - INTERVAL '15 minutes'
-                `);
-            } catch (err) {
-                console.error('Periodic cleanup error:', err);
-            }
-        }, 60 * 1000);
-    })
-    .catch(err => {
-        console.error('Failed to connect to DB, exiting.', err);
-        process.exit(1);
-    });
+            // delete checkout items older than 15 minutes
+            await db.query(`
+                DELETE FROM checkout_items ci
+                USING checkouts co
+                WHERE ci.checkout_id = co.id
+                  AND co.created_at < NOW() - INTERVAL '15 minutes'
+            `);
+
+            // delete the checkout records themselves
+            await db.query(`
+                DELETE FROM checkouts
+                WHERE created_at < NOW() - INTERVAL '15 minutes'
+            `);
+        } catch (err) {
+            console.error('Periodic cleanup error:', err);
+        }
+    }, 60 * 1000);
+}
+
+startServer();
