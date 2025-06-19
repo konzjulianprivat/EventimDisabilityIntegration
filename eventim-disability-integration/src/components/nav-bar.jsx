@@ -12,6 +12,7 @@ export default function NavBar() {
     const [genres, setGenres] = useState([]);
     const [cities, setCities] = useState([]);
     const { items: cartItems, loading: cartLoading, reload: reloadCart } = useCart();
+    const [showCheckoutModal, setShowCheckoutModal] = useState(false);
 
     const eventsRef = useRef(null);
     const placesRef = useRef(null);
@@ -229,10 +230,9 @@ export default function NavBar() {
                                                         credentials: 'include',
                                                     });
                                                     if (res.ok) {
-                                                        // success! send them on to the checkout page
                                                         window.location.href = '/checkout/shopping-cart';
                                                     } else if (res.status === 409) {
-                                                        alert('Sie haben bereits einen offenen Checkout.');
+                                                        setShowCheckoutModal(true);
                                                     } else {
                                                         alert('Fehler beim Erstellen des Checkouts.');
                                                     }
@@ -325,5 +325,41 @@ export default function NavBar() {
                 </div>
             </div>
         </div>
+        {showCheckoutModal && (
+            <div className="checkout-modal-overlay">
+                <div className="checkout-modal">
+                    <p>Sie haben bereits einen laufenden Checkout.</p>
+                    <div className="checkout-modal-actions">
+                        <button
+                            className="btn-ok"
+                            onClick={() => setShowCheckoutModal(false)}
+                        >
+                            Okay
+                        </button>
+                        <button
+                            className="btn-end"
+                            onClick={async () => {
+                                try {
+                                    const res = await fetch(`${API_BASE_URL}/checkout`, {
+                                        method: 'DELETE',
+                                        credentials: 'include',
+                                    });
+                                    if (res.ok) {
+                                        setShowCheckoutModal(false);
+                                    } else {
+                                        alert('Fehler beim Beenden des Checkouts.');
+                                    }
+                                } catch (err) {
+                                    console.error(err);
+                                    alert('Netzwerkfehler beim Beenden des Checkouts.');
+                                }
+                            }}
+                        >
+                            Checkout beenden
+                        </button>
+                    </div>
+                </div>
+            </div>
+        )}
     );
 }
