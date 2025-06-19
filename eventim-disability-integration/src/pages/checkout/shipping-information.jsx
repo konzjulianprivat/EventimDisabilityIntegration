@@ -24,12 +24,9 @@ export default function ShippingInformation() {
         country: '',
     });
 
-    const shippingOptions = [
-        { id: 'standard', label: 'Standardversand', price: 5.90 , description: 'Lieferung in 3-5 Werktagen' },
-        { id: 'express',  label: 'Expressversand',  price: 12.90 , description:  'Lieferung bis Morgen' },
-        { id: 'uber',  label: 'Uber-Lieferung',  price: 15.90 , description:  'Lieferung innerhalb von 90min' },
-    ];
-    const [selectedShipping, setSelectedShipping] = useState(shippingOptions[0]);
+    const [shippingOptions, setShippingOptions] = useState([]);
+    const [selectedShipping, setSelectedShipping] = useState(null);
+
 
     // Fetch user data
     const fetchAddress = async () => {
@@ -57,6 +54,41 @@ export default function ShippingInformation() {
         }
     };
 
+    const fetchShippingOptions = async () => {
+        try {
+            const res = await fetch(`${API_BASE_URL}/shipping-options`, { credentials: 'include' });
+            if (res.ok) {
+                const data = await res.json();
+                const opts = Array.isArray(data.options) ? data.options : [];
+                setShippingOptions(opts);
+                if (opts.length && !selectedShipping) {
+                    setSelectedShipping(opts[0]);
+                }
+            }
+        } catch (err) {
+            console.error('Error fetching shipping options:', err);
+        }
+    };
+
+    const fetchSessionShipping = async () => {
+        try {
+            const res = await fetch(`${API_BASE_URL}/checkout-shipping`, { credentials: 'include' });
+            if (res.ok) {
+                const data = await res.json();
+                if (data.shippingInfo) {
+                    const { shippingInfo: info, shippingMethod } = data.shippingInfo;
+                    if (info) setShippingInfo(prev => ({ ...prev, ...info }));
+                    if (shippingMethod && shippingOptions.length) {
+                        const opt = shippingOptions.find(o => o.id === shippingMethod);
+                        if (opt) setSelectedShipping(opt);
+                    }
+                }
+            }
+        } catch (err) {
+            console.error('Error fetching session shipping info:', err);
+        }
+    };
+
     const fetchCheckout = async () => {
         try {
             const res = await fetch(`${API_BASE_URL}/checkout-items`, { credentials: 'include' });
@@ -77,9 +109,16 @@ export default function ShippingInformation() {
     useEffect(() => {
         fetchCheckout();
         fetchAddress();
+        fetchShippingOptions();
         const poll = setInterval(fetchCheckout, 15_000);
         return () => clearInterval(poll);
     }, []);
+
+    useEffect(() => {
+        if (shippingOptions.length) {
+            fetchSessionShipping();
+        }
+    }, [shippingOptions]);
 
     useEffect(() => {
         if (useDifferentAddress) {
@@ -126,7 +165,7 @@ export default function ShippingInformation() {
                 method: 'POST',
                 credentials: 'include',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ shippingInfo, shippingMethod: selectedShipping.id })
+                body: JSON.stringify({ shippingInfo, shippingMethod: selectedShipping ? selectedShipping.id : null })
             });
             router.push('/checkout/payment');
         } catch (err) {
@@ -135,7 +174,7 @@ export default function ShippingInformation() {
     };
 
     const subtotal = items.reduce((sum, t) => sum + t.price * t.quantity, 0);
-    const shippingCost = selectedShipping.price;
+    const shippingCost = selectedShipping ? selectedShipping.price : 0;
     const total = subtotal + shippingCost;
 
     return (
@@ -160,26 +199,30 @@ export default function ShippingInformation() {
 
                     {useDifferentAddress && (
                         <div className="shipping-form">
-                            {[
-                                'salutation',
-                                'firstName',
-                                'lastName',
-                                'company',
-                                'streetAddress',
-                                'postalCode',
-                                'city',
-                                'country'
-                            ].map(field => (
+                            <div className="checkoutPage__form-field">
+                                <label htmlFor="salutation">Anrede</label>
+                                <select
+                                    id="salutation"
+                                    name="salutation"
+                                    value={shippingInfo.salutation || ''}
+                                    onChange={handleFieldChange}
+                                >
+                                    <option value="">Bitte wählen</option>
+                                    <option value="Herr">Herr</option>
+                                    <option value="Frau">Frau</option>
+                                    <option value="Dr.">Dr.</option>
+                                    <option value="Prof.">Prof.</option>
+                                    <option value="Divers">Divers</option>
+                                </select>
+                            </div>
+
+                            {['firstName', 'lastName', 'company', 'streetAddress'].map((field) => (
                                 <div key={field} className="checkoutPage__form-field">
                                     <label htmlFor={field}>{{
-                                        salutation: 'Anrede',
-                                        firstName:   'Vorname',
-                                        lastName:    'Nachname',
-                                        company:     'Firma',
-                                        streetAddress: 'Straße und Hausnummer',
-                                        postalCode:   'PLZ',
-                                        city:         'Stadt',
-                                        country:      'Land'
+                                        firstName: 'Vorname',
+                                        lastName: 'Nachname',
+                                        company: 'Firma',
+                                        streetAddress: 'Straße und Hausnummer'
                                     }[field]}</label>
                                     <input
                                         id={field}
@@ -189,6 +232,37 @@ export default function ShippingInformation() {
                                     />
                                 </div>
                             ))}
+
+                            <div style={{ display: 'flex', gap: '1rem', marginBottom: '0.75rem' }}>
+                                <div style={{ flex: '1' }} className="checkoutPage__form-field">
+                                    <label htmlFor="postalCode">PLZ</label>
+                                    <input
+                                        id="postalCode"
+                                        name="postalCode"
+                                        value={shippingInfo.postalCode}
+                                        onChange={handleFieldChange}
+                                    />
+                                </div>
+                                <div style={{ flex: '2' }} className="checkoutPage__form-field">
+                                    <label htmlFor="city">Stadt</label>
+                                    <input
+                                        id="city"
+                                        name="city"
+                                        value={shippingInfo.city}
+                                        onChange={handleFieldChange}
+                                    />
+                                </div>
+                            </div>
+
+                            <div className="checkoutPage__form-field">
+                                <label htmlFor="country">Land</label>
+                                <input
+                                    id="country"
+                                    name="country"
+                                    value={shippingInfo.country}
+                                    onChange={handleFieldChange}
+                                />
+                            </div>
                         </div>
                     )}
                 </div>
@@ -204,7 +278,7 @@ export default function ShippingInformation() {
                                     type="radio"
                                     name="shippingOption"
                                     value={opt.id}
-                                    checked={selectedShipping.id === opt.id}
+                                    checked={selectedShipping && selectedShipping.id === opt.id}
                                     onChange={() => setSelectedShipping(opt)}
                                 />
                                 <span className="checkoutPage__shipping-option-label checkoutPage__text-lg">

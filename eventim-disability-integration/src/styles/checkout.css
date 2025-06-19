@@ -220,6 +220,13 @@
     border: 1px solid #D1D1D1;
     border-radius: 4px;
 }
+.checkoutPage__form-field select {
+    width: 100%;
+    padding: 0.5rem;
+    border: 1px solid #D1D1D1;
+    border-radius: 4px;
+    background-color: white;
+}
 
 /* Custom checkbox */
 .checkoutPage__styled-checkbox {

@@ -372,6 +372,24 @@ app.post('/checkout-shipping', (req, res) => {
     req.session.checkout.shippingInfo = req.body || {};
     return res.status(200).json({ message: 'OK' });
 });
+
+// Liefert die aktuell in der Checkout-Session gespeicherten Lieferinformationen
+app.get('/checkout-shipping', (req, res) => {
+    if (!req.session.userId) {
+        return res.status(401).json({ message: 'Not logged in' });
+    }
+
+    if (!req.session.checkout) {
+        return res.status(404).json({ message: 'No active checkout' });
+    }
+
+    if (Date.now() - req.session.checkout.startedAt > 15 * 60 * 1000) {
+        req.session.checkout = null;
+        return res.status(404).json({ message: 'Checkout expired' });
+    }
+
+    return res.json({ shippingInfo: req.session.checkout.shippingInfo || null });
+});
 app.post('/create-country', async (req, res) => {
     try {
         const { name, code } = req.body;
@@ -405,6 +423,19 @@ app.get('/countries', async (req, res) => {
     } catch (error) {
         console.error('Error fetching countries:', error);
         res.status(500).json({ message: 'Fehler beim Laden der Länder' });
+    }
+});
+
+// Liefert alle verfügbaren Versandoptionen
+app.get('/shipping-options', async (req, res) => {
+    try {
+        const result = await client.query(
+            'SELECT id, label, price, description FROM shipping_options ORDER BY price'
+        );
+        res.status(200).json({ options: result.rows });
+    } catch (error) {
+        console.error('Error fetching shipping options:', error);
+        res.status(500).json({ message: 'Serverfehler beim Laden der Versandoptionen' });
     }
 });
 app.post('/create-artist', upload.single('artistImage'), async (req, res) => {
