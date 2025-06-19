@@ -196,6 +196,7 @@ export default function NavBar() {
                                                     <span className="cart-subtitle">{item.category}</span>
                                                 </div>
                                                 <div className="cart-qty">{item.quantity}</div>
+                                                <div className="cart-qty">Make the cart-items text color purple and add a small 'B' in this text box right here</div>
                                                 <div className="cart-line-price">
                                                     {(item.quantity * parseFloat(item.price)).toFixed(2)} €
                                                 </div>
@@ -204,7 +205,7 @@ export default function NavBar() {
                                                     onClick={() => deleteCartItem(item.id)}
                                                     aria-label="Entfernen"
                                                 >
-                                                    ×
+                                                    × (make deletion button only delete non-assistance tickets, assistance tickets cannot be deleted here, but they are automatically deleted once all tickets of the same event_category were deleted)
                                                 </button>
                                             </div>
                                         ))}

@@ -284,7 +284,6 @@ export default function EventPage() {
             {(showDisabledSection || requiresAssistance) && (
                 <section className="ticket-section" style={{
                     paddingBottom: (requiresAssistance && !showDisabledSection) ? 0 : undefined,
-
                 }}>
                     <label className="new-label">NEW</label>
                     <h2 className="section-title">Ticketbuchung für Menschen mit Schwerbehinderung</h2>
@@ -299,7 +298,7 @@ export default function EventPage() {
                                 <span className="slider" />
                             </label>
                             <span className="toggle-label">
-                          {bookingForMe ? 'Buchung für mich' : 'Buchung für Freunde'}
+                          {bookingForMe ? 'Buchung für mich (inkl. Begleitung)' : 'Buchung für andere Personen'}
                       </span>
                         </div>
                     )}
@@ -310,14 +309,14 @@ export default function EventPage() {
                             <div className="row-label">
                                 1. Bitte wähle die Anzahl der Tickets:
                                 <div className="row-note">
-                                    Bitte beachte, dass du nur Tickets für dich selbst buchen kannst.
+                                    Bitte beachte, dass du nur Tickets für dich {requiresAssistance ? 'und deine Begleitperson' : 'selbst'} buchen kannst.
                                 </div>
                             </div>
                             {requiresAssistance && bookingForMe && isDisabledCatSelected && (
                                 <div className="row-control">
                                     <div className="row-note" style={{color: "purple"}}>
                                         <img src="/pictures/info_icon_new.png" alt="Info" style={{maxWidth: "15px", maxHeight: "15px"}} />
-                                        Deine Begleitperson wird in der ersten Kategorie <br/> automatisch mitgebucht.
+                                        Deine Begleitperson wird automatisch mitgebucht.
                                     </div>
                                 </div>
                             )}
@@ -414,7 +413,7 @@ export default function EventPage() {
                             <div className="row-control">
                                 <div className="row-note" style={{color: "purple"}}>
                                     <img src="/pictures/info_icon_new.png" alt="Info" style={{maxWidth: "15px", maxHeight: "15px"}} />
-                                    Deine Begleitperson wird in der ersten Kategorie <br/> automatisch mitgebucht.
+                                    Deine Begleitperson wird automatisch mitgebucht.
                                 </div>
                             </div>
                         )}
