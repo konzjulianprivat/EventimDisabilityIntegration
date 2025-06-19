@@ -94,6 +94,20 @@
     color: #b71c1c;
 }
 
+.checkoutPage__delete-btn:disabled {
+    color: lightgray;
+    cursor: not-allowed;
+}
+
+.checkoutPage__item.assistance {
+    color: purple;
+}
+
+.assist-flag {
+    color: purple;
+    font-weight: bold;
+}
+
 .checkoutPage__sidebar {
     flex: 1 1 0;
     display: flex;
