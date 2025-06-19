@@ -1964,12 +1964,10 @@ app.post('/cart-items', async (req, res) => {
         return res.status(401).json({ message: 'Not logged in' });
     }
 
-    const { eventCategoryId, quantity, isAssistanceTicket } = req.body;
+    const { eventCategoryId, quantity } = req.body;
     if (!eventCategoryId || quantity == null) {
         return res.status(400).json({ message: 'Missing parameters' });
     }
-
-    const assistance = Boolean(isAssistanceTicket);
 
     try {
         // 1) ensure cart exists
@@ -1980,9 +1978,8 @@ app.post('/cart-items', async (req, res) => {
             `SELECT 1
              FROM cart_items
              WHERE cart_id = $1
-               AND event_category_id = $2
-               AND is_assistance_ticket = $3`,
-            [cartId, eventCategoryId, assistance]
+               AND event_category_id = $2`,
+            [cartId, eventCategoryId]
         );
         if (dup.length) {
             return res.status(409).json({ message: 'Item already in cart' });
@@ -2002,11 +1999,7 @@ app.post('/cart-items', async (req, res) => {
         const isDisabledCat = catInfo[0].disability_support_for !== null;
 
         // 4) enforce quantity limits
-        if (assistance) {
-            if (quantity !== 1) {
-                return res.status(400).json({ message: 'Assistance ticket must have quantity 1' });
-            }
-        } else if (isDisabledCat) {
+        if (isDisabledCat) {
             // one disabled ticket per event max
             const { rows: dRows } = await client.query(
                 `SELECT COALESCE(SUM(ci.quantity),0) AS qty
@@ -2039,11 +2032,11 @@ app.post('/cart-items', async (req, res) => {
         // 5) insert the new cart_item (no price column!)
         const { rows } = await client.query(
             `INSERT INTO cart_items
-               (id, cart_id, event_id, event_category_id, quantity, is_assistance_ticket)
+               (id, cart_id, event_id, event_category_id, quantity)
              VALUES
-               ($1, $2, $3, $4, $5, $6)
-             RETURNING id, quantity, is_assistance_ticket`,
-            [uuidv4(), cartId, catEventId, eventCategoryId, quantity, assistance]
+               ($1, $2, $3, $4, $5)
+             RETURNING id, quantity`,
+            [uuidv4(), cartId, catEventId, eventCategoryId, quantity]
         );
 
         return res.status(201).json(rows[0]);
@@ -2085,8 +2078,7 @@ app.get('/cart-items', async (req, res) => {
                     t.title AS title,
                     ec.name AS category,
                     ci.quantity,
-                    CASE WHEN ci.is_assistance_ticket THEN 0 ELSE ec.price END AS price,
-                    ci.is_assistance_ticket
+                    ec.price AS price
                 FROM cart_items ci
                          JOIN events e ON e.id = ci.event_id
                          JOIN tours t ON t.id = e.tour_id
@@ -2120,7 +2112,7 @@ app.patch('/cart-items/:id', async (req, res) => {
 
         // get item details
         const { rows: itemRows } = await client.query(
-            `SELECT ci.quantity, ec.event_id, ec.disability_support_for, ci.is_assistance_ticket
+            `SELECT ci.quantity, ec.event_id, ec.disability_support_for
              FROM cart_items ci
                       JOIN event_categories ec ON ec.id = ci.event_category_id
              WHERE ci.id = $1 AND ci.cart_id = $2`,
@@ -2132,9 +2124,6 @@ app.patch('/cart-items/:id', async (req, res) => {
         const oldQty = itemRows[0].quantity;
         const eventId = itemRows[0].event_id;
         const isDisabled = itemRows[0].disability_support_for !== null;
-        if (itemRows[0].is_assistance_ticket) {
-            return res.status(400).json({ message: 'Cannot modify assistance ticket' });
-        }
 
         if (isDisabled) {
             if (quantity > 1) {
@@ -2178,7 +2167,7 @@ app.delete('/cart-items/:id', async (req, res) => {
     try {
         // 1) Fetch the cart_id for this item
         const { rows } = await client.query(
-            'SELECT cart_id, event_category_id, is_assistance_ticket FROM cart_items WHERE id = $1',
+            'SELECT cart_id FROM cart_items WHERE id = $1',
             [cartItemId]
         );
         if (rows.length === 0) {
@@ -2195,27 +2184,11 @@ app.delete('/cart-items/:id', async (req, res) => {
             return res.status(403).json({ message: 'Forbidden' });
         }
 
-        const eventCategoryId = rows[0].event_category_id;
-        const isAssist = rows[0].is_assistance_ticket;
-
-        if (isAssist) {
-            return res.status(403).json({ message: 'Cannot delete assistance ticket directly' });
-        }
-
-        await client.query('BEGIN');
-        await client.query('DELETE FROM cart_items WHERE id = $1', [cartItemId]);
-
-        const { rows: remaining } = await client.query(
-            `SELECT 1 FROM cart_items WHERE cart_id = $1 AND event_category_id = $2 AND is_assistance_ticket = false`,
-            [cartId, eventCategoryId]
+        // 3) Delete it
+        await client.query(
+            'DELETE FROM cart_items WHERE id = $1',
+            [cartItemId]
         );
-        if (remaining.length === 0) {
-            await client.query(
-                `DELETE FROM cart_items WHERE cart_id = $1 AND event_category_id = $2 AND is_assistance_ticket = true`,
-                [cartId, eventCategoryId]
-            );
-        }
-        await client.query('COMMIT');
 
         return res.status(200).json({ message: 'Deleted' });
     } catch (err) {
@@ -2261,9 +2234,8 @@ app.post('/checkout', async (req, res) => {
       SELECT
         ci.event_category_id,
         ci.quantity,
-        CASE WHEN ci.is_assistance_ticket THEN 0 ELSE ec.price END AS price,
-        ec.event_id,
-        ci.is_assistance_ticket
+        ec.price,
+        ec.event_id
       FROM cart_items ci
       JOIN carts c              ON ci.cart_id = c.id
       JOIN event_categories ec  ON ci.event_category_id = ec.id
@@ -2276,9 +2248,9 @@ app.post('/checkout', async (req, res) => {
         for (const item of cartItems) {
             await client.query(
                 `INSERT INTO checkout_items
-           (id, checkout_id, event_category_id, quantity, price, event_id, is_assistance_ticket)
-         VALUES ($1,$2,$3,$4,$5,$6,$7)`,
-                [uuidv4(), checkoutId, item.event_category_id, item.quantity, item.price, item.event_id, item.is_assistance_ticket]
+           (id, checkout_id, event_category_id, quantity, price, event_id)
+         VALUES ($1,$2,$3,$4,$5,$6)`,
+                [uuidv4(), checkoutId, item.event_category_id, item.quantity, item.price, item.event_id]
             );
         }
 
@@ -2346,8 +2318,7 @@ app.get('/checkout-items', async (req, res) => {
                     e.start_time::time AS "eventStartTime",
                     t.tour_image   AS image,
                     ci.quantity,
-                    ci.price,
-                    ci.is_assistance_ticket
+                    ci.price
                 FROM checkout_items ci
                          JOIN event_categories ec ON ec.id        = ci.event_category_id
                          JOIN events            e  ON e.id         = ci.event_id
@@ -2406,43 +2377,23 @@ app.delete('/checkout-items/:id', async (req, res) => {
 
     const itemId = req.params.id;
     try {
-        const { rows } = await client.query(
-            `SELECT ci.checkout_id, ci.event_category_id, ci.is_assistance_ticket
-             FROM checkout_items ci
-             JOIN checkouts co ON ci.checkout_id = co.id
-             WHERE ci.id = $1 AND co.user_id = $2`,
+        // ensure this belongs to the user’s checkout
+        const result = await client.query(
+            `DELETE FROM checkout_items ci
+         USING checkouts co
+        WHERE ci.id = $1
+          AND ci.checkout_id = co.id
+          AND co.user_id = $2`,
             [itemId, userId]
         );
-        if (!rows.length) {
+
+        // rowCount===0 ⇒ not found or forbidden
+        if (result.rowCount === 0) {
             return res.status(404).json({ message: 'Item not found' });
         }
 
-        const checkoutId = rows[0].checkout_id;
-        const eventCatId = rows[0].event_category_id;
-        const isAssist = rows[0].is_assistance_ticket;
-
-        if (isAssist) {
-            return res.status(403).json({ message: 'Cannot delete assistance ticket directly' });
-        }
-
-        await client.query('BEGIN');
-        await client.query('DELETE FROM checkout_items WHERE id = $1', [itemId]);
-
-        const { rows: rest } = await client.query(
-            `SELECT 1 FROM checkout_items WHERE checkout_id = $1 AND event_category_id = $2 AND is_assistance_ticket = false`,
-            [checkoutId, eventCatId]
-        );
-        if (rest.length === 0) {
-            await client.query(
-                `DELETE FROM checkout_items WHERE checkout_id = $1 AND event_category_id = $2 AND is_assistance_ticket = true`,
-                [checkoutId, eventCatId]
-            );
-        }
-        await client.query('COMMIT');
-
         return res.json({ message: 'Item removed' });
     } catch (err) {
-        await client.query('ROLLBACK');
         console.error('Error deleting checkout item:', err);
         return res.status(500).json({ message: 'Server error' });
     }
