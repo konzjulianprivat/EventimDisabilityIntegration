@@ -3,14 +3,14 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/router';
-import { API_BASE_URL } from '../../config'; // adjust path if needed
+import { API_BASE_URL } from '../../config';
 
 export default function Checkout() {
     const router = useRouter();
     const [items, setItems] = useState([]);
     const [createdAt, setCreatedAt] = useState(null);
     const [timer, setTimer] = useState(0);
-    const offsetRef = useRef(0);   // serverTime - localTime
+    const offsetRef = useRef(0);
 
     const [useDifferentAddress, setUseDifferentAddress] = useState(false);
     const [shippingInfo, setShippingInfo] = useState({
@@ -42,33 +42,24 @@ export default function Checkout() {
         }
     };
 
-    // Helper: fetch checkout data
     const fetchCheckout = async () => {
         try {
-            const res = await fetch(`${API_BASE_URL}/checkout-items`, {
-                credentials: 'include'
-            });
+            const res = await fetch(`${API_BASE_URL}/checkout-items`, { credentials: 'include' });
             if (res.status === 404) {
-                // no checkout → back home
                 window.location.href = '/';
                 return;
             }
             const { createdAt: serverCreatedAt, items: fetchedItems } = await res.json();
-            // ensure items is always an array
             setItems(Array.isArray(fetchedItems) ? fetchedItems : []);
-
-            // sync clocks: get serverNow from headers or fallback to local
             const localNow = Date.now();
             const serverNow = localNow;
             offsetRef.current = serverNow - localNow;
-
             setCreatedAt(new Date(serverCreatedAt).getTime());
         } catch (err) {
             console.error('Error fetching checkout:', err);
         }
     };
 
-    // 1) initial fetch + poll every 15s
     useEffect(() => {
         fetchCheckout();
         fetchAddress();
@@ -76,7 +67,6 @@ export default function Checkout() {
         return () => clearInterval(poll);
     }, []);
 
-    // 2) local countdown every second
     useEffect(() => {
         if (!createdAt) return;
         const iv = setInterval(() => {
@@ -85,7 +75,6 @@ export default function Checkout() {
             const remaining = 15 * 60 - elapsed;
             if (remaining <= 0) {
                 clearInterval(iv);
-                // cleanup on expiration
                 fetch(`${API_BASE_URL}/checkout`, {
                     method: 'DELETE',
                     credentials: 'include'
@@ -105,7 +94,6 @@ export default function Checkout() {
         return `${m}:${sec < 10 ? '0' : ''}${sec} Min.`;
     };
 
-    // 3) Delete single item
     const handleDelete = async (id) => {
         try {
             const res = await fetch(`${API_BASE_URL}/checkout-items/${id}`, {
@@ -142,95 +130,68 @@ export default function Checkout() {
         }
     };
 
-    // guard against undefined
     const subtotal = (items || []).reduce((sum, t) => sum + t.price * t.quantity, 0);
     const shippingCost = selectedShipping.price;
     const total = subtotal + shippingCost;
 
-    const formatDate = (d) =>
-        new Date(d).toLocaleDateString('de-DE', {
-            weekday: 'long',
-            day: '2-digit',
-            month: '2-digit',
-            year: 'numeric',
-        });
-    const formatTime = (d) =>
-        new Date(d).toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' });
-
     return (
-        <div className="checkoutPage__container" >
-            <div className="checkoutPage__item" style={{paddingLeft: '15px', minWidth: '350px'}}>
+        <div className="checkoutPage__container">
+            <div className="checkoutPage__item" style={{ paddingLeft: '15px', minWidth: '350px' }}>
                 <div className="checkoutPage__header">Lieferinformationen</div>
-                <div className="checkoutPage__item">
-                    <label className="checkoutPage__checkbox">
-                        <input
-                            type="checkbox"
-                            checked={useDifferentAddress}
-                            onChange={(e) => setUseDifferentAddress(e.target.checked)}
-                        />{' '}
-                        Lieferadresse weicht von persönlicher Adresse ab?
-                    </label>
 
-                    {useDifferentAddress && (
-                        <div className="shipping-form">
-                            <div className="checkoutPage__form-field">
-                                <label htmlFor="salutation">Anrede</label>
-                                <input id="salutation" name="salutation" value={shippingInfo.salutation} onChange={handleFieldChange} />
-                            </div>
-                            <div className="checkoutPage__form-field">
-                                <label htmlFor="firstName">Vorname</label>
-                                <input id="firstName" name="firstName" value={shippingInfo.firstName} onChange={handleFieldChange} />
-                            </div>
-                            <div className="checkoutPage__form-field">
-                                <label htmlFor="lastName">Nachname</label>
-                                <input id="lastName" name="lastName" value={shippingInfo.lastName} onChange={handleFieldChange} />
-                            </div>
-                            <div className="checkoutPage__form-field">
-                                <label htmlFor="company">Firma</label>
-                                <input id="company" name="company" value={shippingInfo.company} onChange={handleFieldChange} />
-                            </div>
-                            <div className="checkoutPage__form-field">
-                                <label htmlFor="streetAddress">Straße und Hausnummer</label>
-                                <input id="streetAddress" name="streetAddress" value={shippingInfo.streetAddress} onChange={handleFieldChange} />
-                            </div>
-                            <div className="checkoutPage__form-field">
-                                <label htmlFor="postalCode">PLZ</label>
-                                <input id="postalCode" name="postalCode" value={shippingInfo.postalCode} onChange={handleFieldChange} />
-                            </div>
-                            <div className="checkoutPage__form-field">
-                                <label htmlFor="city">Stadt</label>
-                                <input id="city" name="city" value={shippingInfo.city} onChange={handleFieldChange} />
-                            </div>
-                            <div className="checkoutPage__form-field">
-                                <label htmlFor="country">Land</label>
-                                <input id="country" name="country" value={shippingInfo.country} onChange={handleFieldChange} />
-                            </div>
-                        </div>
-                    )}
+                <label className="checkoutPage__styled-checkbox">
+                    <input
+                        type="checkbox"
+                        checked={useDifferentAddress}
+                        onChange={(e) => setUseDifferentAddress(e.target.checked)}
+                    />
+                    <span className="checkbox-label">Lieferadresse weicht von persönlicher Adresse ab?</span>
+                </label>
 
-                    <div className="checkoutPage__item-header" style={{marginTop: '1rem'}}>Versandtart</div>
-                    <div className="checkoutPage__shipping-options">
-                        {shippingOptions.map((opt) => (
-                            <label key={opt.id} className="shipping-option">
-                                <input
-                                    type="radio"
-                                    name="shippingOption"
-                                    value={opt.id}
-                                    checked={selectedShipping.id === opt.id}
-                                    onChange={() => setSelectedShipping(opt)}
-                                />{' '}
-                                {opt.label} – € {opt.price.toFixed(2)}
-                            </label>
+                {useDifferentAddress && (
+                    <div className="shipping-form">
+                        {['salutation', 'firstName', 'lastName', 'company', 'streetAddress', 'postalCode', 'city', 'country'].map(field => (
+                            <div key={field} className="checkoutPage__form-field">
+                                <label htmlFor={field}>{{
+                                    salutation: 'Anrede',
+                                    firstName: 'Vorname',
+                                    lastName: 'Nachname',
+                                    company: 'Firma',
+                                    streetAddress: 'Straße und Hausnummer',
+                                    postalCode: 'PLZ',
+                                    city: 'Stadt',
+                                    country: 'Land'
+                                }[field]}</label>
+                                <input id={field} name={field} value={shippingInfo[field]} onChange={handleFieldChange} />
+                            </div>
                         ))}
                     </div>
-                    <button className="checkoutPage__checkout-button" onClick={handleSubmit}>
-                        Weiter zur Kasse
-                    </button>
+                )}
+
+                <div className="checkoutPage__item-header" style={{ marginTop: '1rem' }}>Versandart</div>
+                <div className="checkoutPage__shipping-options styled-radio-group">
+                    {shippingOptions.map((opt) => (
+                        <label key={opt.id} className="styled-radio-option">
+                            <input
+                                type="radio"
+                                name="shippingOption"
+                                value={opt.id}
+                                checked={selectedShipping.id === opt.id}
+                                onChange={() => setSelectedShipping(opt)}
+                            />
+                            <span>{opt.label} – € {opt.price.toFixed(2)}</span>
+                        </label>
+                    ))}
                 </div>
+
+                <button className="checkoutPage__checkout-button" onClick={handleSubmit}>
+                    Weiter zur Kasse
+                </button>
             </div>
+
             <div className="checkoutPage__sidebar">
                 <div className="checkoutPage__reservation-box">
-                    Deine Tickets sind noch erhältlich<br/>
+                    Deine Tickets sind noch erhältlich<br />
                     ⏱ Reservierungszeit: {formatTimer(timer)}
                 </div>
 

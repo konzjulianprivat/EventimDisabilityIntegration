@@ -2,6 +2,7 @@
 "use client";
 
 import React, { useState, useEffect, useRef } from 'react';
+import { useRouter } from 'next/router';
 import { API_BASE_URL } from '../../config'; // adjust path if needed
 
 export default function Checkout() {
@@ -9,6 +10,8 @@ export default function Checkout() {
     const [createdAt, setCreatedAt] = useState(null);
     const [timer, setTimer] = useState(0);
     const offsetRef = useRef(0);   // serverTime - localTime
+
+    const router = useRouter();
 
     // Helper: fetch checkout data
     const fetchCheckout = async () => {
@@ -175,8 +178,8 @@ export default function Checkout() {
                         <span>€ {subtotal.toFixed(2)}</span>
                     </div>
                     <small>inkl. MwSt., zzgl. Versandkosten</small>
-                    <button className="checkoutPage__checkout-button">
-                        Weiter zur Kasse
+                    <button className="checkoutPage__checkout-button" onClick={() => router.push('/checkout/shipping-information')}>
+                        Weiter
                     </button>
                 </div>
 
