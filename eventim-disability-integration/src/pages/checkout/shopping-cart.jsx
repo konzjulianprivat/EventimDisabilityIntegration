@@ -122,11 +122,12 @@ export default function Checkout() {
                         eventCity,
                         image,
                         quantity,
-                        price
+                        price,
+                        is_assistance_ticket
                     } = t;
 
                     return (
-                        <div key={id} className="checkoutPage__item">
+                        <div key={id} className={`checkoutPage__item${is_assistance_ticket ? ' assistance' : ''}`}>
                             <div className="checkoutPage__item-header">
                                 <img
                                     src={
@@ -139,7 +140,7 @@ export default function Checkout() {
                                     height={120}
                                 />
                                 <div className="checkoutPage__item-info">
-                                    <h2 style={{fontWeight: "bold"}}>{quantity} × <a className="venue-link" href="#" style={{color: "black"}}>{eventTitle}</a> — {category}</h2>
+                                    <h2 style={{fontWeight: "bold"}}>{quantity} × <a className="venue-link" href="#" style={{color: "black"}}>{eventTitle}</a> — {category}{is_assistance_ticket ? ' (B)' : ''}</h2>
                                     <div className="meta-item">
                                         <span className="icon-location" /> {eventCity} |{' '}
                                         <a href="#" className="venue-link" style={{color: "black"}}>{eventVenue}</a>
@@ -150,11 +151,13 @@ export default function Checkout() {
                                     </div>
                                 </div>
                             </div>
-                            <button
-                                className="checkoutPage__delete-btn"
-                                onClick={() => handleDelete(id)}
-                                aria-label="Ticket löschen"
-                            >×</button>
+                            {!is_assistance_ticket && (
+                                <button
+                                    className="checkoutPage__delete-btn"
+                                    onClick={() => handleDelete(id)}
+                                    aria-label="Ticket löschen"
+                                >×</button>
+                            )}
                         </div>
                     );
                 })}
@@ -169,8 +172,8 @@ export default function Checkout() {
                 <div className="checkoutPage__order-summary">
                     <h3>Bestellübersicht</h3>
                     {items.map(t => (
-                        <div key={t.id} className="checkoutPage__order-item">
-                            <span>{t.quantity} × {t.eventTitle}</span>
+                        <div key={t.id} className={`checkoutPage__order-item${t.is_assistance_ticket ? ' assistance' : ''}`}>
+                            <span>{t.quantity} × {t.eventTitle}{t.is_assistance_ticket ? ' (B)' : ''}</span>
                             <span>€ {(t.price * t.quantity).toFixed(2)}</span>
                         </div>
                     ))}

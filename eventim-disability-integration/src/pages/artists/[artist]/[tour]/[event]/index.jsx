@@ -42,6 +42,16 @@ export default function EventPage() {
         setInCartItems(map);
     }, [loggedIn, cartItems]);
 
+    const hasAssistance = (cartItems || []).some(
+        (i) => i.event_id === event && i.is_assistance_ticket
+    );
+
+    useEffect(() => {
+        if (hasAssistance) {
+            setBookingForMe(false);
+        }
+    }, [hasAssistance]);
+
 
     useEffect(() => {
         if (!artist || !tour || !event) return;
@@ -294,6 +304,7 @@ export default function EventPage() {
                                     type="checkbox"
                                     checked={bookingForMe}
                                     onChange={() => setBookingForMe(!bookingForMe)}
+                                    disabled={hasAssistance}
                                 />
                                 <span className="slider" />
                             </label>

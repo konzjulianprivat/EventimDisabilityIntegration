@@ -43,6 +43,11 @@
     margin-bottom: 24px;
 }
 
+.checkoutPage__item.assistance,
+.checkoutPage__order-item.assistance {
+    color: purple;
+}
+
 .checkoutPage__item-header {
     display: flex;
     align-items: flex-start;

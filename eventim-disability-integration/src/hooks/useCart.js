@@ -25,6 +25,7 @@ export function CartProvider({ children }) {
                 setItems(items || []);
                 const agg = {};
                 (items || []).forEach((it) => {
+                    if (it.is_assistance_ticket) return;
                     const eid = it.event_id;
                     const isDisabled = it.disability_support_for !== null && it.disability_support_for !== undefined;
                     if (!agg[eid]) agg[eid] = { regular: 0, disabled: 0 };
