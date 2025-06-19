@@ -175,7 +175,7 @@ export default function ShippingInformation() {
 
     const subtotal = items.reduce((sum, t) => sum + t.price * t.quantity, 0);
     const shippingCost = selectedShipping ? selectedShipping.price : 0;
-    const total = subtotal + shippingCost;
+    const total = Number(subtotal) + Number(shippingCost);
 
     return (
         <div className="checkoutPage__container">
@@ -282,7 +282,7 @@ export default function ShippingInformation() {
                                     onChange={() => setSelectedShipping(opt)}
                                 />
                                 <span className="checkoutPage__shipping-option-label checkoutPage__text-lg">
-                                    {opt.label} – € {opt.price.toFixed(2)}
+                                    {opt.label} – € {Number(opt.price).toFixed(2)}
                                     <p>{opt.description}</p>
                                 </span>
                             </label>
@@ -312,13 +312,15 @@ export default function ShippingInformation() {
                             <span>€ {(t.price * t.quantity).toFixed(2)}</span>
                         </div>
                     ))}
-                    <div className="checkoutPage__order-item">
-                        <span>Versand ({selectedShipping.label})</span>
-                        <span>€ {shippingCost.toFixed(2)}</span>
-                    </div>
+                    {selectedShipping && (
+                      <div className="checkoutPage__order-item">
+                            <span>Versand ({selectedShipping.label})</span>
+                          <span>€ {Number(shippingCost).toFixed(2)}</span>
+                          </div>
+                    )}
                     <div className="checkoutPage__order-subtotal">
                         <span>Gesamt</span>
-                        <span>€ {total.toFixed(2)}</span>
+                        <span>€ {Number(total).toFixed(2)}</span>
                     </div>
                     <small>inkl. MwSt.</small>
                 </div>

@@ -295,3 +295,72 @@
     margin: 4px 0 0;
     line-height: 1.4;
 }
+
+.paymentOption__content {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+.paymentOption__text p {
+    margin: 4px 0 0;
+    font-size: 14px;
+    color: #6c757d;
+    line-height: 1.4;
+}
+.paymentOption__icon {
+    max-width: 60px;
+    height: auto;
+    margin-left: 1rem;
+}
+.paymentSummary {
+    margin: 24px 0;
+    background: #fff;
+    border: 1px solid #D1D1D1;
+    border-radius: 8px;
+    padding: 16px;
+}
+.paymentSummary__toggle {
+    background: none;
+    border: none;
+    color: #0072CE;
+    cursor: pointer;
+    text-align: left;
+    width: 100%;
+    margin-bottom: 12px;
+}
+.paymentSummary__lines {
+    margin-top: 8px;
+}
+
+/* make the whole box clickable and style its selected state */
+
+.paymentOption {
+    /* reuse your item look & feel */
+    background: #ffffff;
+    border: 1px solid #d1d1d1;
+    border-radius: 8px;
+    padding: 16px;
+    cursor: pointer;
+    transition:
+            transform 0.2s ease,
+            background-color 0.2s ease,
+            border-color 0.2s ease;
+}
+
+.paymentOption--selected {
+    background-color: #e2f0ff;   /* Eventim yellow */
+    border-color: #002b55;       /* Eventim blue */
+    transform: scale(1.02);
+}
+
+/* ensure your existing content layout still applies */
+.paymentOption__content {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+.paymentOption__icon {
+    max-width: 60px;
+    height: auto;
+    margin-left: 1rem;
+}
