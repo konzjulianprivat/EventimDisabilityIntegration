@@ -126,117 +126,119 @@ export default function Payment() {
     };
 
     return (
-        <div className="checkoutPage__container">
-            {/* === LEFT PANEL === */}
-            <div
-                className="checkoutPage__item"
-                style={{ paddingLeft: "15px", minWidth: "350px" }}
-            >
-                <div className="checkoutPage__header">Zahlungsart auswählen</div>
-
-                <div className="styled-radio-group">
-                    {paymentOptions.map((opt) => (
-                        <div
-                            key={opt.id}
-                            className={
-                                "paymentOption" +
-                                (selectedPayment.id === opt.id
-                                    ? " paymentOption--selected"
-                                    : "")
-                            }
-                            onClick={() => setSelectedPayment(opt)}
-                            style={{marginLeft: "10px", marginRight: "10px"}}
-                        >
-                            {/* keep the input for form semantics, but hide it */}
-                            <input
-                                type="radio"
-                                name="paymentOption"
-                                value={opt.id}
-                                checked={selectedPayment.id === opt.id}
-                                onChange={() => setSelectedPayment(opt)}
-                                style={{ display: "none" }}
-                            />
-
-                            <div className="paymentOption__content">
-                                <div className="paymentOption__text">
-                                    <span className="checkoutPage__text-lg">{opt.label}</span>
-                                    <p>{opt.description}</p>
-                                </div>
-                                <img
-                                    src={opt.icon}
-                                    alt={opt.label}
-                                    className="paymentOption__icon"
-                                />
-                            </div>
-                        </div>
-                    ))}
-                </div>
-
-                {/* summary inside main panel */}
+        <div className="checkoutPage">
+            <div className="checkoutPage__container">
+                {/* === LEFT PANEL === */}
                 <div
-                    className="paymentSummary__lines"
-                    style={{ marginTop: "30px", padding: "10px" }}
+                    className="checkoutPage__item"
+                    style={{ paddingLeft: "15px", minWidth: "350px" }}
                 >
-                    <div className="checkoutPage__order-item">
-                        <span>Versandkosten</span>
-                        <span>€ {shippingCost.toFixed(2)}</span>
+                    <div className="checkoutPage__header">Zahlungsart auswählen</div>
+
+                    <div className="styled-radio-group">
+                        {paymentOptions.map((opt) => (
+                            <div
+                                key={opt.id}
+                                className={
+                                    "paymentOption" +
+                                    (selectedPayment.id === opt.id
+                                        ? " paymentOption--selected"
+                                        : "")
+                                }
+                                onClick={() => setSelectedPayment(opt)}
+                                style={{marginLeft: "10px", marginRight: "10px"}}
+                            >
+                                {/* keep the input for form semantics, but hide it */}
+                                <input
+                                    type="radio"
+                                    name="paymentOption"
+                                    value={opt.id}
+                                    checked={selectedPayment.id === opt.id}
+                                    onChange={() => setSelectedPayment(opt)}
+                                    style={{ display: "none" }}
+                                />
+
+                                <div className="paymentOption__content">
+                                    <div className="paymentOption__text">
+                                        <span className="checkoutPage__text-lg">{opt.label}</span>
+                                        <p>{opt.description}</p>
+                                    </div>
+                                    <img
+                                        src={opt.icon}
+                                        alt={opt.label}
+                                        className="paymentOption__icon"
+                                    />
+                                </div>
+                            </div>
+                        ))}
                     </div>
-                    <div className="checkoutPage__order-subtotal">
-                        <span>Gesamtsumme</span>
-                        <span>€ {total.toFixed(2)}</span>
-                    </div>
-                    <small>inkl. MwSt.</small>
-                </div>
 
-                <button
-                    className="checkoutPage__checkout-button checkoutPage__text-lg"
-                    onClick={handleSubmit}
-                >
-                    Weiter zur Bestellprüfung
-                </button>
-            </div>
-
-            {/* === RIGHT SIDEBAR (unchanged) === */}
-            <div className="checkoutPage__sidebar">
-                <div className="checkoutPage__reservation-box">
-                    Deine Tickets sind noch erhältlich
-                    <br />
-                    ⏱ Reservierungszeit: {formatTimer(timer)}
-                </div>
-
-                <div className="checkoutPage__order-summary">
-                    <h3>Bestellübersicht</h3>
-                    {items.map((t) => (
-                        <div key={t.id} className="checkoutPage__order-item">
-              <span>
-                {t.quantity} × {t.eventTitle}
-              </span>
-                            <span>€ {(t.price * t.quantity).toFixed(2)}</span>
+                    {/* summary inside main panel */}
+                    <div
+                        className="paymentSummary__lines"
+                        style={{ marginTop: "30px", padding: "10px" }}
+                    >
+                        <div className="checkoutPage__order-item">
+                            <span>Versandkosten</span>
+                            <span>€ {shippingCost.toFixed(2)}</span>
                         </div>
-                    ))}
-                    <div className="checkoutPage__order-item">
-                        <span>Versand (–)</span>
-                        <span>€ {shippingCost.toFixed(2)}</span>
+                        <div className="checkoutPage__order-subtotal">
+                            <span>Gesamtsumme</span>
+                            <span>€ {total.toFixed(2)}</span>
+                        </div>
+                        <small>inkl. MwSt.</small>
                     </div>
-                    <div className="checkoutPage__order-subtotal">
-                        <span>Gesamt</span>
-                        <span>€ {total.toFixed(2)}</span>
-                    </div>
-                    <small>inkl. MwSt.</small>
+
+                    <button
+                        className="checkoutPage__checkout-button checkoutPage__text-lg"
+                        onClick={handleSubmit}
+                    >
+                        Weiter zur Bestellprüfung
+                    </button>
                 </div>
 
-                <div className="checkoutPage__payment-methods">
-                    <img src="/pictures/payment-methods/sepa.svg" alt="SEPA Lastschrift" />
-                    <img
-                        src="/pictures/payment-methods/visa_master_amex.svg"
-                        alt="VISA"
-                    />
-                    <img src="/pictures/payment-methods/paypal.svg" alt="PayPal" />
-                    <img
-                        src="/pictures/payment-methods/gpay_apay.svg"
-                        alt="Google & Apple Pay"
-                    />
-                    <img src="/pictures/payment-methods/klarna.svg" alt="Klarna" />
+                {/* === RIGHT SIDEBAR (unchanged) === */}
+                <div className="checkoutPage__sidebar">
+                    <div className="checkoutPage__reservation-box">
+                        Deine Tickets sind noch erhältlich
+                        <br />
+                        ⏱ Reservierungszeit: {formatTimer(timer)}
+                    </div>
+
+                    <div className="checkoutPage__order-summary">
+                        <h3>Bestellübersicht</h3>
+                        {items.map((t) => (
+                            <div key={t.id} className="checkoutPage__order-item">
+                  <span>
+                    {t.quantity} × {t.eventTitle}
+                  </span>
+                                <span>€ {(t.price * t.quantity).toFixed(2)}</span>
+                            </div>
+                        ))}
+                        <div className="checkoutPage__order-item">
+                            <span>Versand (–)</span>
+                            <span>€ {shippingCost.toFixed(2)}</span>
+                        </div>
+                        <div className="checkoutPage__order-subtotal">
+                            <span>Gesamt</span>
+                            <span>€ {total.toFixed(2)}</span>
+                        </div>
+                        <small>inkl. MwSt.</small>
+                    </div>
+
+                    <div className="checkoutPage__payment-methods">
+                        <img src="/pictures/payment-methods/sepa.svg" alt="SEPA Lastschrift" />
+                        <img
+                            src="/pictures/payment-methods/visa_master_amex.svg"
+                            alt="VISA"
+                        />
+                        <img src="/pictures/payment-methods/paypal.svg" alt="PayPal" />
+                        <img
+                            src="/pictures/payment-methods/gpay_apay.svg"
+                            alt="Google & Apple Pay"
+                        />
+                        <img src="/pictures/payment-methods/klarna.svg" alt="Klarna" />
+                    </div>
                 </div>
             </div>
         </div>

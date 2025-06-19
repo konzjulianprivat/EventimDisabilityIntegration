@@ -178,13 +178,14 @@ export default function ShippingInformation() {
     const total = Number(subtotal) + Number(shippingCost);
 
     return (
+        <div className="checkoutPage">
         <div className="checkoutPage__container">
             <div className="checkoutPage__item" style={{ paddingLeft: '15px', minWidth: '350px' }}>
                 <div className="checkoutPage__header">Lieferinformationen</div>
 
                 <div className="checkoutPage__item">
                     <div className="checkoutPage__item-header" style={{ marginTop: '1rem' }}>
-                        <h2>Lieferadresse</h2>
+                        <h3>Lieferadresse</h3>
                     </div>
                     <label className="checkoutPage__styled-checkbox">
                         <input
@@ -269,7 +270,7 @@ export default function ShippingInformation() {
 
                 <div className="checkoutPage__item">
                     <div className="checkoutPage__item-header" style={{ marginTop: '1rem' }}>
-                        <h2>Versandart</h2>
+                        <h3>Versandart</h3>
                     </div>
                     <div className="checkoutPage__shipping-options styled-radio-group">
                         {shippingOptions.map(opt => (
@@ -333,6 +334,7 @@ export default function ShippingInformation() {
                     <img src="/pictures/payment-methods/klarna.svg" alt="Klarna" />
                 </div>
             </div>
+        </div>
         </div>
     );
 }

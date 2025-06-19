@@ -107,6 +107,7 @@ export default function Checkout() {
         new Date(d).toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' });
 
     return (
+        <div className="checkoutPage">
         <div className="checkoutPage__container" >
             <div className="checkoutPage__item" style={{paddingLeft: '15px', minWidth: '350px'}}>
                 <div className="checkoutPage__header">Bestellübersicht</div>
@@ -191,6 +192,7 @@ export default function Checkout() {
                     <img src="/pictures/payment-methods/klarna.svg" alt="Klarna" />
                 </div>
             </div>
+        </div>
         </div>
     );
 }

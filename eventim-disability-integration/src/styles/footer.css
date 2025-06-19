@@ -4,10 +4,10 @@
 .footer {
     background-color: #EDF0EF;
     color: #4B5563;
-    padding: 10px 32px;
-    margin-top: auto;
+    padding: 32px 32px;
     font-size: 14px;
     border-top: 1px solid #D1D5DB;
+    min-height: 28vh;
 }
 
 /* Footer grid layout */

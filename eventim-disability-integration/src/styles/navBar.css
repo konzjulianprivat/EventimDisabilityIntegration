@@ -19,7 +19,7 @@
     padding: 0 3rem;
     display: flex;
     align-items: center;
-    height: 80px;
+    height: 7vh;
     gap: 2rem;
     justify-content: space-between;
     box-sizing: border-box;
@@ -132,7 +132,7 @@
 }
 
 .nav-bar .search {
-    flex: 1;
+    flex: 3;
     margin-left: 1rem;
 }
 
