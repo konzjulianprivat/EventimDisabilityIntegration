@@ -401,18 +401,6 @@ nav-bar .dropdown-menu .dropdown-item:hover > .sub-menu {
     gap: 0.5rem;
 }
 
-.nav-bar .cart-row.assistance .cart-title,
-.nav-bar .cart-row.assistance .cart-subtitle,
-.nav-bar .cart-row.assistance .cart-qty,
-.nav-bar .cart-row.assistance .cart-line-price {
-    color: purple;
-}
-
-.nav-bar .assist-flag {
-    font-weight: bold;
-    color: purple;
-}
-
 .nav-bar .dropdown.cart .cart-delete-btn {
     margin-left: auto;
     background: transparent;
