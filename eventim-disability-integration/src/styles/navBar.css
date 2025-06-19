@@ -428,3 +428,58 @@ nav-bar .dropdown-menu .dropdown-item:hover > .sub-menu {
 
 
 /* reuse .login-button.dropdown-logout for the "Weiter" button */
+
+.checkout-modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.4);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 2000;
+}
+
+.checkout-modal {
+    background: #fff;
+    border-radius: 4px;
+    padding: 1.5rem;
+    width: 420px;
+    text-align: center;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+.checkout-modal-actions {
+    display: flex;
+    justify-content: center;
+    gap: 0.5rem;
+    margin-top: 1rem;
+}
+
+.checkout-modal-actions button {
+    padding: 0.5rem 1rem;
+    border-radius: 4px;
+    font-weight: bold;
+    border: none;
+    cursor: pointer;
+}
+
+.checkout-modal-actions .btn-ok {
+    background-color: #007bff;
+    color: #fff;
+}
+
+.checkout-modal-actions .btn-ok:hover {
+    background-color: #0056b3;
+}
+
+.checkout-modal-actions .btn-end {
+    background-color: #dc3545;
+    color: #fff;
+}
+
+.checkout-modal-actions .btn-end:hover {
+    background-color: #b21f2f;
+}
