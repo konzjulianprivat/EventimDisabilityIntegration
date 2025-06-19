@@ -360,7 +360,16 @@ app.post('/checkout-shipping', (req, res) => {
         return res.status(401).json({ message: 'Not logged in' });
     }
 
-    req.session.shippingInfo = req.body || {};
+    if (!req.session.checkout) {
+        return res.status(400).json({ message: 'No active checkout' });
+    }
+
+    if (Date.now() - req.session.checkout.startedAt > 15 * 60 * 1000) {
+        req.session.checkout = null;
+        return res.status(400).json({ message: 'Checkout expired' });
+    }
+
+    req.session.checkout.shippingInfo = req.body || {};
     return res.status(200).json({ message: 'OK' });
 });
 app.post('/create-country', async (req, res) => {
@@ -2224,6 +2233,13 @@ app.post('/checkout', async (req, res) => {
         );
 
         await client.query('COMMIT');
+
+        req.session.checkout = {
+            id: checkoutId,
+            startedAt: Date.now(),
+            shippingInfo: null,
+        };
+
         return res.status(201).json({ checkoutId });
     } catch (err) {
         await client.query('ROLLBACK');
@@ -2238,6 +2254,11 @@ app.get('/checkout-items', async (req, res) => {
     const userId = req.session.userId;
     if (!userId) {
         return res.status(401).json({ message: 'Not logged in' });
+    }
+
+    const checkoutSession = req.session.checkout;
+    if (!checkoutSession || Date.now() - checkoutSession.startedAt > 15 * 60 * 1000) {
+        return res.status(404).json({ message: 'No active checkout' });
     }
 
     try {
@@ -2308,6 +2329,7 @@ app.delete('/checkout', async (req, res) => {
         await client.query('DELETE FROM checkout_items WHERE checkout_id = $1', [checkoutId]);
         await client.query('DELETE FROM checkouts WHERE id = $1', [checkoutId]);
         await client.query('COMMIT');
+        req.session.checkout = null;
 
         return res.json({ message: 'Checkout cleared' });
     } catch (err) {

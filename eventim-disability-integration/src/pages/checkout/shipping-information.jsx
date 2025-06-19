@@ -37,7 +37,20 @@ export default function ShippingInformation() {
             const res = await fetch(`${API_BASE_URL}/user-address`, { credentials: 'include' });
             if (res.ok) {
                 const data = await res.json();
-                if (data.address) setShippingInfo(prev => ({ ...prev, ...data.address }));
+                if (data.address) {
+                    const addr = data.address;
+                    const mapped = {
+                        salutation:   addr.salutation || '',
+                        firstName:    addr.first_name || '',
+                        lastName:     addr.last_name || '',
+                        company:      addr.company || '',
+                        streetAddress: addr.street_address || '',
+                        postalCode:   addr.postal_code || '',
+                        city:         addr.city || '',
+                        country:      addr.country || '',
+                    };
+                    setShippingInfo(prev => ({ ...prev, ...mapped }));
+                }
             }
         } catch (err) {
             console.error('Error fetching user address:', err);
@@ -69,6 +82,12 @@ export default function ShippingInformation() {
     }, []);
 
     useEffect(() => {
+        if (useDifferentAddress) {
+            fetchAddress();
+        }
+    }, [useDifferentAddress]);
+
+    useEffect(() => {
         if (!createdAt) return;
         const iv = setInterval(() => {
             const now = Date.now() + offsetRef.current;
@@ -90,8 +109,9 @@ export default function ShippingInformation() {
         return () => clearInterval(iv);
     }, [createdAt]);
 
-    const formatTimer = s => {
-        const m = Math.floor(s / 60), sec = s % 10 < 10 ? `0${s % 60}` : s % 60;
+    const formatTimer = (s) => {
+        const m = Math.floor(s / 60);
+        const sec = s % 60 < 10 ? `0${s % 60}` : s % 60;
         return `${m}:${sec} Min.`;
     };
 
