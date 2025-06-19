@@ -31,13 +31,26 @@ export default function ShippingInformation() {
     ];
     const [selectedShipping, setSelectedShipping] = useState(shippingOptions[0]);
 
-    // Fetch user data
+    // Fetch user data and map DB field names to our form fields
     const fetchAddress = async () => {
         try {
             const res = await fetch(`${API_BASE_URL}/user-address`, { credentials: 'include' });
             if (res.ok) {
                 const data = await res.json();
-                if (data.address) setShippingInfo(prev => ({ ...prev, ...data.address }));
+                if (data.address) {
+                    const a = data.address;
+                    setShippingInfo(prev => ({
+                        ...prev,
+                        salutation:    a.salutation || '',
+                        firstName:     a.first_name || '',
+                        lastName:      a.last_name || '',
+                        company:       a.company || '',
+                        streetAddress: a.street_address || '',
+                        postalCode:    a.postal_code || '',
+                        city:          a.city || '',
+                        country:       a.country || '',
+                    }));
+                }
             }
         } catch (err) {
             console.error('Error fetching user address:', err);
@@ -91,7 +104,8 @@ export default function ShippingInformation() {
     }, [createdAt]);
 
     const formatTimer = s => {
-        const m = Math.floor(s / 60), sec = s % 10 < 10 ? `0${s % 60}` : s % 60;
+        const m = Math.floor(s / 60);
+        const sec = s % 60 < 10 ? `0${s % 60}` : s % 60;
         return `${m}:${sec} Min.`;
     };
 

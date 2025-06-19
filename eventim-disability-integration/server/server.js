@@ -360,7 +360,13 @@ app.post('/checkout-shipping', (req, res) => {
         return res.status(401).json({ message: 'Not logged in' });
     }
 
-    req.session.shippingInfo = req.body || {};
+    if (!req.session.checkout) {
+        return res.status(404).json({ message: 'No active checkout' });
+    }
+
+    const { shippingInfo, shippingMethod } = req.body || {};
+    req.session.checkout.shippingInfo = shippingInfo || {};
+    req.session.checkout.shippingMethod = shippingMethod || null;
     return res.status(200).json({ message: 'OK' });
 });
 app.post('/create-country', async (req, res) => {
@@ -2224,6 +2230,14 @@ app.post('/checkout', async (req, res) => {
         );
 
         await client.query('COMMIT');
+
+        req.session.checkout = {
+            id: checkoutId,
+            createdAt: Date.now(),
+            shippingInfo: null,
+            shippingMethod: null,
+        };
+
         return res.status(201).json({ checkoutId });
     } catch (err) {
         await client.query('ROLLBACK');
@@ -2238,6 +2252,12 @@ app.get('/checkout-items', async (req, res) => {
     const userId = req.session.userId;
     if (!userId) {
         return res.status(401).json({ message: 'Not logged in' });
+    }
+
+    const coSession = req.session.checkout;
+    if (!coSession || !coSession.createdAt || Date.now() - coSession.createdAt > 15 * 60 * 1000) {
+        req.session.checkout = null;
+        return res.status(404).json({ message: 'No active checkout' });
     }
 
     try {
@@ -2281,7 +2301,7 @@ app.get('/checkout-items', async (req, res) => {
 
         // 3) return createdAt + items array
         return res.json({
-            createdAt: created_at,
+            createdAt: new Date(coSession.createdAt).toISOString(),
             items
         });
     } catch (err) {
@@ -2309,6 +2329,7 @@ app.delete('/checkout', async (req, res) => {
         await client.query('DELETE FROM checkouts WHERE id = $1', [checkoutId]);
         await client.query('COMMIT');
 
+        req.session.checkout = null;
         return res.json({ message: 'Checkout cleared' });
     } catch (err) {
         await client.query('ROLLBACK');
