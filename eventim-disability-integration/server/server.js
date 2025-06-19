@@ -2424,6 +2424,20 @@ app.delete('/checkout-items/:id', async (req, res) => {
             return res.status(404).json({ message: 'Item not found' });
         }
 
+        // check if any items remain for this user's checkout
+        const { rows: remaining } = await client.query(
+            `SELECT ci.id
+             FROM checkout_items ci
+             JOIN checkouts co ON ci.checkout_id = co.id
+             WHERE co.user_id = $1
+             LIMIT 1`,
+            [userId]
+        );
+        if (remaining.length === 0) {
+            await client.query('DELETE FROM checkouts WHERE user_id = $1', [userId]);
+            req.session.checkout = null;
+        }
+
         return res.json({ message: 'Item removed' });
     } catch (err) {
         console.error('Error deleting checkout item:', err);
