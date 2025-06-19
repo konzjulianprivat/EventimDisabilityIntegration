@@ -189,7 +189,7 @@ export default function ShippingInformation() {
                                 />
                                 <span className="checkoutPage__shipping-option-label checkoutPage__text-lg">
                                     {opt.label} – € {opt.price.toFixed(2)}
-                                    <p>{opt.des}</p>
+                                    <p>{opt.description}</p>
                                 </span>
                             </label>
                         ))}
