@@ -207,6 +207,7 @@ export default function NavBar() {
                                                     onClick={() => deleteCartItem(item.id)}
                                                     disabled={item.is_assistance_ticket}
                                                     aria-label="Entfernen"
+                                                    style={{color: item.is_assistance_ticket ? 'lightgray' : undefined}}
                                                 >
                                                     ×
                                                 </button>
