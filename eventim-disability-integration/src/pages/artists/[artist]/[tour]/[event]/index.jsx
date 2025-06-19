@@ -28,6 +28,7 @@ export default function EventPage() {
     const [errorMessage, setErrorMessage] = useState('');
     const [lastClickedSection, setLastClickedSection] = useState(null);  // 'disabled' or 'regular'
     const [addDisabled, setAddDisabled] = useState(false);
+    const [assistanceInCart, setAssistanceInCart] = useState(false);
 
     // Build lookup table for items currently in cart
     useEffect(() => {
@@ -37,10 +38,21 @@ export default function EventPage() {
         }
         const map = {};
         (cartItems || []).forEach((i) => {
+            if (i.is_assistance_ticket) return;
             map[i.event_category_id] = { id: i.id, quantity: i.quantity };
         });
         setInCartItems(map);
-    }, [loggedIn, cartItems]);
+        const hasAssistance = (cartItems || []).some(
+            (i) => i.event_id === event && i.is_assistance_ticket
+        );
+        setAssistanceInCart(hasAssistance);
+    }, [loggedIn, cartItems, event]);
+
+    useEffect(() => {
+        if (assistanceInCart) {
+            setBookingForMe(false);
+        }
+    }, [assistanceInCart]);
 
 
     useEffect(() => {
@@ -199,6 +211,7 @@ export default function EventPage() {
                 ((isDisabledCatSelected ? currentCat_disabled.price : currentCat.price) || 0)
                     .toFixed(2)
             ),
+            isAssistanceTicket: false,
         };
         try {
             const res = await fetch(`${API_BASE_URL}/cart-items`, {
@@ -213,6 +226,20 @@ export default function EventPage() {
                     ...prev,
                     [selectedCat]: { id: newItem.id, quantity: newItem.quantity },
                 }));
+                if (requiresAssistance && bookingForMe) {
+                    await fetch(`${API_BASE_URL}/cart-items`, {
+                        method: 'POST',
+                        credentials: 'include',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            eventId: event,
+                            eventCategoryId: selectedCat,
+                            quantity: 1,
+                            price: 0,
+                            isAssistanceTicket: true,
+                        }),
+                    });
+                }
                 setLastClickedSection(isDisabledCatSelected ? 'disabled' : 'regular');
                 setSuccessMessage('Erfolgreich zum Warenkorb hinzugefügt!');
                 setErrorMessage('');
@@ -293,6 +320,7 @@ export default function EventPage() {
                                 <input
                                     type="checkbox"
                                     checked={bookingForMe}
+                                    disabled={assistanceInCart}
                                     onChange={() => setBookingForMe(!bookingForMe)}
                                 />
                                 <span className="slider" />

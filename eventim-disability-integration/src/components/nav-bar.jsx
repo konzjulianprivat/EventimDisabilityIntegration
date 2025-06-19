@@ -190,22 +190,25 @@ export default function NavBar() {
                                 ) : (
                                     <>
                                         {cartItems.map((item) => (
-                                            <div key={item.id} className="cart-row">
+                                            <div key={item.id} className={`cart-row ${item.is_assistance_ticket ? 'assistance' : ''}`}>
                                                 <div className="cart-info">
                                                     <span className="cart-title">{item.title}</span>
                                                     <span className="cart-subtitle">{item.category}</span>
                                                 </div>
                                                 <div className="cart-qty">{item.quantity}</div>
-                                                <div className="cart-qty">Make the cart-items text color purple and add a small 'B' in this text box right here</div>
+                                                <div className="cart-qty">
+                                                    {item.is_assistance_ticket && <span className="assist-flag">B</span>}
+                                                </div>
                                                 <div className="cart-line-price">
                                                     {(item.quantity * parseFloat(item.price)).toFixed(2)} €
                                                 </div>
                                                 <button
                                                     className="cart-delete-btn"
                                                     onClick={() => deleteCartItem(item.id)}
+                                                    disabled={item.is_assistance_ticket}
                                                     aria-label="Entfernen"
                                                 >
-                                                    × (make deletion button only delete non-assistance tickets, assistance tickets cannot be deleted here, but they are automatically deleted once all tickets of the same event_category were deleted)
+                                                    ×
                                                 </button>
                                             </div>
                                         ))}

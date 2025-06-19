@@ -416,6 +416,15 @@ nav-bar .dropdown-menu .dropdown-item:hover > .sub-menu {
     color: #b71c1c;
 }
 
+.nav-bar .cart-row.assistance {
+    color: purple;
+}
+
+.nav-bar .assist-flag {
+    color: purple;
+    font-weight: bold;
+}
+
 
 
 /* reuse .login-button.dropdown-logout for the "Weiter" button */
