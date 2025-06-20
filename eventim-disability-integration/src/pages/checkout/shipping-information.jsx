@@ -159,6 +159,16 @@ export default function ShippingInformation() {
         setShippingInfo(prev => ({ ...prev, [name]: value }));
     };
 
+    // persist changes in session
+    useEffect(() => {
+        fetch(`${API_BASE_URL}/checkout-shipping`, {
+            method: 'POST',
+            credentials: 'include',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ shippingInfo, shippingMethod: selectedShipping ? selectedShipping.id : null })
+        }).catch(() => {});
+    }, [shippingInfo, selectedShipping]);
+
     const handleSubmit = async () => {
         try {
             await fetch(`${API_BASE_URL}/checkout-shipping`, {

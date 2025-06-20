@@ -390,6 +390,44 @@ app.get('/checkout-shipping', (req, res) => {
 
     return res.json({ shippingInfo: req.session.checkout.shippingInfo || null });
 });
+
+// Speichert die gewählte Zahlungsart temporär in der Checkout-Session
+app.post('/checkout-payment', (req, res) => {
+    if (!req.session.userId) {
+        return res.status(401).json({ message: 'Not logged in' });
+    }
+
+    if (!req.session.checkout) {
+        return res.status(400).json({ message: 'No active checkout' });
+    }
+
+    if (Date.now() - req.session.checkout.startedAt > 15 * 60 * 1000) {
+        req.session.checkout = null;
+        return res.status(400).json({ message: 'Checkout expired' });
+    }
+
+    const { paymentMethod } = req.body || {};
+    req.session.checkout.paymentMethod = paymentMethod || null;
+    return res.status(200).json({ message: 'OK' });
+});
+
+// Gibt die in der Session gespeicherte Zahlungsart zurück
+app.get('/checkout-payment', (req, res) => {
+    if (!req.session.userId) {
+        return res.status(401).json({ message: 'Not logged in' });
+    }
+
+    if (!req.session.checkout) {
+        return res.status(404).json({ message: 'No active checkout' });
+    }
+
+    if (Date.now() - req.session.checkout.startedAt > 15 * 60 * 1000) {
+        req.session.checkout = null;
+        return res.status(404).json({ message: 'Checkout expired' });
+    }
+
+    return res.json({ paymentMethod: req.session.checkout.paymentMethod || null });
+});
 app.post('/create-country', async (req, res) => {
     try {
         const { name, code } = req.body;
@@ -2454,6 +2492,102 @@ app.get('/payment-options', async (req, res) => {
     } catch (error) {
         console.error('Error fetching payment options:', error);
         res.status(500).json({ message: 'Fehler beim Laden der Zahlungsarten' });
+    }
+});
+
+// Erstellt eine Bestellung aus dem aktiven Checkout
+app.post('/orders', async (req, res) => {
+    const userId = req.session.userId;
+    if (!userId) return res.status(401).json({ message: 'Not logged in' });
+
+    const coSession = req.session.checkout;
+    if (!coSession) {
+        return res.status(400).json({ message: 'No active checkout' });
+    }
+
+    if (Date.now() - coSession.startedAt > 15 * 60 * 1000) {
+        req.session.checkout = null;
+        return res.status(400).json({ message: 'Checkout expired' });
+    }
+
+    try {
+        const { rows: coRows } = await client.query(
+            'SELECT id FROM checkouts WHERE user_id = $1',
+            [userId]
+        );
+        if (!coRows.length) {
+            return res.status(400).json({ message: 'No active checkout' });
+        }
+        const checkoutId = coRows[0].id;
+
+        const ship = coSession.shippingInfo?.shippingInfo || coSession.shippingInfo || {};
+        const paymentMethodId = coSession.paymentMethod || req.body.paymentMethod || null;
+        const orderId = uuidv4();
+
+        await client.query('BEGIN');
+
+        await client.query(
+            `INSERT INTO orders (
+                id, user_id, created_at,
+                street_address, postal_code, city, country,
+                payment_method, is_paid, salutation, first_name, last_name, company,
+                payment_option_id
+            ) VALUES (
+                $1,$2,NOW(),
+                $3,$4,$5,$6,
+                $7,false,$8,$9,$10,$11,
+                $12
+            )`,
+            [
+                orderId,
+                userId,
+                ship.streetAddress || null,
+                ship.postalCode || null,
+                ship.city || null,
+                ship.country || null,
+                ship.paymentMethod || null,
+                ship.salutation || null,
+                ship.firstName || null,
+                ship.lastName || null,
+                ship.company || null,
+                paymentMethodId
+            ]
+        );
+
+        const { rows: items } = await client.query(
+            `SELECT event_category_id, quantity, price, is_assistance_ticket
+             FROM checkout_items ci
+             WHERE ci.checkout_id = $1`,
+            [checkoutId]
+        );
+
+        for (const item of items) {
+            for (let i = 0; i < item.quantity; i++) {
+                const ticketId = uuidv4();
+                await client.query(
+                    `INSERT INTO tickets (
+                        id, order_id, event_category_id, seat_number, price, created_at, is_assistance_ticket
+                    ) VALUES ($1,$2,$3,NULL,$4,NOW(),$5)`,
+                    [ticketId, orderId, item.event_category_id, item.price, item.is_assistance_ticket]
+                );
+                await client.query(
+                    `INSERT INTO order_tickets (id, order_id, ticket_id) VALUES ($1,$2,$3)`,
+                    [uuidv4(), orderId, ticketId]
+                );
+            }
+        }
+
+        await client.query('DELETE FROM checkout_items WHERE checkout_id = $1', [checkoutId]);
+        await client.query('DELETE FROM checkouts WHERE id = $1', [checkoutId]);
+        await client.query('COMMIT');
+
+        req.session.checkout = null;
+
+        return res.status(201).json({ orderId });
+    } catch (err) {
+        await client.query('ROLLBACK');
+        console.error('Error creating order:', err);
+        return res.status(500).json({ message: 'Server error' });
     }
 });
 
