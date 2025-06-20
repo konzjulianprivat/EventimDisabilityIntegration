@@ -8,11 +8,13 @@
     min-height:  65vh;
     font-family: sans-serif;
     text-align: center;
-    box-sizing: border-box;
+    box-sizing: border-box;;
 }
 
 .custom404-content {
-    max-width: 480px;
+    max-width: 600px;
+    border: 1px black solid;
+    padding: 3rem;
 }
 
 .custom404-code {

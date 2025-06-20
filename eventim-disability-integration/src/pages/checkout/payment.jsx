@@ -136,7 +136,10 @@ export default function Payment() {
             });
 
             if (res.ok) {
-                setTimeout(() => router.push("/"), 3000);
+                router.push({
+                    pathname: '/checkout/success',
+                    query: { from: 'payment' },
+                });
             } else {
                 console.error("Order creation failed");
             }

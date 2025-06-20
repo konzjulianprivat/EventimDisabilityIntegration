@@ -390,8 +390,7 @@ app.get('/checkout-shipping', (req, res) => {
 
     return res.json({ shippingInfo: req.session.checkout.shippingInfo || null });
 });
-
-// Speichert die gewählte Zahlungsart temporär in der Checkout-Session
+// Temporäres Speichern der Zahlungsart in der Session
 app.post('/checkout-payment', (req, res) => {
     if (!req.session.userId) {
         return res.status(401).json({ message: 'Not logged in' });
@@ -406,12 +405,11 @@ app.post('/checkout-payment', (req, res) => {
         return res.status(400).json({ message: 'Checkout expired' });
     }
 
-    const { paymentMethod } = req.body || {};
-    req.session.checkout.paymentMethod = paymentMethod || null;
+    req.session.checkout.paymentMethod = req.body.paymentMethod || null;
     return res.status(200).json({ message: 'OK' });
 });
 
-// Gibt die in der Session gespeicherte Zahlungsart zurück
+// Liefert die aktuell gespeicherte Zahlungsart
 app.get('/checkout-payment', (req, res) => {
     if (!req.session.userId) {
         return res.status(401).json({ message: 'Not logged in' });
@@ -2483,6 +2481,154 @@ app.delete('/checkout-items/:id', async (req, res) => {
     }
 });
 
+app.post('/orders', async (req, res) => {
+    const userId = req.session.userId;
+    if (!userId) return res.status(401).json({ message: 'Not logged in' });
+
+    const sessionCheckout = req.session.checkout;
+    if (!sessionCheckout || Date.now() - sessionCheckout.startedAt > 15 * 60 * 1000) {
+        req.session.checkout = null;
+        return res.status(400).json({ message: 'Checkout expired' });
+    }
+    if (!sessionCheckout.shippingInfo || !sessionCheckout.paymentMethod) {
+        return res.status(400).json({ message: 'Missing checkout info' });
+    }
+
+    try {
+        await client.query('BEGIN');
+
+        // find checkout record
+        const { rows: coRows } = await client.query(
+            'SELECT id FROM checkouts WHERE user_id = $1',
+            [userId]
+        );
+        if (coRows.length === 0) {
+            await client.query('ROLLBACK');
+            return res.status(400).json({ message: 'No active checkout' });
+        }
+        const checkoutId = coRows[0].id;
+
+        // Pull event_id as well so we can look up capacity for this category
+        const { rows: items } = await client.query(
+            `SELECT id,
+              event_id,
+              event_category_id,
+              quantity,
+              price,
+              is_assistance_ticket
+       FROM checkout_items
+       WHERE checkout_id = $1`,
+            [checkoutId]
+        );
+
+        // Insert order header
+        const info = sessionCheckout.shippingInfo.shippingInfo || {};
+        const paymentId = sessionCheckout.paymentMethod;
+        const orderId = uuidv4();
+        await client.query(
+            `INSERT INTO orders
+             (id, user_id, created_at,
+              street_address, postal_code, city, country,
+              is_paid, salutation, first_name, last_name, company,
+              payment_option_id)
+             VALUES
+                 ($1, $2, NOW(),
+                  $3, $4, $5, $6,
+                  false, $7, $8, $9, $10,
+                  $11)`,
+            [
+                orderId,
+                userId,
+                info.streetAddress || null,
+                info.postalCode    || null,
+                info.city          || null,
+                info.country       || null,
+                info.salutation    || null,
+                info.firstName     || null,
+                info.lastName      || null,
+                info.company       || null,
+                paymentId,
+            ]
+        );
+
+        // For each category in the cart, figure out seat numbers
+        for (const it of items) {
+            // 1) load capacity for this category (and event, if you want to enforce per-event)
+            const { rows: capRows } = await client.query(
+                `SELECT eva.capacity
+           FROM event_venue_areas eva
+          WHERE eva.category_id = $1
+            AND eva.event_id    = $2`,    // remove event_id filter if not needed
+                [it.event_category_id, it.event_id]
+            );
+            if (capRows.length === 0) {
+                throw new Error(`No seating defined for category ${it.event_category_id}`);
+            }
+            const capacity = capRows[0].capacity;
+
+            // 2) grab all already-taken seats for this category
+            const { rows: seatRows } = await client.query(
+                `SELECT seat_number
+           FROM tickets
+          WHERE event_category_id = $1`,
+                [it.event_category_id]
+            );
+            // parse to integers
+            const taken = new Set(seatRows.map(r => parseInt(r.seat_number, 10)));
+
+            // 3) for each ticket to mint, pick the lowest-numbered free seat
+            for (let i = 0; i < it.quantity; i++) {
+                let seatNum = null;
+                for (let n = 1; n <= capacity; n++) {
+                    if (!taken.has(n)) {
+                        seatNum = n;
+                        taken.add(n);
+                        break;
+                    }
+                }
+                if (!seatNum) {
+                    throw new Error(
+                        `Sold out: cannot assign ${it.quantity} tickets in category ${it.event_category_id}`
+                    );
+                }
+
+                const ticketId = uuidv4();
+                await client.query(
+                    `INSERT INTO tickets
+                     (id, order_id, event_category_id,
+                      seat_number, price, created_at,
+                      is_assistance_ticket)
+                     VALUES ($1,$2,$3,$4,$5,NOW(),$6)`,
+                    [
+                        ticketId,
+                        orderId,
+                        it.event_category_id,
+                        seatNum.toString(),
+                        it.price,
+                        it.is_assistance_ticket,
+                    ]
+                );
+                await client.query(
+                    `INSERT INTO order_tickets (id, order_id, ticket_id)
+           VALUES ($1, $2, $3)`,
+                    [uuidv4(), orderId, ticketId]
+                );
+            }
+        }
+
+        // Clean up
+        await client.query('DELETE FROM checkout_items WHERE checkout_id = $1', [checkoutId]);
+        await client.query('DELETE FROM checkouts      WHERE id          = $1', [checkoutId]);
+        await client.query('COMMIT');
+
+        req.session.checkout = null;
+        return res.status(201).json({ orderId });
+    } catch (err) {
+        await client.query('ROLLBACK');
+        console.error('Error creating order:', err);
+        return res.status(500).json({ message: err.message || 'Server error' });
+    }
+});
 app.get('/payment-options', async (req, res) => {
     try {
         const result = await client.query(
@@ -2492,102 +2638,6 @@ app.get('/payment-options', async (req, res) => {
     } catch (error) {
         console.error('Error fetching payment options:', error);
         res.status(500).json({ message: 'Fehler beim Laden der Zahlungsarten' });
-    }
-});
-
-// Erstellt eine Bestellung aus dem aktiven Checkout
-app.post('/orders', async (req, res) => {
-    const userId = req.session.userId;
-    if (!userId) return res.status(401).json({ message: 'Not logged in' });
-
-    const coSession = req.session.checkout;
-    if (!coSession) {
-        return res.status(400).json({ message: 'No active checkout' });
-    }
-
-    if (Date.now() - coSession.startedAt > 15 * 60 * 1000) {
-        req.session.checkout = null;
-        return res.status(400).json({ message: 'Checkout expired' });
-    }
-
-    try {
-        const { rows: coRows } = await client.query(
-            'SELECT id FROM checkouts WHERE user_id = $1',
-            [userId]
-        );
-        if (!coRows.length) {
-            return res.status(400).json({ message: 'No active checkout' });
-        }
-        const checkoutId = coRows[0].id;
-
-        const ship = coSession.shippingInfo?.shippingInfo || coSession.shippingInfo || {};
-        const paymentMethodId = coSession.paymentMethod || req.body.paymentMethod || null;
-        const orderId = uuidv4();
-
-        await client.query('BEGIN');
-
-        await client.query(
-            `INSERT INTO orders (
-                id, user_id, created_at,
-                street_address, postal_code, city, country,
-                payment_method, is_paid, salutation, first_name, last_name, company,
-                payment_option_id
-            ) VALUES (
-                $1,$2,NOW(),
-                $3,$4,$5,$6,
-                $7,false,$8,$9,$10,$11,
-                $12
-            )`,
-            [
-                orderId,
-                userId,
-                ship.streetAddress || null,
-                ship.postalCode || null,
-                ship.city || null,
-                ship.country || null,
-                ship.paymentMethod || null,
-                ship.salutation || null,
-                ship.firstName || null,
-                ship.lastName || null,
-                ship.company || null,
-                paymentMethodId
-            ]
-        );
-
-        const { rows: items } = await client.query(
-            `SELECT event_category_id, quantity, price, is_assistance_ticket
-             FROM checkout_items ci
-             WHERE ci.checkout_id = $1`,
-            [checkoutId]
-        );
-
-        for (const item of items) {
-            for (let i = 0; i < item.quantity; i++) {
-                const ticketId = uuidv4();
-                await client.query(
-                    `INSERT INTO tickets (
-                        id, order_id, event_category_id, seat_number, price, created_at, is_assistance_ticket
-                    ) VALUES ($1,$2,$3,NULL,$4,NOW(),$5)`,
-                    [ticketId, orderId, item.event_category_id, item.price, item.is_assistance_ticket]
-                );
-                await client.query(
-                    `INSERT INTO order_tickets (id, order_id, ticket_id) VALUES ($1,$2,$3)`,
-                    [uuidv4(), orderId, ticketId]
-                );
-            }
-        }
-
-        await client.query('DELETE FROM checkout_items WHERE checkout_id = $1', [checkoutId]);
-        await client.query('DELETE FROM checkouts WHERE id = $1', [checkoutId]);
-        await client.query('COMMIT');
-
-        req.session.checkout = null;
-
-        return res.status(201).json({ orderId });
-    } catch (err) {
-        await client.query('ROLLBACK');
-        console.error('Error creating order:', err);
-        return res.status(500).json({ message: 'Server error' });
     }
 });
 
