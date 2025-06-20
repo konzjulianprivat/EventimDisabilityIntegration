@@ -27,7 +27,7 @@
 .checkoutPage__header {
     font-size: 26px;
     font-weight: bold;
-    margin-bottom: 24px;
+    margin-bottom: 20px;
     color: #002b55;
 }
 
@@ -270,7 +270,7 @@
 /* Styled radio group */
 .styled-radio-group {
     display: grid;
-    row-gap: 1.5rem;               /* vertical spacing between options */
+    row-gap: 0.5rem;               /* vertical spacing between options */
 }
 
 .styled-radio-option {
@@ -348,7 +348,7 @@
     margin-bottom: 12px;
 }
 .paymentSummary__lines {
-    margin-top: 8px;
+    margin-top: 0;
 }
 
 /* make the whole box clickable and style its selected state */

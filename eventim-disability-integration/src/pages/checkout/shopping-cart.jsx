@@ -111,7 +111,9 @@ export default function Checkout() {
         <div className="checkoutPage__container" >
             <div className="checkoutPage__item" style={{paddingLeft: '15px', minWidth: '350px'}}>
                 <div className="checkoutPage__header">Bestellübersicht</div>
-                {items.map(t => {
+                {items
+                    .filter(t => !t.is_assistance_ticket)
+                    .map(t => {
                     const {
                         id,
                         eventId,
@@ -141,12 +143,12 @@ export default function Checkout() {
                                 />
                                 <div className="checkoutPage__item-info">
                                     <h2 style={{fontWeight: 'bold'}}>
-                                        {quantity} × <a className="venue-link" href="#" style={{color: 'black'}}>{eventTitle}</a> — {category}
+                                        {quantity} × <a className="venue-link" href="#" style={{color: is_assistance_ticket ? 'purple' : 'black'}}>{eventTitle}</a> — {category}
                                         {is_assistance_ticket && <span className="assist-flag" style={{marginLeft: '6px'}}>B</span>}
                                     </h2>
                                     <div className="meta-item">
                                         <span className="icon-location" /> {eventCity} |{' '}
-                                        <a href="#" className="venue-link" style={{color: "black"}}>{eventVenue}</a>
+                                        <a href="#" className="venue-link" style={{color: is_assistance_ticket ? 'purple' : 'black'}}>{eventVenue}</a>
                                     </div>
                                     <div className="meta-item">
                                         <span className="icon-calendar" />
@@ -161,6 +163,40 @@ export default function Checkout() {
                                 style={{color: is_assistance_ticket ? 'lightgray' : undefined}}
                                 aria-label="Ticket löschen"
                             >×</button>
+                            {
+                                // check the *original* items array for an assistance‐ticket
+                                items.some(other =>
+                                    other.eventId === eventId &&
+                                    other.category === category &&
+                                    other.is_assistance_ticket
+                                ) && (
+                                    <div
+                                        className="checkoutPage__item-header"
+                                        style={{ borderTop: '1px solid lightgray', paddingTop: '16px'}}
+                                    >
+                                        <div className="checkoutPage__item-info" style={{ marginLeft: '144px' }}>
+                                            <label className="new-label">NEW</label>
+                                            <h2 style={{ fontWeight: 'bold' }}>
+                                                1 × Begleitung — {category}
+                                            </h2>
+                                            <div className="meta-item">
+                                                <span className="icon-location" /> {eventCity} |{' '}
+                                                <a
+                                                    href="#"
+                                                    className="venue-link"
+                                                    style={{ color: 'black'}}
+                                                >
+                                                    {eventVenue}
+                                                </a>
+                                            </div>
+                                            <div className="meta-item">
+                                                <span className="icon-calendar" />
+                                                {formatDate(startTime)} | {formatTime(startTime)} Uhr
+                                            </div>
+                                        </div>
+                                    </div>
+                                )
+                            }
                         </div>
                     );
                 })}
@@ -174,15 +210,38 @@ export default function Checkout() {
 
                 <div className="checkoutPage__order-summary">
                     <h3>Bestellübersicht</h3>
-                    {items.map(t => (
+                    {items
+                        .filter(t => !t.is_assistance_ticket)
+                        .map(t => (
                         <div key={t.id} className="checkoutPage__order-item">
                             <span>
                                 {t.quantity} × {t.eventTitle}
-                                {t.is_assistance_ticket && (
-                                    <span className="assist-flag" style={{marginLeft: '4px'}}>B</span>
-                                )}
+                                {
+                                    items.some(other =>
+                                        other.eventId === t.eventId &&
+                                        other.category === t.category &&
+                                        other.is_assistance_ticket
+                                    ) && (
+                                        <>
+                                            <br/> <a style={{marginLeft: "24px", color: "purple"}}>+ 1 × Begleitung</a>
+                                        </>
+                                    )
+                                }
                             </span>
-                            <span>€ {(t.price * t.quantity).toFixed(2)}</span>
+                            <span style={{textAlign: "end"}}>
+                                € {(t.price * t.quantity).toFixed(2)}
+                                {
+                                    items.some(other =>
+                                        other.eventId === t.eventId &&
+                                        other.category === t.category &&
+                                        other.is_assistance_ticket
+                                    ) && (
+                                        <>
+                                            <br/> <a style={{color: "purple"}}>€ 0.00</a>
+                                        </>
+                                    )
+                                }
+                            </span>
                         </div>
                     ))}
                     <div className="checkoutPage__order-subtotal">

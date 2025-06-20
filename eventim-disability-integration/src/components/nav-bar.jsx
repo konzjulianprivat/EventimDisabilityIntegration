@@ -73,6 +73,7 @@ export default function NavBar() {
     };
 
     return (
+        <>
         <div className="nav-bar">
             <div className="nav-wrapper">
                 <div className="logo">
@@ -361,5 +362,6 @@ export default function NavBar() {
                 </div>
             </div>
         )}
+        </>
     );
 }

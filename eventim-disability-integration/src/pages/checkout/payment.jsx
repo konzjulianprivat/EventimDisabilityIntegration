@@ -207,14 +207,40 @@ export default function Payment() {
 
                     <div className="checkoutPage__order-summary">
                         <h3>Bestellübersicht</h3>
-                        {items.map((t) => (
-                            <div key={t.id} className="checkoutPage__order-item">
-                  <span>
-                    {t.quantity} × {t.eventTitle}
-                  </span>
-                                <span>€ {(t.price * t.quantity).toFixed(2)}</span>
-                            </div>
-                        ))}
+                        {items
+                            .filter(t => !t.is_assistance_ticket)
+                            .map(t => (
+                                <div key={t.id} className="checkoutPage__order-item">
+                            <span>
+                                {t.quantity} × {t.eventTitle}
+                                {
+                                    items.some(other =>
+                                        other.eventId === t.eventId &&
+                                        other.category === t.category &&
+                                        other.is_assistance_ticket
+                                    ) && (
+                                        <>
+                                            <br/> <a style={{marginLeft: "24px", color: "purple"}}>+ 1 × Begleitung</a>
+                                        </>
+                                    )
+                                }
+                            </span>
+                                    <span style={{textAlign: "end"}}>
+                                € {(t.price * t.quantity).toFixed(2)}
+                                        {
+                                            items.some(other =>
+                                                other.eventId === t.eventId &&
+                                                other.category === t.category &&
+                                                other.is_assistance_ticket
+                                            ) && (
+                                                <>
+                                                    <br/> <a style={{color: "purple"}}>€ 0.00</a>
+                                                </>
+                                            )
+                                        }
+                            </span>
+                                </div>
+                            ))}
                         <div className="checkoutPage__order-item">
                             <span>Versand (–)</span>
                             <span>€ {shippingCost.toFixed(2)}</span>
