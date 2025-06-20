@@ -14,6 +14,26 @@ export default function Payment() {
     const [timer, setTimer] = useState(0);
     const offsetRef = useRef(0);
 
+    // --- load payment options from DB ---
+    const [paymentOptions, setPaymentOptions] = useState([]);
+    const [selectedPayment, setSelectedPayment] = useState(null);
+
+    // Fetch payment options on mount
+    useEffect(() => {
+        fetch(`${API_BASE_URL}/payment-options`, {
+            credentials: "include",
+        })
+            .then((res) => res.json())
+            .then(({ paymentOptions }) => {
+                setPaymentOptions(paymentOptions);
+                if (paymentOptions.length) {
+                    setSelectedPayment(paymentOptions[0]);
+                }
+            })
+            .catch((err) => console.error("Error fetching payment options:", err));
+    }, []);
+
+    // --- fetch checkout items + createdAt ---
     const fetchCheckout = async () => {
         try {
             const res = await fetch(`${API_BASE_URL}/checkout-items`, {
@@ -39,6 +59,7 @@ export default function Payment() {
         return () => clearInterval(poll);
     }, []);
 
+    // --- timer logic ---
     useEffect(() => {
         if (!createdAt) return;
         const iv = setInterval(() => {
@@ -67,44 +88,6 @@ export default function Payment() {
         return `${m}:${sec} Min.`;
     };
 
-    // --- static payment options from your screenshot ---
-    const paymentOptions = [
-        {
-            id: "sepa",
-            label: "Bankeinzug",
-            description: "Mit Chance auf einen von drei 100€-Gutscheinen!",
-            icon: "/pictures/payment-methods/sepa.svg",
-        },
-        {
-            id: "sofort",
-            label: "Apple Pay / Google Pay",
-            description: "Einfach mit Apple Pay oder Google Pay bezahlen",
-            icon: "/pictures/payment-methods/gpay_apay.svg",
-        },
-        {
-            id: "card",
-            label: "Karte",
-            description:
-                "Einfach Bank auswählen, einloggen und Zahlung bestätigen",
-            icon: "/pictures/payment-methods/visa_master_amex.svg",
-        },
-        {
-            id: "klarna",
-            label: "Bezah­le mit Klarna",
-            description:
-                "Sofort, in bis zu 30 Tagen bezahlen oder teile die Kosten auf",
-            icon: "/pictures/payment-methods/klarna.svg",
-        },
-        {
-            id: "paypal",
-            label: "PayPal",
-            description: "Einfach, schnell und sicher mit PayPal bezahlen.",
-            icon: "/pictures/payment-methods/paypal.svg",
-        },
-    ];
-
-    const [selectedPayment, setSelectedPayment] = useState(paymentOptions[0]);
-
     // --- compute totals ---
     const subtotal = items.reduce((sum, t) => sum + t.price * t.quantity, 0);
     const shippingCost = 5.9; // adjust as needed
@@ -112,6 +95,7 @@ export default function Payment() {
 
     // --- submit selected payment ---
     const handleSubmit = async () => {
+        if (!selectedPayment) return;
         try {
             await fetch(`${API_BASE_URL}/checkout-payment`, {
                 method: "POST",
@@ -141,19 +125,18 @@ export default function Payment() {
                                 key={opt.id}
                                 className={
                                     "paymentOption" +
-                                    (selectedPayment.id === opt.id
+                                    (selectedPayment?.id === opt.id
                                         ? " paymentOption--selected"
                                         : "")
                                 }
                                 onClick={() => setSelectedPayment(opt)}
-                                style={{marginLeft: "10px", marginRight: "10px"}}
+                                style={{ margin: "0 10px" }}
                             >
-                                {/* keep the input for form semantics, but hide it */}
                                 <input
                                     type="radio"
                                     name="paymentOption"
                                     value={opt.id}
-                                    checked={selectedPayment.id === opt.id}
+                                    checked={selectedPayment?.id === opt.id}
                                     onChange={() => setSelectedPayment(opt)}
                                     style={{ display: "none" }}
                                 />
@@ -164,7 +147,7 @@ export default function Payment() {
                                         <p>{opt.description}</p>
                                     </div>
                                     <img
-                                        src={opt.icon}
+                                        src={opt.icon_src}
                                         alt={opt.label}
                                         className="paymentOption__icon"
                                     />
@@ -192,12 +175,13 @@ export default function Payment() {
                     <button
                         className="checkoutPage__checkout-button checkoutPage__text-lg"
                         onClick={handleSubmit}
+                        disabled={!selectedPayment}
                     >
                         Weiter zur Bestellprüfung
                     </button>
                 </div>
 
-                {/* === RIGHT SIDEBAR (unchanged) === */}
+                {/* === RIGHT SIDEBAR === */}
                 <div className="checkoutPage__sidebar">
                     <div className="checkoutPage__reservation-box">
                         Deine Tickets sind noch erhältlich
@@ -208,37 +192,38 @@ export default function Payment() {
                     <div className="checkoutPage__order-summary">
                         <h3>Bestellübersicht</h3>
                         {items
-                            .filter(t => !t.is_assistance_ticket)
-                            .map(t => (
+                            .filter((t) => !t.is_assistance_ticket)
+                            .map((t) => (
                                 <div key={t.id} className="checkoutPage__order-item">
-                            <span>
-                                {t.quantity} × {t.eventTitle}
-                                {
-                                    items.some(other =>
-                                        other.eventId === t.eventId &&
-                                        other.category === t.category &&
-                                        other.is_assistance_ticket
-                                    ) && (
-                                        <>
-                                            <br/> <a style={{marginLeft: "24px", color: "purple"}}>+ 1 × Begleitung</a>
-                                        </>
-                                    )
-                                }
-                            </span>
-                                    <span style={{textAlign: "end"}}>
-                                € {(t.price * t.quantity).toFixed(2)}
-                                        {
-                                            items.some(other =>
+                  <span>
+                    {t.quantity} × {t.eventTitle}
+                      {items.some(
+                          (other) =>
+                              other.eventId === t.eventId &&
+                              other.category === t.category &&
+                              other.is_assistance_ticket
+                      ) && (
+                          <>
+                              <br />{" "}
+                              <a style={{ marginLeft: "24px", color: "purple" }}>
+                                  + 1 × Begleitung
+                              </a>
+                          </>
+                      )}
+                  </span>
+                                    <span style={{ textAlign: "end" }}>
+                    € {(t.price * t.quantity).toFixed(2)}
+                                        {items.some(
+                                            (other) =>
                                                 other.eventId === t.eventId &&
                                                 other.category === t.category &&
                                                 other.is_assistance_ticket
-                                            ) && (
-                                                <>
-                                                    <br/> <a style={{color: "purple"}}>€ 0.00</a>
-                                                </>
-                                            )
-                                        }
-                            </span>
+                                        ) && (
+                                            <>
+                                                <br /> <a style={{ color: "purple" }}>€ 0.00</a>
+                                            </>
+                                        )}
+                  </span>
                                 </div>
                             ))}
                         <div className="checkoutPage__order-item">
@@ -253,17 +238,9 @@ export default function Payment() {
                     </div>
 
                     <div className="checkoutPage__payment-methods">
-                        <img src="/pictures/payment-methods/sepa.svg" alt="SEPA Lastschrift" />
-                        <img
-                            src="/pictures/payment-methods/visa_master_amex.svg"
-                            alt="VISA"
-                        />
-                        <img src="/pictures/payment-methods/paypal.svg" alt="PayPal" />
-                        <img
-                            src="/pictures/payment-methods/gpay_apay.svg"
-                            alt="Google & Apple Pay"
-                        />
-                        <img src="/pictures/payment-methods/klarna.svg" alt="Klarna" />
+                        {paymentOptions.map((opt) => (
+                            <img key={opt.id} src={opt.icon_src} alt={opt.label} />
+                        ))}
                     </div>
                 </div>
             </div>

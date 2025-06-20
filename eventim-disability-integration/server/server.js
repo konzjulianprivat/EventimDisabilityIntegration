@@ -2445,6 +2445,18 @@ app.delete('/checkout-items/:id', async (req, res) => {
     }
 });
 
+app.get('/payment-options', async (req, res) => {
+    try {
+        const result = await client.query(
+            'SELECT id, label, description, icon_src FROM payment_options ORDER BY label'
+        );
+        res.status(200).json({ paymentOptions: result.rows });
+    } catch (error) {
+        console.error('Error fetching payment options:', error);
+        res.status(500).json({ message: 'Fehler beim Laden der Zahlungsarten' });
+    }
+});
+
 app.get(/.*/, (req, res) => {
     res.redirect(301, 'http://localhost:3000');
 });
