@@ -33,6 +33,19 @@ export default function Payment() {
             .catch((err) => console.error("Error fetching payment options:", err));
     }, []);
 
+    useEffect(() => {
+        if (!paymentOptions.length) return;
+        fetch(`${API_BASE_URL}/checkout-payment`, { credentials: "include" })
+            .then((res) => (res.ok ? res.json() : null))
+            .then((data) => {
+                if (data && data.paymentMethod) {
+                    const opt = paymentOptions.find((o) => o.id === data.paymentMethod);
+                    if (opt) setSelectedPayment(opt);
+                }
+            })
+            .catch((err) => console.error("Error fetching session payment:", err));
+    }, [paymentOptions]);
+
     // --- fetch checkout items + createdAt ---
     const fetchCheckout = async () => {
         try {
@@ -103,9 +116,22 @@ export default function Payment() {
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ paymentMethod: selectedPayment.id }),
             });
-            router.push("/checkout/review");
+
+            const res = await fetch(`${API_BASE_URL}/orders`, {
+                method: "POST",
+                credentials: "include",
+            });
+
+            if (res.ok) {
+                setTimeout(() => {
+                    router.push("/");
+                }, 3000);
+            } else {
+                const data = await res.json().catch(() => ({}));
+                alert(data.message || "Fehler bei der Bestellung");
+            }
         } catch (err) {
-            console.error("Error saving payment method:", err);
+            console.error("Error creating order:", err);
         }
     };
 
