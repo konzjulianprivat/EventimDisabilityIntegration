@@ -198,38 +198,17 @@ export default function ProfilePage() {
 
                         {/* Empfehlungen */}
                         <div className="content-inner">
-                            <h3>Empfehlungen basierend auf deinen letzten Buchungen</h3>
-                            <div
-                                className="carousel-container"
-                                ref={carouselRef}
-                            >
-                                <div className="carousel-wrapper">
-                                    <button
-                                        className="carousel-button left"
-                                        onClick={handlePrev}
-                                        disabled={carouselIndex === 0}
-                                    >
-                                        ‹
-                                    </button>
-                                    <div className="carousel-track">
-                                        {recommendCards.map((t, i) => (
-                                            <SquareTourCard
-                                                key={carouselIndex + i}
-                                                {...t}
-                                            />
-                                        ))}
-                                    </div>
-                                    <button
-                                        className="carousel-button right"
-                                        onClick={handleNext}
-                                        disabled={
-                                            carouselIndex >= sampleTourData.length - visibleCount
-                                        }
-                                    >
-                                        ›
-                                    </button>
-                                </div>
-                            </div>
+                            Insert a Table here with the following columns to display one order:
+                            - Order No. -> Number should be counting up how many orders the user has in the orders table (starting counting from 1, the last order has the highest number)
+                            - How many Tickets (you can find that using the number of entries under order_tickets to this order_id)
+                            - order_status: if the order created_at date is older than 3days from now, the status is "send" in green, if its more recent its "in progress" in yellow
+
+                            It should be possible to click on each order and see an overview of all data of that order (shipping address and so on ...) as well as all tickets to that order
+                            a ticket should be displayed with the following columns:
+                            - event_title: the title of the event
+                            - event_category: the category of the event
+                            - seat number: the seat number of the ticket
+                            - is_assistance_ticket: if the ticket is an assistance ticket, it should be displayed with a purple 'B' sign in a sepaarte column
                         </div>
                     </div>
 
