@@ -3,6 +3,21 @@
 
 import React, { useState } from "react";
 import SquareTourCard from "../../components/squareTourCard";
+import { API_BASE_URL } from "../../config";
+
+export async function getServerSideProps({ req }) {
+    const cookie = req.headers.cookie || '';
+    try {
+        const res = await fetch(`${API_BASE_URL}/session-status`, { headers: { cookie } });
+        const data = await res.json();
+        if (!data.loggedIn) {
+            return { redirect: { destination: '/login?redirect=/profile', permanent: false } };
+        }
+    } catch {
+        return { redirect: { destination: '/login?redirect=/profile', permanent: false } };
+    }
+    return { props: {} };
+}
 
 /**
  * Beispiel‐Datensatz: 8 Einträge

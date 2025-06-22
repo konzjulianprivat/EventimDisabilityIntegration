@@ -4,6 +4,20 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/router';
 import { API_BASE_URL } from '../../config';
+import CheckoutExpiredModal from '../../components/CheckoutExpiredModal';
+
+export async function getServerSideProps({ req }) {
+    const cookie = req.headers.cookie || '';
+    try {
+        const res = await fetch(`${API_BASE_URL}/checkout-items`, { headers: { cookie } });
+        if (res.status !== 200) {
+            return { redirect: { destination: '/', permanent: false } };
+        }
+    } catch {
+        return { redirect: { destination: '/', permanent: false } };
+    }
+    return { props: {} };
+}
 
 export default function ShippingInformation() {
     const router = useRouter();
@@ -11,6 +25,7 @@ export default function ShippingInformation() {
     const [createdAt, setCreatedAt] = useState(null);
     const [timer, setTimer] = useState(0);
     const offsetRef = useRef(0);
+    const [showExpiredModal, setShowExpiredModal] = useState(false);
 
     const [useDifferentAddress, setUseDifferentAddress] = useState(false);
     const [shippingInfo, setShippingInfo] = useState({
@@ -93,7 +108,11 @@ export default function ShippingInformation() {
         try {
             const res = await fetch(`${API_BASE_URL}/checkout-items`, { credentials: 'include' });
             if (res.status === 404) {
-                window.location.href = '/';
+                if (createdAt !== null) {
+                    setShowExpiredModal(true);
+                } else {
+                    window.location.href = '/';
+                }
                 return;
             }
             const { createdAt: serverCreatedAt, items: fetchedItems } = await res.json();
@@ -138,8 +157,7 @@ export default function ShippingInformation() {
                     method: 'DELETE',
                     credentials: 'include'
                 }).finally(() => {
-                    alert('Deine Reservierungszeit ist abgelaufen.');
-                    window.location.href = '/';
+                    setShowExpiredModal(true);
                 });
             } else {
                 setTimer(remaining);
@@ -373,6 +391,9 @@ export default function ShippingInformation() {
                 </div>
             </div>
         </div>
+        {showExpiredModal && (
+            <CheckoutExpiredModal onClose={() => (window.location.href = '/')} />
+        )}
         </div>
     );
 }
