@@ -4,6 +4,22 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/router";
 import { API_BASE_URL } from "../../config";
+import CheckoutExpiredModal from "../../components/CheckoutExpiredModal";
+
+export async function getServerSideProps({ req }) {
+    const cookie = req.headers.cookie || "";
+    try {
+        const res = await fetch(`${API_BASE_URL}/checkout-items`, {
+            headers: { cookie },
+        });
+        if (res.status !== 200) {
+            return { redirect: { destination: "/", permanent: false } };
+        }
+    } catch {
+        return { redirect: { destination: "/", permanent: false } };
+    }
+    return { props: {} };
+}
 
 export default function Payment() {
     const router = useRouter();
@@ -17,6 +33,12 @@ export default function Payment() {
     // --- load payment options from DB ---
     const [paymentOptions, setPaymentOptions] = useState([]);
     const [selectedPayment, setSelectedPayment] = useState(null);
+
+    // --- shipping options and selection ---
+    const [shippingOptions, setShippingOptions] = useState([]);
+    const [selectedShipping, setSelectedShipping] = useState(null);
+
+    const [showExpiredModal, setShowExpiredModal] = useState(false);
 
     // Fetch payment options on mount
     useEffect(() => {
@@ -32,6 +54,30 @@ export default function Payment() {
             })
             .catch((err) => console.error("Error fetching payment options:", err));
     }, []);
+
+    // Fetch shipping options on mount
+    useEffect(() => {
+        fetch(`${API_BASE_URL}/shipping-options`, { credentials: "include" })
+            .then((res) => (res.ok ? res.json() : { options: [] }))
+            .then(({ options }) => setShippingOptions(options || []))
+            .catch((err) => console.error("Error fetching shipping options:", err));
+    }, []);
+
+    // After shipping options loaded, load selection from session
+    useEffect(() => {
+        if (!shippingOptions.length) return;
+        fetch(`${API_BASE_URL}/checkout-shipping`, { credentials: "include" })
+            .then((res) => (res.ok ? res.json() : null))
+            .then((data) => {
+                if (data && data.shippingInfo && data.shippingInfo.shippingMethod) {
+                    const opt = shippingOptions.find(
+                        (o) => o.id === data.shippingInfo.shippingMethod
+                    );
+                    if (opt) setSelectedShipping(opt);
+                }
+            })
+            .catch((err) => console.error("Error fetching session shipping:", err));
+    }, [shippingOptions]);
 
     // After payment options loaded, check if session stored a method
     useEffect(() => {
@@ -65,7 +111,11 @@ export default function Payment() {
                 credentials: "include",
             });
             if (res.status === 404) {
-                window.location.href = "/";
+                if (createdAt !== null) {
+                    setShowExpiredModal(true);
+                } else {
+                    window.location.href = "/";
+                }
                 return;
             }
             const { createdAt: serverCreatedAt, items: fetchedItems } =
@@ -97,8 +147,7 @@ export default function Payment() {
                     method: "DELETE",
                     credentials: "include",
                 }).finally(() => {
-                    alert("Deine Reservierungszeit ist abgelaufen.");
-                    window.location.href = "/";
+                    setShowExpiredModal(true);
                 });
             } else {
                 setTimer(remaining);
@@ -115,7 +164,7 @@ export default function Payment() {
 
     // --- compute totals ---
     const subtotal = items.reduce((sum, t) => sum + t.price * t.quantity, 0);
-    const shippingCost = 5.9; // adjust as needed
+    const shippingCost = selectedShipping ? Number(selectedShipping.price) : 0;
     const total = subtotal + shippingCost;
 
     // --- submit selected payment ---
@@ -266,7 +315,7 @@ export default function Payment() {
                                 </div>
                             ))}
                         <div className="checkoutPage__order-item">
-                            <span>Versand (–)</span>
+                            <span>Versand ({selectedShipping ? selectedShipping.label : '–'})</span>
                             <span>€ {shippingCost.toFixed(2)}</span>
                         </div>
                         <div className="checkoutPage__order-subtotal">
@@ -284,5 +333,8 @@ export default function Payment() {
                 </div>
             </div>
         </div>
+        {showExpiredModal && (
+            <CheckoutExpiredModal onClose={() => (window.location.href = '/')} />
+        )}
     );
 }
