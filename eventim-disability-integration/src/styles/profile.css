@@ -302,7 +302,56 @@
 }
 
 /* -----------------------------------
-   10) Help Center / FAQ
+   10) Orders Table
+   ----------------------------------- */
+.orders-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 1rem;
+}
+.orders-table th,
+.orders-table td {
+    padding: 0.5rem;
+    border-bottom: 1px solid #e0e0e0;
+    text-align: left;
+}
+.orders-table th {
+    background-color: #f0f0f0;
+    color: #002b55;
+    font-weight: 600;
+}
+.order-row:hover {
+    background-color: #f9f9f9;
+    cursor: pointer;
+}
+.order-status.send {
+    color: green;
+}
+.order-status.progress {
+    color: #ffc700;
+}
+.order-detail-shipping p {
+    margin: 0;
+}
+.tickets-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 1rem;
+}
+.tickets-table th,
+.tickets-table td {
+    padding: 0.4rem;
+    border-bottom: 1px solid #ddd;
+    text-align: left;
+}
+.tickets-table th {
+    background-color: #fafafa;
+    color: #002b55;
+    font-weight: 600;
+}
+
+/* -----------------------------------
+   11) Help Center / FAQ
    ----------------------------------- */
 .help-section {
     padding: 0;

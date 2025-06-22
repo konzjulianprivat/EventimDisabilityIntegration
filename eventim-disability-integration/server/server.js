@@ -2641,6 +2641,71 @@ app.get('/payment-options', async (req, res) => {
     }
 });
 
+// Liefert alle Bestellungen des eingeloggten Users
+app.get('/orders', async (req, res) => {
+    const userId = req.session.userId;
+    if (!userId) return res.status(401).json({ message: 'Not logged in' });
+
+    try {
+        const { rows } = await client.query(
+            `SELECT o.id, o.created_at, COUNT(ot.ticket_id) AS ticket_count
+               FROM orders o
+               LEFT JOIN order_tickets ot ON ot.order_id = o.id
+              WHERE o.user_id = $1
+              GROUP BY o.id
+              ORDER BY o.created_at DESC`,
+            [userId]
+        );
+        return res.json({ orders: rows });
+    } catch (err) {
+        console.error('Error fetching orders:', err);
+        return res.status(500).json({ message: 'Server error' });
+    }
+});
+
+// Liefert Details zu einer bestimmten Bestellung
+app.get('/orders/:id', async (req, res) => {
+    const userId = req.session.userId;
+    if (!userId) return res.status(401).json({ message: 'Not logged in' });
+    const orderId = req.params.id;
+
+    try {
+        const { rows: orderRows } = await client.query(
+            `SELECT id, created_at, street_address, postal_code, city, country,
+                    is_paid, salutation, first_name, last_name, company,
+                    payment_option_id
+               FROM orders
+              WHERE id = $1 AND user_id = $2
+              LIMIT 1`,
+            [orderId, userId]
+        );
+        if (!orderRows.length) {
+            return res.status(404).json({ message: 'Order not found' });
+        }
+        const order = orderRows[0];
+
+        const { rows: ticketRows } = await client.query(
+            `SELECT t.id,
+                    t.seat_number,
+                    t.is_assistance_ticket,
+                    ec.name  AS event_category,
+                    tu.title AS event_title
+               FROM tickets t
+                    JOIN event_categories ec ON ec.id = t.event_category_id
+                    JOIN events e          ON e.id  = ec.event_id
+                    JOIN tours  tu         ON tu.id = e.tour_id
+              WHERE t.order_id = $1
+              ORDER BY t.created_at`,
+            [orderId]
+        );
+
+        return res.json({ order, tickets: ticketRows });
+    } catch (err) {
+        console.error('Error fetching order detail:', err);
+        return res.status(500).json({ message: 'Server error' });
+    }
+});
+
 app.get(/.*/, (req, res) => {
     res.redirect(301, 'http://localhost:3000');
 });
