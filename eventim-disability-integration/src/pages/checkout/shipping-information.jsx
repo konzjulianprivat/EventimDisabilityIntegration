@@ -4,7 +4,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/router';
 import { API_BASE_URL } from '../../config';
-import CheckoutExpiredModal from '../../components/checkout-expired-modal.jsx';
 
 export default function ShippingInformation() {
     const router = useRouter();
@@ -12,8 +11,6 @@ export default function ShippingInformation() {
     const [createdAt, setCreatedAt] = useState(null);
     const [timer, setTimer] = useState(0);
     const offsetRef = useRef(0);
-    const [expired, setExpired] = useState(false);
-    const initialLoadRef = useRef(true);
 
     const [useDifferentAddress, setUseDifferentAddress] = useState(false);
     const [shippingInfo, setShippingInfo] = useState({
@@ -96,11 +93,7 @@ export default function ShippingInformation() {
         try {
             const res = await fetch(`${API_BASE_URL}/checkout-items`, { credentials: 'include' });
             if (res.status === 404) {
-                if (initialLoadRef.current) {
-                    window.location.href = '/';
-                } else {
-                    setExpired(true);
-                }
+                window.location.href = '/';
                 return;
             }
             const { createdAt: serverCreatedAt, items: fetchedItems } = await res.json();
@@ -108,7 +101,6 @@ export default function ShippingInformation() {
             const now = Date.now();
             offsetRef.current = now - now;
             setCreatedAt(new Date(serverCreatedAt).getTime());
-            initialLoadRef.current = false;
         } catch (err) {
             console.error('Error fetching checkout:', err);
         }
@@ -145,7 +137,10 @@ export default function ShippingInformation() {
                 fetch(`${API_BASE_URL}/checkout`, {
                     method: 'DELETE',
                     credentials: 'include'
-                }).finally(() => setExpired(true));
+                }).finally(() => {
+                    alert('Deine Reservierungszeit ist abgelaufen.');
+                    window.location.href = '/';
+                });
             } else {
                 setTimer(remaining);
             }
@@ -379,6 +374,5 @@ export default function ShippingInformation() {
             </div>
         </div>
         </div>
-        {expired && <CheckoutExpiredModal />}
     );
 }

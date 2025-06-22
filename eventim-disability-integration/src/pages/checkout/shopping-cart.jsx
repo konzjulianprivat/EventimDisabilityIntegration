@@ -4,15 +4,12 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/router';
 import { API_BASE_URL } from '../../config'; // adjust path if needed
-import CheckoutExpiredModal from '../../components/checkout-expired-modal.jsx';
 
 export default function Checkout() {
     const [items, setItems] = useState([]);
     const [createdAt, setCreatedAt] = useState(null);
     const [timer, setTimer] = useState(0);
     const offsetRef = useRef(0);   // serverTime - localTime
-    const [expired, setExpired] = useState(false);
-    const initialLoadRef = useRef(true);
 
     const router = useRouter();
 
@@ -23,11 +20,8 @@ export default function Checkout() {
                 credentials: 'include'
             });
             if (res.status === 404) {
-                if (initialLoadRef.current) {
-                    window.location.href = '/';
-                } else {
-                    setExpired(true);
-                }
+                // no checkout → back home
+                window.location.href = '/';
                 return;
             }
             const { createdAt: serverCreatedAt, items: fetchedItems } = await res.json();
@@ -40,7 +34,6 @@ export default function Checkout() {
             offsetRef.current = serverNow - localNow;
 
             setCreatedAt(new Date(serverCreatedAt).getTime());
-            initialLoadRef.current = false;
         } catch (err) {
             console.error('Error fetching checkout:', err);
         }
@@ -62,10 +55,14 @@ export default function Checkout() {
             const remaining = 15 * 60 - elapsed;
             if (remaining <= 0) {
                 clearInterval(iv);
+                // cleanup on expiration
                 fetch(`${API_BASE_URL}/checkout`, {
                     method: 'DELETE',
                     credentials: 'include'
-                }).finally(() => setExpired(true));
+                }).finally(() => {
+                    alert('Deine Reservierungszeit ist abgelaufen.');
+                    window.location.href = '/';
+                });
             } else {
                 setTimer(remaining);
             }
@@ -267,6 +264,5 @@ export default function Checkout() {
             </div>
         </div>
         </div>
-        {expired && <CheckoutExpiredModal />}
     );
 }

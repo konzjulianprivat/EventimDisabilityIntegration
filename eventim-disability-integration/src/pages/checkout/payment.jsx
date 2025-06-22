@@ -4,7 +4,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/router";
 import { API_BASE_URL } from "../../config";
-import CheckoutExpiredModal from "../../components/checkout-expired-modal.jsx";
 
 export default function Payment() {
     const router = useRouter();
@@ -14,11 +13,6 @@ export default function Payment() {
     const [createdAt, setCreatedAt] = useState(null);
     const [timer, setTimer] = useState(0);
     const offsetRef = useRef(0);
-    const [expired, setExpired] = useState(false);
-    const initialLoadRef = useRef(true);
-
-    const [shippingOptions, setShippingOptions] = useState([]);
-    const [selectedShipping, setSelectedShipping] = useState(null);
 
     // --- load payment options from DB ---
     const [paymentOptions, setPaymentOptions] = useState([]);
@@ -64,38 +58,6 @@ export default function Payment() {
         }).catch(() => {});
     }, [selectedPayment]);
 
-    const fetchShippingOptions = async () => {
-        try {
-            const res = await fetch(`${API_BASE_URL}/shipping-options`, { credentials: 'include' });
-            if (res.ok) {
-                const data = await res.json();
-                const opts = Array.isArray(data.options) ? data.options : [];
-                setShippingOptions(opts);
-                if (opts.length && !selectedShipping) {
-                    setSelectedShipping(opts[0]);
-                }
-            }
-        } catch (err) {
-            console.error('Error fetching shipping options:', err);
-        }
-    };
-
-    const fetchSessionShipping = async () => {
-        try {
-            const res = await fetch(`${API_BASE_URL}/checkout-shipping`, { credentials: 'include' });
-            if (res.ok) {
-                const data = await res.json();
-                if (data.shippingInfo && data.shippingInfo.shippingMethod) {
-                    const methodId = data.shippingInfo.shippingMethod;
-                    const opt = shippingOptions.find(o => o.id === methodId);
-                    if (opt) setSelectedShipping(opt);
-                }
-            }
-        } catch (err) {
-            console.error('Error fetching session shipping info:', err);
-        }
-    };
-
     // --- fetch checkout items + createdAt ---
     const fetchCheckout = async () => {
         try {
@@ -103,11 +65,7 @@ export default function Payment() {
                 credentials: "include",
             });
             if (res.status === 404) {
-                if (initialLoadRef.current) {
-                    window.location.href = "/";
-                } else {
-                    setExpired(true);
-                }
+                window.location.href = "/";
                 return;
             }
             const { createdAt: serverCreatedAt, items: fetchedItems } =
@@ -115,7 +73,6 @@ export default function Payment() {
             setItems(Array.isArray(fetchedItems) ? fetchedItems : []);
             offsetRef.current = 0;
             setCreatedAt(new Date(serverCreatedAt).getTime());
-            initialLoadRef.current = false;
         } catch (err) {
             console.error("Error fetching checkout:", err);
         }
@@ -123,16 +80,9 @@ export default function Payment() {
 
     useEffect(() => {
         fetchCheckout();
-        fetchShippingOptions();
         const poll = setInterval(fetchCheckout, 15_000);
         return () => clearInterval(poll);
     }, []);
-
-    useEffect(() => {
-        if (shippingOptions.length) {
-            fetchSessionShipping();
-        }
-    }, [shippingOptions]);
 
     // --- timer logic ---
     useEffect(() => {
@@ -146,7 +96,10 @@ export default function Payment() {
                 fetch(`${API_BASE_URL}/checkout`, {
                     method: "DELETE",
                     credentials: "include",
-                }).finally(() => setExpired(true));
+                }).finally(() => {
+                    alert("Deine Reservierungszeit ist abgelaufen.");
+                    window.location.href = "/";
+                });
             } else {
                 setTimer(remaining);
             }
@@ -162,7 +115,7 @@ export default function Payment() {
 
     // --- compute totals ---
     const subtotal = items.reduce((sum, t) => sum + t.price * t.quantity, 0);
-    const shippingCost = selectedShipping ? Number(selectedShipping.price) : 0;
+    const shippingCost = 5.9; // adjust as needed
     const total = subtotal + shippingCost;
 
     // --- submit selected payment ---
@@ -247,12 +200,10 @@ export default function Payment() {
                         className="paymentSummary__lines"
                         style={{ marginTop: "30px", padding: "10px" }}
                     >
-                        {selectedShipping && (
-                            <div className="checkoutPage__order-item">
-                                <span>Versand ({selectedShipping.label})</span>
-                                <span>€ {shippingCost.toFixed(2)}</span>
-                            </div>
-                        )}
+                        <div className="checkoutPage__order-item">
+                            <span>Versandkosten</span>
+                            <span>€ {shippingCost.toFixed(2)}</span>
+                        </div>
                         <div className="checkoutPage__order-subtotal">
                             <span>Gesamtsumme</span>
                             <span>€ {total.toFixed(2)}</span>
@@ -314,12 +265,10 @@ export default function Payment() {
                   </span>
                                 </div>
                             ))}
-                        {selectedShipping && (
-                            <div className="checkoutPage__order-item">
-                                <span>Versand ({selectedShipping.label})</span>
-                                <span>€ {shippingCost.toFixed(2)}</span>
-                            </div>
-                        )}
+                        <div className="checkoutPage__order-item">
+                            <span>Versand (–)</span>
+                            <span>€ {shippingCost.toFixed(2)}</span>
+                        </div>
                         <div className="checkoutPage__order-subtotal">
                             <span>Gesamt</span>
                             <span>€ {total.toFixed(2)}</span>
@@ -333,8 +282,7 @@ export default function Payment() {
                         ))}
                     </div>
                 </div>
+            </div>
         </div>
-        </div>
-        {expired && <CheckoutExpiredModal />}
     );
 }
