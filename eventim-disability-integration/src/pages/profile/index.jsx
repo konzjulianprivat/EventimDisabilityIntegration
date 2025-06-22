@@ -51,6 +51,41 @@ export default function ProfilePage() {
     const [visibleCount, setVisibleCount] = useState(1);
     const carouselRef = useRef(null);
 
+    const [orders, setOrders] = useState([]);
+    const [selectedOrder, setSelectedOrder] = useState(null);
+
+    const fetchOrders = async () => {
+        try {
+            const res = await fetch(`${API_BASE_URL}/orders`, {
+                credentials: 'include'
+            });
+            if (res.ok) {
+                const data = await res.json();
+                setOrders(Array.isArray(data.orders) ? data.orders : []);
+            }
+        } catch (err) {
+            console.error('Error fetching orders:', err);
+        }
+    };
+
+    const fetchOrderDetail = async (id) => {
+        try {
+            const res = await fetch(`${API_BASE_URL}/orders/${id}`, {
+                credentials: 'include'
+            });
+            if (res.ok) {
+                const data = await res.json();
+                setSelectedOrder({ id, ...data });
+            }
+        } catch (err) {
+            console.error('Error fetching order detail:', err);
+        }
+    };
+
+    useEffect(() => {
+        fetchOrders();
+    }, []);
+
     // Recalculate on mount + resize
     useEffect(() => {
         const CARD_W = 180;
@@ -196,20 +231,73 @@ export default function ProfilePage() {
                             <p className="subtitle">Alle bevorstehenden Events</p>
                         </div>
 
-                        {/* Empfehlungen */}
                         <div className="content-inner">
-                            Insert a Table here with the following columns to display one order:
-                            - Order No. -> Number should be counting up how many orders the user has in the orders table (starting counting from 1, the last order has the highest number)
-                            - How many Tickets (you can find that using the number of entries under order_tickets to this order_id)
-                            - order_status: if the order created_at date is older than 3days from now, the status is "send" in green, if its more recent its "in progress" in yellow
-
-                            It should be possible to click on each order and see an overview of all data of that order (shipping address and so on ...) as well as all tickets to that order
-                            a ticket should be displayed with the following columns:
-                            - event_title: the title of the event
-                            - event_category: the category of the event
-                            - seat number: the seat number of the ticket
-                            - is_assistance_ticket: if the ticket is an assistance ticket, it should be displayed with a purple 'B' sign in a sepaarte column
+                            <table className="orders-table">
+                                <thead>
+                                    <tr>
+                                        <th>Order&nbsp;No.</th>
+                                        <th>Tickets</th>
+                                        <th>Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {orders.map((o, idx) => {
+                                        const orderNo = orders.length - idx;
+                                        const isSent = new Date(o.created_at).getTime() < Date.now() - 3 * 24 * 60 * 60 * 1000;
+                                        return (
+                                            <tr
+                                                key={o.id}
+                                                className="order-row"
+                                                onClick={() => fetchOrderDetail(o.id)}
+                                            >
+                                                <td>#{orderNo}</td>
+                                                <td>{o.ticket_count}</td>
+                                                <td>
+                                                    <span className={`order-status ${isSent ? 'send' : 'progress'}`}>{isSent ? 'send' : 'in progress'}</span>
+                                                </td>
+                                            </tr>
+                                        );
+                                    })}
+                                </tbody>
+                            </table>
                         </div>
+
+                        {selectedOrder && (
+                            <div className="modal-overlay" onClick={() => setSelectedOrder(null)}>
+                                <div className="modal-box" onClick={e => e.stopPropagation()}>
+                                    <h3>Bestellung #{orders.findIndex(o => o.id === selectedOrder.id) >= 0 ? orders.length - orders.findIndex(o => o.id === selectedOrder.id) : ''}</h3>
+                                    <div className="order-detail-shipping">
+                                        <p>{selectedOrder.order.salutation} {selectedOrder.order.first_name} {selectedOrder.order.last_name}</p>
+                                        <p>{selectedOrder.order.street_address}</p>
+                                        <p>{selectedOrder.order.postal_code} {selectedOrder.order.city}</p>
+                                        <p>{selectedOrder.order.country}</p>
+                                    </div>
+                                    <table className="tickets-table">
+                                        <thead>
+                                            <tr>
+                                                <th>Event</th>
+                                                <th>Kategorie</th>
+                                                <th>Sitz</th>
+                                                <th>B</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {selectedOrder.tickets.map(t => (
+                                                <tr key={t.id}>
+                                                    <td>{t.event_title}</td>
+                                                    <td>{t.event_category}</td>
+                                                    <td>{t.seat_number}</td>
+                                                    <td>{t.is_assistance_ticket ? <span className="assist-flag">B</span> : ''}</td>
+                                                </tr>
+                                            ))}
+                                        </tbody>
+                                    </table>
+                                    <div className="modal-actions">
+                                        <button className="btn btn-cancel" onClick={() => setSelectedOrder(null)}>Schließen</button>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
                     </div>
 
                     {/* Help Center / FAQ */}
