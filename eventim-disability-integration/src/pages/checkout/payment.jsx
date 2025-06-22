@@ -198,6 +198,7 @@ export default function Payment() {
     };
 
     return (
+        <>
         <div className="checkoutPage">
             <div className="checkoutPage__container">
                 {/* === LEFT PANEL === */}
@@ -336,5 +337,6 @@ export default function Payment() {
         {showExpiredModal && (
             <CheckoutExpiredModal onClose={() => (window.location.href = '/')} />
         )}
+    </>
     );
 }

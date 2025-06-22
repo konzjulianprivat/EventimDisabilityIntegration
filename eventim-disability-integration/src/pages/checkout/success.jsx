@@ -32,7 +32,7 @@ export default function OrderSuccess() {
     }
     return (
         <div className="custom404-wrapper">
-            <div className="success-message" style={{ maxWidth: '600px', padding: '3rem', borderColor: "green", boxShadow: "0 0 8px 4px darkgreen, 0 0 6px 3px green, 0 0 8px 4px lightgreen" }}>
+            <div className="success-message" style={{ maxWidth: '600px', padding: '3rem'}}>
                 <h1 className="custom404-code" style={{fontSize: "3rem", color: "green"}}>Bestellung erfolgreich!</h1>
                 <p className="custom404-message">
                     Glückwunsch! Ihre Bestellung wurde erfolgreich abgeschlossen. Du erhältst eine Bestätigungs-E-Mail mit den Details deiner Bestellung. Vielen Dank für deinen Einkauf!

@@ -6,26 +6,14 @@ import { useRouter } from 'next/router';
 import { API_BASE_URL } from '../../config';
 import CheckoutExpiredModal from '../../components/CheckoutExpiredModal';
 
-export async function getServerSideProps({ req }) {
-    const cookie = req.headers.cookie || '';
-    try {
-        const res = await fetch(`${API_BASE_URL}/checkout-items`, { headers: { cookie } });
-        if (res.status !== 200) {
-            return { redirect: { destination: '/', permanent: false } };
-        }
-    } catch {
-        return { redirect: { destination: '/', permanent: false } };
-    }
-    return { props: {} };
-}
-
 export default function ShippingInformation() {
     const router = useRouter();
     const [items, setItems] = useState([]);
     const [createdAt, setCreatedAt] = useState(null);
     const [timer, setTimer] = useState(0);
     const offsetRef = useRef(0);
-    const [showExpiredModal, setShowExpiredModal] = useState(false);
+    const [expired, setExpired] = useState(false);
+    const initialLoadRef = useRef(true);
 
     const [useDifferentAddress, setUseDifferentAddress] = useState(false);
     const [shippingInfo, setShippingInfo] = useState({
@@ -108,10 +96,10 @@ export default function ShippingInformation() {
         try {
             const res = await fetch(`${API_BASE_URL}/checkout-items`, { credentials: 'include' });
             if (res.status === 404) {
-                if (createdAt !== null) {
-                    setShowExpiredModal(true);
-                } else {
+                if (initialLoadRef.current) {
                     window.location.href = '/';
+                } else {
+                    setExpired(true);
                 }
                 return;
             }
@@ -120,6 +108,7 @@ export default function ShippingInformation() {
             const now = Date.now();
             offsetRef.current = now - now;
             setCreatedAt(new Date(serverCreatedAt).getTime());
+            initialLoadRef.current = false;
         } catch (err) {
             console.error('Error fetching checkout:', err);
         }
@@ -156,9 +145,7 @@ export default function ShippingInformation() {
                 fetch(`${API_BASE_URL}/checkout`, {
                     method: 'DELETE',
                     credentials: 'include'
-                }).finally(() => {
-                    setShowExpiredModal(true);
-                });
+                }).finally(() => setExpired(true));
             } else {
                 setTimer(remaining);
             }
@@ -206,6 +193,7 @@ export default function ShippingInformation() {
     const total = Number(subtotal) + Number(shippingCost);
 
     return (
+        <>
         <div className="checkoutPage">
         <div className="checkoutPage__container">
             <div className="checkoutPage__item" style={{ paddingLeft: '15px', minWidth: '350px' }}>
@@ -391,9 +379,8 @@ export default function ShippingInformation() {
                 </div>
             </div>
         </div>
-        {showExpiredModal && (
-            <CheckoutExpiredModal onClose={() => (window.location.href = '/')} />
-        )}
         </div>
+        {expired && <CheckoutExpiredModal />}
+        </>
     );
 }
