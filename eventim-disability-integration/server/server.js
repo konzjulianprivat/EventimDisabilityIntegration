@@ -2648,12 +2648,19 @@ app.get('/orders', async (req, res) => {
 
     try {
         const { rows } = await client.query(
-            `SELECT o.id, o.created_at, COUNT(ot.ticket_id) AS ticket_count
-               FROM orders o
-               LEFT JOIN order_tickets ot ON ot.order_id = o.id
-              WHERE o.user_id = $1
-              GROUP BY o.id
-              ORDER BY o.created_at DESC`,
+            `SELECT
+                 o.id,
+                 o.created_at,
+                 COUNT(ot.ticket_id) AS ticket_count
+             FROM orders o
+                      LEFT JOIN order_tickets ot
+                                ON ot.order_id = o.id
+             WHERE o.user_id = $1
+             GROUP BY
+                 o.id,
+                 o.created_at
+             ORDER BY
+                 o.created_at DESC`,
             [userId]
         );
         return res.json({ orders: rows });

@@ -9,7 +9,8 @@
     /* fill the viewport and hide extra overflow */
     height: 100vh;
     font-family: Arial, sans-serif;
-    overflow: hidden;
+    overflow-y: auto;
+    overflow-x: hidden;
 }
 
 /* -----------------------------------
@@ -93,8 +94,7 @@
     box-sizing: border-box;
     flex: 1 1 auto;
     width: auto;
-    /* allow this pane to scroll instead of body/sidebar */
-    overflow-y: auto;
+    scroll-padding-top: 7vh;
 }
 
 .inner-container {
@@ -110,6 +110,7 @@
     border-radius: 6px;
     box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
     margin-bottom: 2rem;
+    scroll-margin-top: 7vh;
 }
 
 .events-white-box {
@@ -118,6 +119,12 @@
 
 .help-white-box {
     padding: 1rem 0;
+}
+
+#meine-events,
+#meine-bestellungen,
+#help-center {
+    scroll-margin-top: 7vh;
 }
 
 /* -----------------------------------
@@ -350,6 +357,11 @@
     font-weight: 600;
 }
 
+.qr-code-info {
+    margin-top: 2vh;
+}
+
+
 /* -----------------------------------
    11) Help Center / FAQ
    ----------------------------------- */
@@ -388,6 +400,12 @@
     font-size: 0.95rem;
 }
 
+.profile__btn-cancel {
+    background-color: #ffc700;
+    color: #333;
+    transition: background-color 0.2s ease;
+}
+
 /* -----------------------------------
    11) Mobile-Fallback
    ----------------------------------- */
@@ -406,4 +424,19 @@
         width: 100%;
         padding: 1rem;
     }
+}
+
+.no-orders {
+    width: 100%;
+    padding: 2rem 1rem;           /* match content-inner padding */
+    text-align: center;
+    color: #666666;               /* same as .subtitle */
+    font-size: 1rem;              /* same base size as items */
+    border: 1px dashed #e0e0e0;   /* echo the table’s border color */
+    border-radius: 4px;           /* same radius as cards/tables */
+    background-color: #fafafa;    /* a very light background to set it apart */
+}
+
+.no-orders p {
+                      /* reset default p-margins */
 }

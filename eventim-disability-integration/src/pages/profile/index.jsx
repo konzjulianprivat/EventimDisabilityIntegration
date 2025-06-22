@@ -43,8 +43,6 @@ const sampleTourData = [
 ];
 
 export default function ProfilePage() {
-    // Sidebar‐State
-    const [activeSidebarItem, setActiveSidebarItem] = useState("Meine Events");
     // Carousel indices
     const [carouselIndex, setCarouselIndex] = useState(0);
     // How many cards fit side‐by‐side? 1 – 8
@@ -53,6 +51,35 @@ export default function ProfilePage() {
 
     const [orders, setOrders] = useState([]);
     const [selectedOrder, setSelectedOrder] = useState(null);
+
+    const [qrTicketId, setQrTicketId] = useState(null);
+
+    const [activeSidebarItem, setActiveSidebarItem] = useState("Meine Events");
+    // refs for each section
+    const eventsRef = useRef(null);
+    const ordersRef = useRef(null);
+    const faqRef    = useRef(null);
+
+    const scrollTo = ref => {
+        if (ref?.current) {
+            ref.current.scrollIntoView({ behavior: "smooth", block: "start" });
+        }
+    };
+
+    const onSidebarClick = label => {
+        setActiveSidebarItem(label);
+        switch (label) {
+            case "Meine Events":
+                scrollTo(eventsRef);
+                break;
+            case "Meine Bestellungen":
+                scrollTo(ordersRef);
+                break;
+            case "Help Center / FAQ":
+                scrollTo(faqRef);
+                break;
+        }
+    };
 
     const fetchOrders = async () => {
         try {
@@ -117,6 +144,21 @@ export default function ProfilePage() {
         carouselIndex + visibleCount
     );
 
+    const formatDate = (d) =>
+        new Date(d).toLocaleDateString('de-DE', {
+            weekday: 'long',
+            day: '2-digit',
+            month: '2-digit',
+            year: 'numeric',
+        });
+    const formatTime = (d) =>
+        new Date(d).toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' });
+
+    const closeModal = () => {
+        setQrTicketId(null);
+        setSelectedOrder(null);
+    };
+
     return (
         <div className="profile-container">
             {/* Sidebar */}
@@ -127,7 +169,7 @@ export default function ProfilePage() {
                         className={`sidebar-item ${
                             activeSidebarItem === label ? "active" : ""
                         }`}
-                        onClick={() => setActiveSidebarItem(label)}
+                        onClick={() => onSidebarClick(label)}
                     >
             <span className="icon">
               {label === "Mein EVENTIM"
@@ -166,7 +208,7 @@ export default function ProfilePage() {
                     {/* „Meine Events“ */}
                     <div className="white-box events-white-box">
                         <div className="content-inner">
-                            <div className="events-header">
+                            <div ref= {eventsRef} className="events-header">
                                 <h1>Meine Events</h1>
                                 <span className="arrow">›</span>
                             </div>
@@ -224,87 +266,126 @@ export default function ProfilePage() {
 
                     <div className="white-box events-white-box">
                         <div className="content-inner">
-                            <div className="events-header">
+                            <div ref= {ordersRef} className="events-header">
                                 <h1>Meine Bestellungen</h1>
                                 <span className="arrow">›</span>
                             </div>
-                            <p className="subtitle">Alle bevorstehenden Events</p>
-                        </div>
-
-                        <div className="content-inner">
-                            <table className="orders-table">
-                                <thead>
-                                    <tr>
-                                        <th>Order&nbsp;No.</th>
-                                        <th>Tickets</th>
-                                        <th>Status</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {orders.map((o, idx) => {
-                                        const orderNo = orders.length - idx;
-                                        const isSent = new Date(o.created_at).getTime() < Date.now() - 3 * 24 * 60 * 60 * 1000;
-                                        return (
-                                            <tr
-                                                key={o.id}
-                                                className="order-row"
-                                                onClick={() => fetchOrderDetail(o.id)}
-                                            >
-                                                <td>#{orderNo}</td>
-                                                <td>{o.ticket_count}</td>
-                                                <td>
-                                                    <span className={`order-status ${isSent ? 'send' : 'progress'}`}>{isSent ? 'send' : 'in progress'}</span>
-                                                </td>
-                                            </tr>
-                                        );
-                                    })}
-                                </tbody>
-                            </table>
-                        </div>
-
-                        {selectedOrder && (
-                            <div className="modal-overlay" onClick={() => setSelectedOrder(null)}>
-                                <div className="modal-box" onClick={e => e.stopPropagation()}>
-                                    <h3>Bestellung #{orders.findIndex(o => o.id === selectedOrder.id) >= 0 ? orders.length - orders.findIndex(o => o.id === selectedOrder.id) : ''}</h3>
-                                    <div className="order-detail-shipping">
-                                        <p>{selectedOrder.order.salutation} {selectedOrder.order.first_name} {selectedOrder.order.last_name}</p>
-                                        <p>{selectedOrder.order.street_address}</p>
-                                        <p>{selectedOrder.order.postal_code} {selectedOrder.order.city}</p>
-                                        <p>{selectedOrder.order.country}</p>
+                            <p className="subtitle">Übersicht deiner Bestellungen</p>
+                            <div className="content-inner">
+                                {orders.length === 0 ? (
+                                    <div className="no-orders" style={{ padding: '2rem', textAlign: 'center' }}>
+                                        <p>Du hast noch keine Bestellungen.</p>
                                     </div>
-                                    <table className="tickets-table">
+                                ) : (
+                                    <table className="orders-table">
                                         <thead>
                                             <tr>
-                                                <th>Event</th>
-                                                <th>Kategorie</th>
-                                                <th>Sitz</th>
-                                                <th>B</th>
+                                                <th>Bestellungsnummer</th>
+                                                <th>Bestellt am</th>
+                                                <th>Anzahl d. Tickets</th>
+                                                <th>Status</th>
                                             </tr>
                                         </thead>
                                         <tbody>
-                                            {selectedOrder.tickets.map(t => (
-                                                <tr key={t.id}>
-                                                    <td>{t.event_title}</td>
-                                                    <td>{t.event_category}</td>
-                                                    <td>{t.seat_number}</td>
-                                                    <td>{t.is_assistance_ticket ? <span className="assist-flag">B</span> : ''}</td>
-                                                </tr>
-                                            ))}
+                                            {orders.map((o, idx) => {
+                                                const orderNo = orders.length - idx;
+                                                const isSent = new Date(o.created_at).getTime() < Date.now() - 3 * 24 * 60 * 60 * 1000;
+                                                return (
+                                                    <tr
+                                                        key={o.id}
+                                                        className="order-row"
+                                                        onClick={() => fetchOrderDetail(o.id)}
+                                                    >
+                                                        <td>#{orderNo}</td>
+                                                        <td>{formatDate(o.created_at)} | {formatTime(o.created_at)}</td>
+                                                        <td>{o.ticket_count}</td>
+                                                        <td>
+                                                            <span className={`order-status ${isSent ? 'send' : 'progress'}`}>{isSent ? 'In Zustellung' : 'In Bearbeitung'}</span>
+                                                        </td>
+                                                    </tr>
+                                                );
+                                            })}
                                         </tbody>
                                     </table>
-                                    <div className="modal-actions">
-                                        <button className="btn btn-cancel" onClick={() => setSelectedOrder(null)}>Schließen</button>
+                                )}
+                            </div>
+
+                            {selectedOrder && (
+                                <div className="modal-overlay" onClick={() => setSelectedOrder(null)}>
+                                    <div className="modal-box" onClick={e => e.stopPropagation()}>
+                                        <h3>Bestellung #{orders.findIndex(o => o.id === selectedOrder.id) >= 0 ? orders.length - orders.findIndex(o => o.id === selectedOrder.id) : ''} </h3>
+                                        <div className="order-detail-shipping">
+                                            <p>[{formatDate(selectedOrder.order.created_at)} | {formatTime(selectedOrder.order.created_at)}]</p>
+                                            <p>{selectedOrder.order.salutation} {selectedOrder.order.first_name} {selectedOrder.order.last_name}</p>
+                                            <p>{selectedOrder.order.street_address}, {selectedOrder.order.postal_code} {selectedOrder.order.city}, {selectedOrder.order.country}</p>
+                                        </div>
+                                        <table className="tickets-table">
+                                            <thead>
+                                                <tr>
+                                                    <th>Event</th>
+                                                    <th>Kategorie</th>
+                                                    <th></th>
+                                                    <th>Sitz</th>
+                                                    <th>QR-Code</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {selectedOrder.tickets.map(t => (
+                                                    <tr key={t.id}>
+                                                        <td>{t.event_title}</td>
+                                                        <td>{t.event_category}</td>
+                                                        <td>{t.is_assistance_ticket ? <span className="assist-flag">B</span> : ''}</td>
+                                                        <td>{t.seat_number}</td>
+                                                        <td>
+                                                            <a
+                                                                href="#"
+                                                                onClick={e => {
+                                                                    e.preventDefault();
+                                                                    setQrTicketId(t.id);
+                                                                }}
+                                                            >
+                                                                Ticket
+                                                            </a>
+                                                        </td>
+                                                    </tr>
+                                                ))}
+                                            </tbody>
+                                        </table>
+                                        {qrTicketId && (
+                                            <>
+                                                <div className="qr-code-info">
+                                                    <h3>QR-Code für Ihr Ticket:</h3>
+                                                </div>
+                                                <div className="qr-code-container" style={{ textAlign: 'center', margin: '1rem 0' }}>
+                                                    <img
+                                                        src={`https://api.qrserver.com/v1/create-qr-code/?data=${qrTicketId}&size=200x200`}
+                                                        alt={`QR Code for ticket ${qrTicketId}`}
+                                                    />
+                                                </div>
+                                            </>
+                                        )}
+                                        <div className="modal-actions">
+                                            <button className="profile__btn-cancel" style={{backgroundColor: "#ffc700"}} onClick={
+                                                () => {
+                                                    setQrTicketId(null);
+                                                    setSelectedOrder(null);
+                                                }
+                                            }>Schließen</button>
+                                        </div>
                                     </div>
                                 </div>
-                            </div>
-                        )}
+                            )}
+                        </div>
                     </div>
 
                     {/* Help Center / FAQ */}
                     <div className="white-box help-white-box">
                         <div className="content-inner">
-                            <h2>Help Center / FAQ</h2>
-                            <p className="subtitle">Die häufigsten Fragen</p>
+                            <div ref={faqRef} className="events-header">
+                                <h1>Help-Center // FAQ</h1>
+                                <span className="arrow">›</span>
+                            </div>
+                            <p className="subtitle">Die häufigst gestellten Fragen</p>
                             <div className="faq-placeholder">
                                 <div>FAQ-Box 1</div>
                                 <div>FAQ-Box 2</div>
@@ -313,7 +394,6 @@ export default function ProfilePage() {
                             </div>
                         </div>
                     </div>
-
                 </div>
             </main>
         </div>
