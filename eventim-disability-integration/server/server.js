@@ -1227,6 +1227,31 @@ app.get("/artists-with-images", async (req, res) => {
     }
 });
 
+// Liefert Detailinformationen zu einem Künstler inkl. Anzahl seiner Tours
+app.get('/artist-details/:id', async (req, res) => {
+    const artistId = req.params.id;
+    try {
+        const { rows } = await client.query(
+            `SELECT id, name, biography, website, artist_image
+             FROM artists WHERE id = $1`,
+            [artistId]
+        );
+        if (rows.length === 0) {
+            return res.status(404).json({ message: 'Artist nicht gefunden' });
+        }
+        const artist = rows[0];
+        const { rows: cRows } = await client.query(
+            'SELECT COUNT(*) AS cnt FROM tour_artists WHERE artist_id = $1',
+            [artistId]
+        );
+        artist.tourCount = parseInt(cRows[0].cnt, 10);
+        res.status(200).json({ artist });
+    } catch (err) {
+        console.error('Error fetching artist details:', err);
+        res.status(500).json({ message: 'Fehler beim Laden des Künstlers' });
+    }
+});
+
 app.post('/create-area', async (req, res) => {
     try {
         const { name, description } = req.body;
@@ -1398,6 +1423,8 @@ app.get('/tours-detailed', async (req, res) => {
         console.log('marksMap (disability_marks):', marksMap);
 
         // 1) Alle Tours holen (optional nach Disability-Marks gefiltert)
+        const artistId = req.query.artistId || null;
+
         const tourQueryBase = `
             SELECT
                 t.id,
@@ -1407,16 +1434,32 @@ app.get('/tours-detailed', async (req, res) => {
                 t.end_date,
                 t.tour_image
             FROM tours t`;
-        const filterClause = marks.length > 0 ? `
-            WHERE EXISTS (
+
+        const conditions = [];
+        const params = [];
+
+        if (marks.length > 0) {
+            conditions.push(`EXISTS (
                 SELECT 1
                 FROM events e
                     JOIN event_categories ec ON ec.event_id = e.id
                 WHERE e.tour_id = t.id
-                  AND ec.disability_support_for = ANY($1::text[])
-            )` : '';
-        const tourQuery = `${tourQueryBase} ${filterClause} ORDER BY t.start_date;`;
-        const { rows: tourRows } = await client.query(tourQuery, marks.length > 0 ? [marks] : []);
+                  AND ec.disability_support_for = ANY($${params.length + 1}::text[])
+            )`);
+            params.push(marks);
+        }
+
+        if (artistId) {
+            conditions.push(`EXISTS (
+                SELECT 1 FROM tour_artists ta
+                WHERE ta.tour_id = t.id AND ta.artist_id = $${params.length + 1}
+            )`);
+            params.push(artistId);
+        }
+
+        const whereClause = conditions.length ? `WHERE ${conditions.join(' AND ')}` : '';
+        const tourQuery = `${tourQueryBase} ${whereClause} ORDER BY t.start_date;`;
+        const { rows: tourRows } = await client.query(tourQuery, params);
 
         console.log('Gefundene Tours (raw):', tourRows);
 
