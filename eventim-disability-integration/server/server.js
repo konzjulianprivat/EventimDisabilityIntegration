@@ -2670,6 +2670,41 @@ app.get('/orders', async (req, res) => {
     }
 });
 
+// Liefert alle Events, für die der eingeloggte Nutzer Tickets besitzt
+app.get('/my-events', async (req, res) => {
+    const userId = req.session.userId;
+    if (!userId) return res.status(401).json({ message: 'Not logged in' });
+
+    try {
+        const { rows } = await client.query(
+            `SELECT
+                e.id         AS event_id,
+                e.start_time,
+                v.name       AS venue_name,
+                c.name       AS city_name,
+                t.id         AS tour_id,
+                t.title      AS tour_title,
+                t.tour_image,
+                (SELECT artist_id FROM tour_artists WHERE tour_id = t.id LIMIT 1) AS artist_id
+             FROM tickets tk
+                  JOIN orders o           ON o.id  = tk.order_id
+                  JOIN event_categories ec ON ec.id = tk.event_category_id
+                  JOIN events e           ON e.id  = ec.event_id
+                  JOIN tours t            ON t.id  = e.tour_id
+                  JOIN venues v           ON v.id  = e.venue_id
+                  JOIN cities c           ON c.id  = v.city_id
+             WHERE o.user_id = $1
+             GROUP BY e.id, e.start_time, v.name, c.name, t.id, t.title, t.tour_image
+             ORDER BY e.start_time`,
+            [userId]
+        );
+        return res.json({ events: rows });
+    } catch (err) {
+        console.error('Error fetching my events:', err);
+        return res.status(500).json({ message: 'Server error' });
+    }
+});
+
 // Liefert Details zu einer bestimmten Bestellung
 app.get('/orders/:id', async (req, res) => {
     const userId = req.session.userId;
