@@ -1373,6 +1373,10 @@ app.delete('/artists/:id', async (req, res) => {
 
 app.get('/tours-detailed', async (req, res) => {
     try {
+        const marks = (req.query.marks || '')
+            .split(',')
+            .map((m) => m.trim())
+            .filter((m) => m.length > 0);
         // 0) Vorab: Alle disability_marks abfragen (area_id → mark_code), aber trim() auf mark_code
         const { rows: allMarks } = await client.query(`
             SELECT area_id, mark_code
@@ -1393,8 +1397,8 @@ app.get('/tours-detailed', async (req, res) => {
 
         console.log('marksMap (disability_marks):', marksMap);
 
-        // 1) Alle Tours holen
-        const { rows: tourRows } = await client.query(`
+        // 1) Alle Tours holen (optional nach Disability-Marks gefiltert)
+        const tourQueryBase = `
             SELECT
                 t.id,
                 t.title,
@@ -1402,9 +1406,17 @@ app.get('/tours-detailed', async (req, res) => {
                 t.start_date,
                 t.end_date,
                 t.tour_image
-            FROM tours t
-            ORDER BY t.start_date;
-        `);
+            FROM tours t`;
+        const filterClause = marks.length > 0 ? `
+            WHERE EXISTS (
+                SELECT 1
+                FROM events e
+                    JOIN event_categories ec ON ec.event_id = e.id
+                WHERE e.tour_id = t.id
+                  AND ec.disability_support_for = ANY($1::text[])
+            )` : '';
+        const tourQuery = `${tourQueryBase} ${filterClause} ORDER BY t.start_date;`;
+        const { rows: tourRows } = await client.query(tourQuery, marks.length > 0 ? [marks] : []);
 
         console.log('Gefundene Tours (raw):', tourRows);
 
@@ -1425,6 +1437,7 @@ app.get('/tours-detailed', async (req, res) => {
                         FROM event_categories ec
                                  JOIN events e ON e.id = ec.event_id
                         WHERE e.tour_id = $1
+                          AND ec.disability_support_for IS NULL
                     `,
                     [tour.id]
                 );
