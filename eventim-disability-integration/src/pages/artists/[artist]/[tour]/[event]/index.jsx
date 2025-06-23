@@ -301,7 +301,7 @@ export default function EventPage() {
                         src={
                             eventData.tourImage
                                 ? `${API_BASE_URL}/image/${eventData.tourImage}`
-                                : '/placeholder-tour.png'
+                                : '/pictures/placeholder.png'
                         }
                         alt={eventData.tourTitle || 'Event'}
                     />

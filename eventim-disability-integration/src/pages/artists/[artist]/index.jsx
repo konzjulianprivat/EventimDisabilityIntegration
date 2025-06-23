@@ -141,7 +141,7 @@ export default function ArtistPage() {
 
     const artistImage = artistData.artist_image
         ? `${API_BASE_URL}/image/${artistData.artist_image}`
-        : '/placeholder-artist.png';
+        : '/pictures/placeholder.png';
 
     const totalEventCount = filteredTours.reduce((total, tour) => total + tour.eventCount, 0);
 
@@ -220,7 +220,7 @@ export default function ArtistPage() {
                                             src={
                                                 tour.tour_image
                                                     ? `${API_BASE_URL}/image/${tour.tour_image}`
-                                                    : '/placeholder-tour.png'
+                                                    : '/pictures/placeholder.png'
                                             }
                                             alt={tour.title || 'Unbekannte Tour'}
                                         />
