@@ -376,6 +376,24 @@ export default function ProfilePage() {
                         </div>
                     </div>
 
+                    <div className="white-box events-white-box">
+                        <div className="content-inner">
+                            <div ref= {eventsRef} className="events-header">
+                                <h1>Meine Daten</h1>
+                                <span className="arrow">›</span>
+                            </div>
+                            <p className="subtitle">Übersicht deiner gespeicherten Profildaten</p>
+                        </div>
+                        In here, add the following:
+                        - add the same overview of user account data as in register.jsx (use the same display of fielda as well so it looks identical!!!) except for the fields of disability, these should be added below as explained
+                        - add an icon to switch between an edit mode, where all fields are input fields as well as a display mode where all fields are displayed as labels and cannot be edited
+                        - add a button below to delete the account (there should be a popup which asks you to type "Löschen" to confirm the deletion)
+                        - include a small divider border and below add the possibility to change the password
+                        - include a small divider border and below make it possible to register for disability requests (name it "Antrag auf Nachteilsausgleich für Menschen mit Behinderung") (this should only be displayed, if the users.disability_check == false)
+                        - if the user is disabled (disability_check == true), then display a message that the user is already registered for disability requests as success_message
+                        - if the user isnt disabled, there should be a small button to register, which opens up the disability fields from registration.jsx and lets you input the data and send it to patch the user data
+                    </div>
+
                     {/* Help Center / FAQ */}
                     <div className="white-box help-white-box">
                         <div className="content-inner">
