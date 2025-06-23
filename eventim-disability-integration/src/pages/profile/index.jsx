@@ -4,6 +4,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import SquareTourCard from "../../components/squareTourCard";
 import { API_BASE_URL } from "../../config";
+import { useAuth } from "../../hooks/useAuth";
 
 export async function getServerSideProps({ req }) {
     const cookie = req.headers.cookie || "";
@@ -45,6 +46,8 @@ export default function ProfilePage() {
 
     const [myEvents, setMyEvents] = useState([]);
     const [tours, setTours] = useState([]);
+
+    const { loading: authLoading, user } = useAuth();
 
     const [activeSidebarItem, setActiveSidebarItem] = useState("Meine Events");
     // refs for each section
@@ -99,9 +102,12 @@ export default function ProfilePage() {
         }
     };
 
-    const fetchTours = async () => {
+    const fetchTours = async (marks) => {
         try {
-            const res = await fetch(`${API_BASE_URL}/tours-detailed`);
+            const query = marks && marks.length > 0
+                ? `?marks=${encodeURIComponent(marks.join(','))}`
+                : '';
+            const res = await fetch(`${API_BASE_URL}/tours-detailed${query}`);
             if (res.ok) {
                 const data = await res.json();
                 setTours(Array.isArray(data.tours) ? data.tours : []);
@@ -128,8 +134,13 @@ export default function ProfilePage() {
     useEffect(() => {
         fetchOrders();
         fetchMyEvents();
-        fetchTours();
     }, []);
+
+    useEffect(() => {
+        if (authLoading) return;
+        const marks = (user && user.disabilityMarks) || [];
+        fetchTours(marks);
+    }, [authLoading, user]);
 
     // Recalculate on mount + resize
     useEffect(() => {
