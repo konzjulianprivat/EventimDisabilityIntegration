@@ -1,306 +1,23 @@
-import React, {Fragment, useEffect, useState} from 'react';
+import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/router';
+import FilterBar from '../../../components/filter-bar';
 import { API_BASE_URL } from '../../../config';
-import { useAuth } from '../../../hooks/useAuth';
-import { useCart } from "../../../hooks/useCart";
-import FilterBar from "../../../components/filter-bar";
 
 export default function ArtistPage() {
     const router = useRouter();
-    const { artist, tour, event } = router.query;
+    const { artist } = router.query;
 
-    const { loading: authLoading, loggedIn, user } = useAuth();
-
-    const [eventData, setEventData] = useState(null);
-    const [categories, setCategories] = useState([]);
-    const [bookingForMe, setBookingForMe] = useState(true);
-    const [error, setError] = useState('');
-    const [loading, setLoading] = useState(true);
-
-    const [qty, setQty] = useState(1);
-    const [qty_disabled, setQty_disabled] = useState(1);
-    const [selectedCat, setSelectedCat] = useState(null);
-
-    // Track category IDs already in cart
-    const [inCartItems, setInCartItems] = useState({});
-    const { reload: reloadCart, items: cartItems, counts } = useCart();
-
-    const [successMessage, setSuccessMessage] = useState('');
-    const [errorMessage, setErrorMessage] = useState('');
-    const [lastClickedSection, setLastClickedSection] = useState(null);  // 'disabled' or 'regular'
-    const [addDisabled, setAddDisabled] = useState(false);
-    const [assistanceInCart, setAssistanceInCart] = useState(false);
-
-    // Build lookup table for items currently in cart
-    useEffect(() => {
-        if (!loggedIn) {
-            setInCartItems({});
-            return;
-        }
-        const map = {};
-        (cartItems || []).forEach((i) => {
-            if (i.is_assistance_ticket) return;
-            map[i.event_category_id] = { id: i.id, quantity: i.quantity };
-        });
-        setInCartItems(map);
-        const hasAssistance = (cartItems || []).some(
-            (i) => i.event_id === event && i.is_assistance_ticket
-        );
-        setAssistanceInCart(hasAssistance);
-    }, [loggedIn, cartItems, event]);
-
-    useEffect(() => {
-        if (assistanceInCart) {
-            setBookingForMe(false);
-        }
-    }, [assistanceInCart]);
-
-
-    useEffect(() => {
-        if (!artist) return;
-        const load = async () => {
-            try {
-                const res = await fetch(`${API_BASE_URL}/event-details/${event}`);
-                if (!res.ok) throw new Error('Fetch failed');
-                const data = await res.json();
-
-                setEventData(data.event);
-                setCategories(data.categories || []);
-                setSelectedCat(data.categories && data.categories[0] ? data.categories[0].id : null);
-                setLoading(false);
-            } catch (err) {
-                console.error(err);
-                setError('Fehler beim Laden des Künstlers');
-                setLoading(false);
-            }
-        };
-        load();
-    }, [artist, tour, event]);
-
-    const userMarks = (user && user.disabilityMarks) || [];
-    const showDisabledSection =
-        loggedIn && user?.disabilityCheck && categories.some((c) =>
-            c.disability_support_for &&
-            userMarks.includes(c.disability_support_for.trim())
-        );
-
-    const requiresAssistance = userMarks.some((mark) => mark.trim() === 'B');
-
-    const disabledCategories = categories.filter(
-        (c) =>
-            c.disability_support_for != null &&
-            loggedIn &&
-            user?.disabilityCheck &&
-            userMarks.includes(c.disability_support_for.trim())
-    );
-
-    const regularCategories = categories.filter(
-        (c) => c.disability_support_for == null
-    );
-
-    const eventCounts = counts[event] || { regular: 0, disabled: 0 };
-
-    useEffect(() => {
-        if (categories.length === 0) return;
-        const allCats = [
-            ...(showDisabledSection ? disabledCategories : []),
-            ...regularCategories,
-        ];
-        if (!selectedCat || !allCats.some((c) => c.id === selectedCat)) {
-            setSelectedCat(allCats[0]?.id || null);
-        }
-    }, [categories, showDisabledSection, loggedIn, authLoading]);
-
-    const currentCat = categories.find((c) => c.id === selectedCat) || {};
-    const currentCat_disabled =
-        disabledCategories.find((c) => c.id === selectedCat) || {};
-    // determine which section is live
-    const isDisabledCatSelected = Boolean(currentCat_disabled.id);
-    const isRegularCatSelected = !isDisabledCatSelected;
-
-    // now compute the display-only quantities (UI shows +1 when bookingForMe)
-    const displayQty = (requiresAssistance && bookingForMe && isRegularCatSelected)
-        ? qty + 1
-        : qty;
-
-    const displayQtyDisabled = (requiresAssistance && bookingForMe && isDisabledCatSelected)
-        ? qty_disabled + 1
-        : qty_disabled;
-
-    // only show real total when that section is active
-    const total = isRegularCatSelected
-        ? (qty * (currentCat.price || 0)).toFixed(2).replace('.', ',')
-        : '0,00';
-    const total_disabled = isDisabledCatSelected
-        ? (qty_disabled * (currentCat_disabled.price || 0)).toFixed(2).replace('.', ',')
-        : '0,00';
-
-    // Handler to add selected item to cart
-    const handleAddToCart = async () => {
-        // prevent spamming: disable button for 3s
-        setAddDisabled(true);
-        setTimeout(() => setAddDisabled(false), 3000);
-
-        if (!loggedIn) {
-            const redirect = encodeURIComponent(router.asPath);
-            router.push(`/login?redirect=${redirect}`);
-            return;
-        }
-
-        const existing = inCartItems[selectedCat];
-
-        // If regular and already in cart, PATCH new quantity
-        if (existing && isRegularCatSelected) {
-            const newQty = existing.quantity + qty;
-            const newTotal = eventCounts.regular - existing.quantity + newQty;
-            if (newTotal > 8) {
-                setLastClickedSection('regular');
-                setErrorMessage(`Maximal ${8 - (eventCounts.regular - existing.quantity)} weitere Tickets möglich.`);
-                setTimeout(() => setErrorMessage(''), 3000);
-                return;
-            }
-            const res = await fetch(
-                `${API_BASE_URL}/cart-items/${existing.id}`,
-                {
-                    method: 'PATCH',
-                    credentials: 'include',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ quantity: newQty }),
-                }
-            );
-            if (res.ok) {
-                setInCartItems(prev => ({
-                    ...prev,
-                    [selectedCat]: { ...existing, quantity: newQty },
-                }));
-                setLastClickedSection('regular');
-                setSuccessMessage('Warenkorb aktualisiert!');
-                reloadCart();
-                setTimeout(() => setSuccessMessage(''), 3000);
-            } else {
-                setLastClickedSection('regular');
-                setErrorMessage('Aktualisierung fehlgeschlagen.');
-                setTimeout(() => setErrorMessage(''), 3000);
-            }
-            return;
-        }
-
-        // Otherwise (new item OR disabled), do POST
-        if (isDisabledCatSelected && eventCounts.disabled >= 1) {
-            setLastClickedSection('disabled');
-            setErrorMessage('Es kann nur ein Behinderten-Ticket gebucht werden.');
-            setTimeout(() => setErrorMessage(''), 3000);
-            return;
-        }
-        if (isRegularCatSelected && eventCounts.regular + qty > 8) {
-            setLastClickedSection('regular');
-            setErrorMessage(`Maximal ${8 - eventCounts.regular} weitere Tickets möglich.`);
-            setTimeout(() => setErrorMessage(''), 3000);
-            return;
-        }
-        const payload = {
-            eventId: event,
-            eventCategoryId: selectedCat,
-            quantity: isDisabledCatSelected ? qty_disabled : qty,
-            price: Number(
-                ((isDisabledCatSelected ? currentCat_disabled.price : currentCat.price) || 0)
-                    .toFixed(2)
-            ),
-            isAssistanceTicket: false,
-        };
-        try {
-            const res = await fetch(`${API_BASE_URL}/cart-items`, {
-                method: 'POST',
-                credentials: 'include',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(payload),
-            });
-            if (res.status === 201) {
-                const newItem = await res.json(); // { id, event_category_id, quantity }
-                setInCartItems(prev => ({
-                    ...prev,
-                    [selectedCat]: { id: newItem.id, quantity: newItem.quantity },
-                }));
-                if (requiresAssistance && bookingForMe) {
-                    await fetch(`${API_BASE_URL}/cart-items`, {
-                        method: 'POST',
-                        credentials: 'include',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({
-                            eventId: event,
-                            eventCategoryId: selectedCat,
-                            quantity: 1,
-                            price: 0,
-                            isAssistanceTicket: true,
-                        }),
-                    });
-                }
-                setLastClickedSection(isDisabledCatSelected ? 'disabled' : 'regular');
-                setSuccessMessage('Erfolgreich zum Warenkorb hinzugefügt!');
-                setErrorMessage('');
-                reloadCart();
-                setTimeout(() => setSuccessMessage(''), 3000);
-            } else if (res.status === 409) {
-                setLastClickedSection(isDisabledCatSelected ? 'disabled' : 'regular');
-                setErrorMessage('Dieser Artikel ist bereits im Warenkorb.');
-                setSuccessMessage('');
-                setTimeout(() => setErrorMessage(''), 3000);
-            } else {
-                setLastClickedSection(isDisabledCatSelected ? 'disabled' : 'regular');
-                setErrorMessage('Fehler beim Hinzufügen zum Warenkorb.');
-                setSuccessMessage('');
-                setTimeout(() => setErrorMessage(''), 3000);
-            }
-        } catch (err) {
-            console.error('Error adding to cart:', err);
-            setLastClickedSection(isDisabledCatSelected ? 'disabled' : 'regular');
-            setErrorMessage('Fehler beim Hinzufügen zum Warenkorb.');
-            setSuccessMessage('');
-            setTimeout(() => setErrorMessage(''), 3000);
-        }
-    };
-
-
-    if (loading) return <div>Loading …</div>;
-    if (error) return <div>{error}</div>;
-    if (!eventData) return <div>Event nicht gefunden</div>;
-
-    const formatDate = (d) =>
-        new Date(d).toLocaleDateString('de-DE', {
-            weekday: 'long',
-            day: '2-digit',
-            month: '2-digit',
-            year: 'numeric',
-        });
-    const formatTime = (d) =>
-        new Date(d).toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' });
-
+    const [artistData, setArtistData] = useState(null);
     const [tours, setTours] = useState([]);
     const [basicFilteredTours, setBasicFilteredTours] = useState([]);
     const [filteredTours, setFilteredTours] = useState([]);
-    const [editingId, setEditingId] = useState(null);
-    const [editedData, setEditedData] = useState({
-        id: '',
-        title: '',
-        subtitle: '',
-        startDate: '',
-        endDate: '',
-        tour_image: null,
-        existingImageId: null,
-    });
-    const [allArtists, setAllArtists] = useState([]);
-    const [allGenres, setAllGenres] = useState([]);
-    const [tourArtists, setTourArtists] = useState([]);
-    const [tourGenres, setTourGenres] = useState([]);
-    const [confirmDeleteId, setConfirmDeleteId] = useState(null);
 
-    // Erweiterte Filter‐States
     const [filterStartDate, setFilterStartDate] = useState('');
     const [filterEndDate, setFilterEndDate] = useState('');
     const [filterCategories, setFilterCategories] = useState([]);
     const [filterVenue, setFilterVenue] = useState('');
     const [filterCity, setFilterCity] = useState('');
-    const [filterArtists, setFilterArtists] = useState([]);
+    const [filterArtists, setFilterArtistsInternal] = useState([]);
 
     const filterFields = [
         { key: 'title', label: 'Titel', match: 'startsWith' },
@@ -309,7 +26,41 @@ export default function ArtistPage() {
         { key: 'end_date', label: 'Enddatum', match: 'equals' },
     ];
 
-    // Optionen ableiten
+    useEffect(() => {
+        if (!artist) return;
+        const loadArtist = async () => {
+            try {
+                const res = await fetch(`${API_BASE_URL}/artist-details/${artist}`);
+                if (!res.ok) throw new Error();
+                const data = await res.json();
+                setArtistData(data.artist);
+                setFilterArtistsInternal([data.artist.name]);
+            } catch {
+                setArtistData(null);
+            }
+        };
+        loadArtist();
+    }, [artist]);
+
+    useEffect(() => {
+        const fetchTours = async () => {
+            try {
+                const res = await fetch(`${API_BASE_URL}/tours-detailed`);
+                if (!res.ok) throw new Error();
+                const json = await res.json();
+                const arr = Array.isArray(json.tours) ? json.tours : [];
+                setTours(arr);
+                setBasicFilteredTours(arr);
+                setFilteredTours(arr);
+            } catch {
+                setTours([]);
+                setBasicFilteredTours([]);
+                setFilteredTours([]);
+            }
+        };
+        fetchTours();
+    }, []);
+
     const categoryOptions = React.useMemo(() => {
         const s = new Set();
         tours.forEach((t) =>
@@ -334,52 +85,6 @@ export default function ArtistPage() {
         return Array.from(s);
     }, [tours]);
 
-    // ── Daten laden
-    useEffect(() => {
-        fetchTours();
-        fetchAllArtists();
-        fetchAllGenresWithSub();
-    }, []);
-    const fetchTours = async () => {
-        try {
-            const res = await fetch(`${API_BASE_URL}/tours-detailed`);
-            if (!res.ok) throw new Error();
-            const json = await res.json();
-            const arr = Array.isArray(json.tours) ? json.tours : [];
-            setTours(arr);
-            setBasicFilteredTours(arr);
-            setFilteredTours(arr);
-        } catch {
-            setTours([]); setBasicFilteredTours([]); setFilteredTours([]);
-        }
-    };
-    const fetchAllArtists = async () => {
-        try {
-            const res = await fetch(`${API_BASE_URL}/artists`);
-            if (!res.ok) throw new Error();
-            const j = await res.json();
-            const arr = Array.isArray(j)
-                ? j
-                : Array.isArray(j.artists)
-                    ? j.artists
-                    : [];
-            setAllArtists(arr.map((a) => ({ id: a.id, name: a.name })));
-        } catch {
-            setAllArtists([]);
-        }
-    };
-    const fetchAllGenresWithSub = async () => {
-        try {
-            const res = await fetch(`${API_BASE_URL}/genres-with-subgenres`);
-            if (!res.ok) throw new Error();
-            const j = await res.json();
-            setAllGenres(j.genres || []);
-        } catch {
-            setAllGenres([]);
-        }
-    };
-
-    // ── Erweiterte Filter anwenden
     useEffect(() => {
         let resArr = basicFilteredTours;
         if (filterStartDate) {
@@ -423,147 +128,44 @@ export default function ArtistPage() {
         filterCategories,
     ]);
 
-    // ── Edit / Save / Delete (unverändert) ───────────────────────────────────
-    const handleEditToggle = async (tour) => {
-        setEditingId(tour.id);
-        setEditedData({
-            id: tour.id,
-            title: tour.title || '',
-            subtitle: tour.subtitle || '',
-            startDate: tour.start_date || '',
-            endDate: tour.end_date || '',
-            tour_image: null,
-            existingImageId: tour.tour_image || null,
-        });
-        try {
-            const [ra, rg] = await Promise.all([
-                fetch(`${API_BASE_URL}/tour-artists?tourId=${tour.id}`),
-                fetch(`${API_BASE_URL}/tour-genres?tourId=${tour.id}`)
-            ]);
-            const [ja, jg] = await Promise.all([ra.json(), rg.json()]);
-            setTourArtists(ja.artists || []);
-            setTourGenres(jg.tourGenres || []);
-        } catch {
-            setTourArtists([]); setTourGenres([]);
-        }
-    };
-    const handleInputChange = (e) => {
-        const { name, value, files } = e.target;
-        if (files) setEditedData((p) => ({ ...p, [name]: files[0] }));
-        else setEditedData((p) => ({ ...p, [name]: value }));
-    };
-    const addArtistField = () => setTourArtists((p) => [...p, { id: '', name: '' }]);
-    const updateArtistField = (i, id) => {
-        const f = allArtists.find((a) => a.id === id) || { id: '', name: '' };
-        setTourArtists((p) => p.map((x, idx) => (idx === i ? f : x)));
-    };
-    const removeArtistField = (i) => setTourArtists((p) => p.filter((_, idx) => idx !== i));
-    const addGenreBlock = () => setTourGenres((p) => [...p, { genreId: '', genreName: '', subgenreIds: [] }]);
-    const updateGenreSelect = (i, id) => {
-        const f = allGenres.find((g) => g.id === id) || { id: '', name: '', subgenres: [] };
-        setTourGenres((p) =>
-            p.map((blk, idx) =>
-                idx === i
-                    ? { genreId: f.id, genreName: f.name, subgenreIds: [] }
-                    : blk
-            )
-        );
-    };
-    const toggleSubgenreInBlock = (i, sid) =>
-        setTourGenres((p) =>
-            p.map((blk, idx) => {
-                if (idx !== i) return blk;
-                const has = blk.subgenreIds.includes(sid);
-                return {
-                    ...blk,
-                    subgenreIds: has
-                        ? blk.subgenreIds.filter((x) => x !== sid)
-                        : [...blk.subgenreIds, sid],
-                };
-            })
-        );
-    const removeGenreBlock = (i) => setTourGenres((p) => p.filter((_, idx) => idx !== i));
-
-    const handleSave = async () => {
-        try {
-            const fd = new FormData();
-            fd.append('title', editedData.title);
-            fd.append('subtitle', editedData.subtitle);
-            fd.append('startDate', editedData.startDate);
-            fd.append('endDate', editedData.endDate);
-            if (editedData.tour_image instanceof File) {
-                fd.append('tour_image', editedData.tour_image);
-            }
-            const aid = tourArtists.map((a) => a.id).filter(Boolean);
-            fd.append('artistsJson', JSON.stringify(aid));
-            const gsend = tourGenres
-                .filter((b) => b.genreId)
-                .map((b) => ({ genreId: b.genreId, subgenreIds: b.subgenreIds }));
-            fd.append('genresJson', JSON.stringify(gsend));
-
-            const r = await fetch(`${API_BASE_URL}/tours/${editedData.id}`, {
-                method: 'PUT',
-                body: fd,
-            });
-            if (!r.ok) throw new Error();
-            setEditingId(null);
-            fetchTours();
-        } catch {
-            console.error('Speichern fehlgeschlagen');
-        }
+    const lockedArtistName = artistData?.name || '';
+    const setFilterArtists = (arr) => {
+        if (!lockedArtistName) return;
+        const copy = arr.includes(lockedArtistName)
+            ? arr
+            : [...arr, lockedArtistName];
+        setFilterArtistsInternal(copy);
     };
 
-    const handleDelete = async (id) => {
-        try {
-            const r = await fetch(`${API_BASE_URL}/tours/${id}`, { method: 'DELETE' });
-            if (!r.ok) throw new Error();
-            setConfirmDeleteId(null);
-            fetchTours();
-        } catch {
-            console.error('Löschen fehlgeschlagen');
-        }
-    };
+    if (!artistData) return <div>Loading …</div>;
+
+    const artistImage = artistData.artist_image
+        ? `${API_BASE_URL}/image/${artistData.artist_image}`
+        : '/placeholder-artist.png';
 
     return (
         <div className="event-container">
-            {/* ————— HEADER ————— */}
             <header className="event-header">
                 <div className="header-info">
-                    <h1 className="event-title">{eventData.tourTitle}</h1>
+                    <h1 className="event-title">{artistData.name}</h1>
                     <div className="event-meta">
-                        <div className="meta-item">
-                            <span className="icon-calendar" /> {formatDate(eventData.start_time)} | {formatTime(eventData.start_time)}
-                        </div>
-                        <div className="meta-item">
-                            <span className="icon-location" /> {eventData.cityName} |{' '}
-                            <a href="#" className="venue-link">{eventData.venueName}</a>
-                        </div>
+                        <div className="meta-item">{artistData.tourCount} Touren</div>
+                        {artistData.website && (
+                            <div className="meta-item">
+                                <a href={artistData.website} className="venue-link">
+                                    {artistData.website}
+                                </a>
+                            </div>
+                        )}
                     </div>
+                    {artistData.biography && <p>{artistData.biography}</p>}
                 </div>
                 <div className="event-hero">
-                    <img
-                        src={
-                            eventData.tourImage
-                                ? `${API_BASE_URL}/image/${eventData.tourImage}`
-                                : '/placeholder-tour.png'
-                        }
-                        alt={eventData.tourTitle || 'Event'}
-                    />
+                    <img src={artistImage} alt={artistData.name || 'Artist'} />
                 </div>
             </header>
-            <div className="artists-wrapper">
-                {/* Header + Create */}
-                <div className="artists-header">
-                    <h2 className="artists-title">Übersicht – Touren</h2>
-                    <button
-                        className="btn-create-entity"
-                        onClick={() => router.push(`/admin/tours/create`)}
-                    >
-                        + Tour erstellen
-                    </button>
-                </div>
 
-                {/* Filter */}
+            <div className="artists-wrapper">
                 <div className="filter-container">
                     <FilterBar
                         items={tours}
@@ -586,408 +188,126 @@ export default function ArtistPage() {
                         cityOptions={cityOptions}
                         filterArtists={filterArtists}
                         setFilterArtists={setFilterArtists}
-                        artistOptions={allArtists.map((a) => a.name)}
+                        artistOptions={lockedArtistName ? [lockedArtistName] : []}
                     />
                 </div>
 
-                {/* Tour Cards */}
                 <div className="tours-grid">
                     {filteredTours.length === 0 && (
                         <div className="no-artists">Keine Touren vorhanden.</div>
                     )}
-
                     {filteredTours.map((tour) => {
-                        // Primary artist for link
                         const artId = tour.artistIds?.[0] ?? '';
                         const tourUrl = `/artists/${artId}/${tour.id}`;
-                        // Gather tour-level accessibility
                         const tourAccess = Array.from(
-                            new Set(
-                                (tour.events || []).flatMap((ev) => ev.accessibility || [])
-                            )
+                            new Set((tour.events || []).flatMap((ev) => ev.accessibility || []))
                         );
-
                         return (
                             <div className="artist-card" key={tour.id}>
-                                {/* Edit header */}
-                                {editingId === tour.id && (
-                                    <div className="card-header">
-                                        <input
-                                            type="text"
-                                            name="title"
-                                            value={editedData.title}
-                                            onChange={handleInputChange}
-                                            className="input-name"
-                                            placeholder="Titel"
-                                        />
-                                        <button
-                                            className="btn-save"
-                                            onClick={handleSave}
-                                            title="Speichern"
-                                        >
-                                            💾
-                                        </button>
-                                    </div>
-                                )}
-
                                 <div className="card-body">
-                                    {/* Single square poster, flush left */}
                                     <div className="image-wrapper tour-image-large">
                                         <img
                                             className="artist-image"
                                             src={
-                                                editingId === tour.id &&
-                                                editedData.tour_image instanceof File
-                                                    ? URL.createObjectURL(editedData.tour_image)
-                                                    : tour.tour_image
-                                                        ? `${API_BASE_URL}/image/${tour.tour_image}`
-                                                        : '/placeholder-tour.png'
+                                                tour.tour_image
+                                                    ? `${API_BASE_URL}/image/${tour.tour_image}`
+                                                    : '/placeholder-tour.png'
                                             }
                                             alt={tour.title || 'Unbekannte Tour'}
                                         />
                                     </div>
-
                                     <div className="details-wrapper">
-                                        {editingId === tour.id ? (
-                                            /* ——— EDIT MODE FORM ——— */
-                                            <>
-                                                {/* subtitle */}
-                                                <input
-                                                    type="text"
-                                                    name="subtitle"
-                                                    value={editedData.subtitle}
-                                                    onChange={handleInputChange}
-                                                    className="input-website"
-                                                    placeholder="Subtitle"
-                                                />
-
-                                                {/* dates */}
-                                                <div className="date-row">
-                                                    <label className="date-label">
-                                                        Start:
-                                                        <input
-                                                            type="date"
-                                                            name="startDate"
-                                                            value={editedData.startDate}
-                                                            onChange={handleInputChange}
-                                                            className="input-date"
-                                                        />
-                                                    </label>
-                                                    <label className="date-label">
-                                                        Ende:
-                                                        <input
-                                                            type="date"
-                                                            name="endDate"
-                                                            value={editedData.endDate}
-                                                            onChange={handleInputChange}
-                                                            className="input-date"
-                                                        />
-                                                    </label>
+                                        <div className="tour-header hoverable" onClick={() => router.push(tourUrl)}>
+                                            <div>
+                                                <h3 className="tour-title">{tour.title}</h3>
+                                                {tour.subtitle && (
+                                                    <p className="tour-subtitle">{tour.subtitle}</p>
+                                                )}
+                                                <div className="tour-meta">
+                                                    <span>
+                                                        {new Date(tour.start_date).toLocaleDateString('de-DE')} –{' '}
+                                                        {new Date(tour.end_date).toLocaleDateString('de-DE')}
+                                                    </span>
+                                                    <span>• {tour.eventCount} Events</span>
                                                 </div>
-
-                                                {/* replace image */}
-                                                <input
-                                                    type="file"
-                                                    name="tour_image"
-                                                    onChange={handleInputChange}
-                                                    accept="image/*"
-                                                    className="input-file"
-                                                />
-
-                                                {/* artists */}
-                                                <div className="section-block">
-                        <span className="section-label">
-                          Zugeordnete Künstler
-                        </span>
-                                                    <br />
-                                                    {tourArtists.map((a, idx) => (
+                                                {tourAccess.length > 0 && (
+                                                    <div className="tour-accessibility">
+                                                        {tourAccess.map((lbl) => (
+                                                            <span key={lbl} className="access-label-small">
+                                                                {lbl}
+                                                            </span>
+                                                        ))}
+                                                    </div>
+                                                )}
+                                            </div>
+                                            <div className="header-right">
+                                                <div className="price">
+                                                    ab €{' '}
+                                                    {tour.cheapestPrice != null
+                                                        ? tour.cheapestPrice.toFixed(2)
+                                                        : '–'}
+                                                </div>
+                                                <button
+                                                    className="btn-view-events"
+                                                    onClick={() => router.push(tourUrl)}
+                                                >
+                                                    Alle {tour.eventCount} Events anzeigen
+                                                </button>
+                                            </div>
+                                        </div>
+                                        <div className="sub-events">
+                                            {(tour.events || [])
+                                                .slice(0, 2)
+                                                .map((ev) => {
+                                                    const dt = new Date(ev.start_time);
+                                                    const ds = dt.toLocaleDateString('de-DE', {
+                                                        weekday: 'short',
+                                                        day: '2-digit',
+                                                        month: '2-digit',
+                                                        year: 'numeric',
+                                                    });
+                                                    const ts = dt.toLocaleTimeString('de-DE', {
+                                                        hour: '2-digit',
+                                                        minute: '2-digit',
+                                                    });
+                                                    const evAcc = Array.from(new Set(ev.accessibility || []));
+                                                    const evUrl = `/artists/${artId}/${tour.id}/${ev.id}`;
+                                                    return (
                                                         <div
-                                                            key={idx}
-                                                            className="inline-flex align-center gap-0_5rem artist-field"
+                                                            key={ev.id}
+                                                            className="sub-event-row hoverable"
+                                                            onClick={() => router.push(evUrl)}
                                                         >
-                                                            <select
-                                                                value={a.id}
-                                                                onChange={(e) =>
-                                                                    updateArtistField(idx, e.target.value)
-                                                                }
-                                                                className="input-website"
-                                                            >
-                                                                <option value="">— Künstler wählen —</option>
-                                                                {allArtists.map((opt) => (
-                                                                    <option key={opt.id} value={opt.id}>
-                                                                        {opt.name}
-                                                                    </option>
-                                                                ))}
-                                                            </select>
-                                                            <button
-                                                                type="button"
-                                                                onClick={() => removeArtistField(idx)}
-                                                                className="btn-remove-field"
-                                                            >
-                                                                ✕
-                                                            </button>
-                                                        </div>
-                                                    ))}
-                                                    <button
-                                                        type="button"
-                                                        onClick={addArtistField}
-                                                        className="btn-create-entity btn-small"
-                                                    >
-                                                        + Künstler hinzufügen
-                                                    </button>
-                                                </div>
-
-                                                {/* genres */}
-                                                <div className="section-block">
-                        <span className="section-label">
-                          Genres & Subgenres
-                        </span>
-                                                    <br />
-                                                    {tourGenres.map((blk, idx) => {
-                                                        const chosen = allGenres.find(
-                                                            (g) => g.id === blk.genreId
-                                                        );
-                                                        const subs = chosen?.subgenres || [];
-                                                        return (
-                                                            <div key={idx} className="genre-block">
-                                                                <div className="inline-flex align-center gap-0_5rem">
-                                                                    <select
-                                                                        value={blk.genreId}
-                                                                        onChange={(e) =>
-                                                                            updateGenreSelect(idx, e.target.value)
-                                                                        }
-                                                                        className="input-website"
-                                                                    >
-                                                                        <option value="">
-                                                                            — Genre wählen —
-                                                                        </option>
-                                                                        {allGenres.map((g) => (
-                                                                            <option key={g.id} value={g.id}>
-                                                                                {g.name}
-                                                                            </option>
-                                                                        ))}
-                                                                    </select>
-                                                                    <button
-                                                                        type="button"
-                                                                        onClick={() => removeGenreBlock(idx)}
-                                                                        className="btn-remove-field"
-                                                                    >
-                                                                        ✕
-                                                                    </button>
+                                                            <div className="sub-event-info">
+                                                                <div className="sub-event-details">
+                                                                    {ev.cityName}, {ds}, {ts}
                                                                 </div>
-                                                                {subs.length > 0 && blk.genreId && (
-                                                                    <div className="subgenre-checkboxes">
-                                                                        {subs.map((s) => (
-                                                                            <label
-                                                                                key={s.id}
-                                                                                className="checkbox-inline"
-                                                                            >
-                                                                                <input
-                                                                                    type="checkbox"
-                                                                                    checked={blk.subgenreIds.includes(
-                                                                                        s.id
-                                                                                    )}
-                                                                                    onChange={() =>
-                                                                                        toggleSubgenreInBlock(
-                                                                                            idx,
-                                                                                            s.id
-                                                                                        )
-                                                                                    }
-                                                                                />
-                                                                                <span className="sub-name">
-                                        {s.name}
-                                      </span>
-                                                                            </label>
+                                                                <div className="sub-event-arena">{ev.venueName}</div>
+                                                                {evAcc.length > 0 && (
+                                                                    <div className="sub-event-accessibility">
+                                                                        {evAcc.map((lbl) => (
+                                                                            <span key={lbl} className="access-label-small">
+                                                                                {lbl}
+                                                                            </span>
                                                                         ))}
                                                                     </div>
                                                                 )}
                                                             </div>
-                                                        );
-                                                    })}
-                                                    <button
-                                                        type="button"
-                                                        onClick={addGenreBlock}
-                                                        className="btn-create-entity btn-small"
-                                                    >
-                                                        + Genre hinzufügen
-                                                    </button>
-                                                </div>
-
-                                                {/* + Event */}
-                                                <div className="section-block">
-                                                    <button
-                                                        className="btn-create-entity btn-small"
-                                                        onClick={() =>
-                                                            router.push(
-                                                                `/admin/tours/events/create?tourId=${tour.id}`
-                                                            )
-                                                        }
-                                                    >
-                                                        + Event hinzufügen
-                                                    </button>
-                                                </div>
-                                            </>
-                                        ) : (
-                                            /* ——— DISPLAY MODE ——— */
-                                            <>
-                                                {/* TOUR INFO (clickable) */}
-                                                <div
-                                                    className="tour-header hoverable"
-                                                    onClick={() => router.push(tourUrl)}
-                                                >
-                                                    <div>
-                                                        <h3 className="tour-title">{tour.title}</h3>
-                                                        {tour.subtitle && (
-                                                            <p className="tour-subtitle">{tour.subtitle}</p>
-                                                        )}
-                                                        <div className="tour-meta">
-                            <span>
-                              {new Date(tour.start_date).toLocaleDateString(
-                                  'de-DE'
-                              )}{' '}
-                                –{' '}
-                                {new Date(tour.end_date).toLocaleDateString(
-                                    'de-DE'
-                                )}
-                            </span>
-                                                            <span>• {tour.eventCount} Events</span>
+                                                            <button
+                                                                className="btn-tickets"
+                                                                onClick={(e) => {
+                                                                    e.stopPropagation();
+                                                                    router.push(evUrl);
+                                                                }}
+                                                            >
+                                                                Tickets
+                                                            </button>
                                                         </div>
-                                                        {tourAccess.length > 0 && (
-                                                            <div className="tour-accessibility">
-                                                                {tourAccess.map((lbl) => (
-                                                                    <span
-                                                                        key={lbl}
-                                                                        className="access-label-small"
-                                                                    >
-                                  {lbl}
-                                </span>
-                                                                ))}
-                                                            </div>
-                                                        )}
-                                                    </div>
-                                                    <div className="header-right">
-                                                        <div className="price">
-                                                            ab €{' '}
-                                                            {tour.cheapestPrice != null
-                                                                ? tour.cheapestPrice.toFixed(2)
-                                                                : '–'}
-                                                        </div>
-                                                        <button
-                                                            className="btn-view-events"
-                                                            onClick={() => router.push(tourUrl)}
-                                                        >
-                                                            Alle {tour.eventCount} Events anzeigen
-                                                        </button>
-                                                    </div>
-                                                </div>
-
-                                                {/* FIRST TWO EVENTS */}
-                                                <div className="sub-events">
-                                                    {(tour.events || [])
-                                                        .slice(0, 2)
-                                                        .map((ev) => {
-                                                            const dt = new Date(ev.start_time);
-                                                            const ds = dt.toLocaleDateString('de-DE', {
-                                                                weekday: 'short',
-                                                                day: '2-digit',
-                                                                month: '2-digit',
-                                                                year: 'numeric',
-                                                            });
-                                                            const ts = dt.toLocaleTimeString('de-DE', {
-                                                                hour: '2-digit',
-                                                                minute: '2-digit',
-                                                            });
-                                                            const evAcc = Array.from(
-                                                                new Set(ev.accessibility || [])
-                                                            );
-                                                            const evUrl = `/artists/${artId}/${tour.id}/${ev.id}`;
-
-                                                            return (
-                                                                <div
-                                                                    key={ev.id}
-                                                                    className="sub-event-row hoverable"
-                                                                    onClick={() => router.push(evUrl)}
-                                                                >
-                                                                    <div className="sub-event-info">
-                                                                        <div className="sub-event-details">
-                                                                            {ev.cityName}, {ds}, {ts}
-                                                                        </div>
-                                                                        <div className="sub-event-arena">
-                                                                            {ev.venueName}
-                                                                        </div>
-                                                                        {evAcc.length > 0 && (
-                                                                            <div className="sub-event-accessibility">
-                                                                                {evAcc.map((lbl) => (
-                                                                                    <span
-                                                                                        key={lbl}
-                                                                                        className="access-label-small"
-                                                                                    >
-                                          {lbl}
-                                        </span>
-                                                                                ))}
-                                                                            </div>
-                                                                        )}
-                                                                    </div>
-                                                                    <button
-                                                                        className="btn-tickets"
-                                                                        onClick={(e) => {
-                                                                            e.stopPropagation();
-                                                                            router.push(evUrl);
-                                                                        }}
-                                                                    >
-                                                                        Tickets
-                                                                    </button>
-                                                                </div>
-                                                            );
-                                                        })}
-                                                </div>
-                                            </>
-                                        )}
-                                    </div>
-                                </div>
-
-                                {/* Edit + Delete icons */}
-                                {editingId !== tour.id && (
-                                    <div className="card-footer-icons">
-                                        <button
-                                            className="btn-edit small-edit"
-                                            onClick={() => handleEditToggle(tour)}
-                                            title="Bearbeiten"
-                                        >
-                                            ✎
-                                        </button>
-                                        <button
-                                            className="btn-edit delete-icon"
-                                            onClick={() => setConfirmDeleteId(tour.id)}
-                                            title="Löschen"
-                                        >
-                                            🗑
-                                        </button>
-                                    </div>
-                                )}
-
-                                {/* Delete modal */}
-                                {confirmDeleteId === tour.id && (
-                                    <div className="modal-overlay">
-                                        <div className="modal-box">
-                                            <p>Möchtest du diese Tour wirklich löschen?</p>
-                                            <div className="modal-actions">
-                                                <button
-                                                    className="btn btn-confirm"
-                                                    onClick={() => handleDelete(tour.id)}
-                                                >
-                                                    Ja, löschen
-                                                </button>
-                                                <button
-                                                    className="btn btn-cancel"
-                                                    onClick={() => setConfirmDeleteId(null)}
-                                                >
-                                                    Abbrechen
-                                                </button>
-                                            </div>
+                                                    );
+                                                })}
                                         </div>
                                     </div>
-                                )}
+                                </div>
                             </div>
                         );
                     })}
