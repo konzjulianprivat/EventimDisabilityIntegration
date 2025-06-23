@@ -12,7 +12,6 @@
 .homepage-scroller-img {
     width: auto;
     height: 250px;
-    border-radius: 12px;
     transition: transform 0.3s ease-in-out;
     overflow: hidden;
     display: flex;

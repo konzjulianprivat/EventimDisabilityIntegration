@@ -151,6 +151,14 @@ export default function NavBar() {
 
                 <div className="search">
                     <input type="search" placeholder="Suche nach Künstlern und Events" />
+                    <div className="search-icon">
+                        <Image
+                            src="/pictures/search_icon.png"
+                            alt="Suche"
+                            width={20}
+                            height={20}
+                        />
+                    </div>
                 </div>
 
                 <div className="icons">

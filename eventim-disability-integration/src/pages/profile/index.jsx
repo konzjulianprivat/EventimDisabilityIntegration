@@ -260,50 +260,6 @@ export default function ProfilePage() {
                                 </div>
                             </div>
                         </div>
-
-                        {/* Empfehlungen */}
-                        <div className="content-inner">
-                            <h3>Empfehlungen basierend auf deinen letzten Buchungen</h3>
-                            <div
-                                className="carousel-container"
-                                ref={carouselRef}
-                                style={{marginTop: "1rem"}}
-                            >
-                                <div className="carousel-wrapper">
-                                    <button
-                                        className="carousel-button left"
-                                        onClick={handlePrev}
-                                        disabled={carouselIndex === 0}
-                                    >
-                                        ‹
-                                    </button>
-                                    <div className="carousel-track">
-                                        {recommendCards.map((t, i) => {
-                                            const ev = t.events && t.events[0];
-                                            if (!ev) return null;
-                                            return (
-                                                <SquareTourCard
-                                                    key={carouselIndex + i}
-                                                    imageId={t.tour_image}
-                                                    title={t.title}
-                                                    bottomText={`${formatDate(ev.start_time)} | ${ev.venueName}`}
-                                                    link={`/artists/${t.artistIds && t.artistIds[0]}/${t.id}/${ev.id}`}
-                                                />
-                                            );
-                                        })}
-                                    </div>
-                                    <button
-                                        className="carousel-button right"
-                                        onClick={handleNext}
-                                        disabled={
-                                            carouselIndex >= tours.length - visibleCount
-                                        }
-                                    >
-                                        ›
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
                     </div>
 
                     <div className="white-box events-white-box">
