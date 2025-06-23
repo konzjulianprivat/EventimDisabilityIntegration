@@ -143,13 +143,16 @@ export default function ArtistPage() {
         ? `${API_BASE_URL}/image/${artistData.artist_image}`
         : '/placeholder-artist.png';
 
+    const totalEventCount = filteredTours.reduce((total, tour) => total + tour.eventCount, 0);
+
     return (
         <div className="event-container">
             <header className="event-header">
                 <div className="header-info">
                     <h1 className="event-title">{artistData.name}</h1>
+                    {artistData.biography && <p>{artistData.biography}</p>}
                     <div className="event-meta">
-                        <div className="meta-item">{artistData.tourCount} Touren</div>
+                        <div className="meta-item">{artistData.tourCount} Touren | {totalEventCount} Events</div>
                         {artistData.website && (
                             <div className="meta-item">
                                 <a href={artistData.website} className="venue-link">
@@ -158,10 +161,16 @@ export default function ArtistPage() {
                             </div>
                         )}
                     </div>
-                    {artistData.biography && <p>{artistData.biography}</p>}
                 </div>
                 <div className="event-hero">
-                    <img src={artistImage} alt={artistData.name || 'Artist'} />
+                    <img
+                        src={
+                            artistData.artist_image
+                                ? `${API_BASE_URL}/image/${artistData.artist_image}`
+                                : '/pictures/placeholder.png'
+                        }
+                        alt={artistData.name || 'Artist'}
+                    />
                 </div>
             </header>
 

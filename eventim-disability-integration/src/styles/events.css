@@ -15,10 +15,11 @@ body { font-family: Arial, sans-serif; color: #333; }
     color: #fff;
     display: flex;
     justify-content: space-between;
-    align-items: center;
-    padding: 24px 20px;
+    align-items: flex-start;
+    padding: 24px 10%;
+    gap: 3rem;
 }
-.header-info { display: flex; flex-direction: column; gap: 12px; margin-left: 10%}
+.header-info { display: flex; flex-direction: column; gap: 12px; flex: 1 1 0; min-width: 0; }
 .event-title { font-size: 2rem; color: white; }
 .event-meta { display: flex; flex-direction: column; gap: 6px; font-size: 1rem; }
 .meta-item { display: flex; align-items: center; gap: 6px; }
@@ -30,7 +31,7 @@ body { font-family: Arial, sans-serif; color: #333; }
     border-bottom: 1px solid rgba(255,255,255,0.5);
 }
 .venue-link:hover { border-color: #fff; }
-.event-hero {margin-right: 10%;}
+.event-hero { flex: 0 0 auto;}
 .event-hero img {
     height: 200px;
     width: 200px;
@@ -40,9 +41,7 @@ body { font-family: Arial, sans-serif; color: #333; }
 
 /* 4) Ticket section */
 .ticket-section {
-    padding: 24px 20px;
-    margin-left: 10%;
-    margin-right: 10%;
+    padding: 24px 10%;
 }
 /* 5) Card wrapper */
 .ticket-card {
@@ -211,7 +210,7 @@ body { font-family: Arial, sans-serif; color: #333; }
 /* 12) Responsive tweaks */
 @media (max-width: 700px) {
     .event-header {
-        flex-direction: column;
+        flex-direction: row;
         align-items: flex-start;
         gap: 16px;
     }
