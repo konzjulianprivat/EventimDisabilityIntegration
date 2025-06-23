@@ -31,16 +31,6 @@ export async function getServerSideProps({ req }) {
     return { props: {} };
 }
 
-const sampleTourData = [
-    { imageId: "90bbc401-2984-494b-a34c-59831427a0b3", title: "Rod Stewart",         priceText: "Tickets ab € 68,00", link: "#" },
-    { imageId: "f1d49502-0d05-4ea8-b347-2b22cac9ea65", title: "Tom Odell",           priceText: "Tickets ab € 60,40", link: "#" },
-    { imageId: "d3b82c8c-4c08-4859-88a2-ca4cfebc08df", title: "Disney In Concert",   priceText: "Tickets ab € 59,90", link: "#" },
-    { imageId: "82a3438f-83a4-475a-90a3-fc9fe951faac", title: "Schwanensee – Ballett", priceText: "Tickets ab € 42,00", link: "#" },
-    { imageId: "5da11a45-7366-42dc-8604-e81851271b25", title: "Ehrlich Brothers",    priceText: "Tickets ab € 52,00", link: "#" },
-    { imageId: "1dd71154-1920-4c77-99f1-94e08572eb78", title: "Tom Gaebel",          priceText: "Tickets ab € 39,90", link: "#" },
-    { imageId: "68368c8c-2094-463a-8698-adea0440b44c", title: "Teddy Teclebrhan",    priceText: "Tickets ab € 42,25", link: "#" },
-    { imageId: "9fde1a84-3a64-4a0a-9210-7c9bb3dcb7e5", title: "Lars Eidinger",       priceText: "Tickets ab € 35,00", link: "#" },
-];
 
 export default function ProfilePage() {
     // Carousel indices
@@ -53,6 +43,9 @@ export default function ProfilePage() {
     const [selectedOrder, setSelectedOrder] = useState(null);
 
     const [qrTicketId, setQrTicketId] = useState(null);
+
+    const [myEvents, setMyEvents] = useState([]);
+    const [tours, setTours] = useState([]);
 
     const [activeSidebarItem, setActiveSidebarItem] = useState("Meine Events");
     // refs for each section
@@ -109,8 +102,61 @@ export default function ProfilePage() {
         }
     };
 
+    const formatDate = (d) =>
+        new Date(d).toLocaleDateString('de-DE', {
+            weekday: 'long',
+            day: '2-digit',
+            month: '2-digit',
+            year: 'numeric',
+        });
+    const formatTime = (d) =>
+        new Date(d).toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' });
+    const fetchMyEvents = async () => {
+        try {
+            const res = await fetch(`${API_BASE_URL}/my-events`, { credentials: 'include' });
+            if (res.ok) {
+                const data = await res.json();
+                const arr = Array.isArray(data.events) ? data.events : [];
+                const mapped = arr.map(ev => ({
+                    imageId: ev.tour_image,
+                    title: ev.tour_title,
+                    infoText: `${formatDate(ev.start_time)} | ${ev.venue_name}`,
+                    link: `/artists/${ev.artist_id}/${ev.tour_id}/${ev.event_id}`
+                }));
+                setMyEvents(mapped);
+            }
+        } catch (err) {
+            console.error('Error fetching my events:', err);
+        }
+    };
+
+    const fetchTours = async () => {
+        try {
+            const res = await fetch(`${API_BASE_URL}/tours-detailed`);
+            if (res.ok) {
+                const data = await res.json();
+                const arr = Array.isArray(data.tours) ? data.tours : [];
+                const mapped = arr.map(t => {
+                    const ev = t.events && t.events[0];
+                    const artistId = (t.artistIds || [])[0];
+                    return {
+                        imageId: t.tour_image,
+                        title: t.title,
+                        infoText: ev ? `${formatDate(ev.start_time)} | ${ev.venueName}` : '',
+                        link: ev && artistId ? `/artists/${artistId}/${t.id}/${ev.id}` : '#'
+                    };
+                });
+                setTours(mapped);
+            }
+        } catch (err) {
+            console.error('Error fetching tours:', err);
+        }
+    };
+
     useEffect(() => {
         fetchOrders();
+        fetchMyEvents();
+        fetchTours();
     }, []);
 
     // Recalculate on mount + resize
@@ -122,7 +168,7 @@ export default function ProfilePage() {
             const count = Math.floor((w + GAP) / (CARD_W + GAP));
             const clamp = Math.min(8, Math.max(1, count));
             setVisibleCount(clamp);
-            setCarouselIndex(ci => Math.min(ci, sampleTourData.length - clamp));
+            setCarouselIndex(ci => Math.min(ci, tours.length - clamp));
         }
         updateCount();
         window.addEventListener("resize", updateCount);
@@ -133,26 +179,16 @@ export default function ProfilePage() {
         if (carouselIndex > 0) setCarouselIndex(i => i - 1);
     };
     const handleNext = () => {
-        if (carouselIndex < sampleTourData.length - visibleCount)
+        if (carouselIndex < tours.length - visibleCount)
             setCarouselIndex(i => i + 1);
     };
 
     // Slices for blue cards (Meine Events) and recommendations
-    const blueCards = sampleTourData.slice(0, visibleCount);
-    const recommendCards = sampleTourData.slice(
+    const blueCards = myEvents.slice(0, visibleCount);
+    const recommendCards = tours.slice(
         carouselIndex,
         carouselIndex + visibleCount
     );
-
-    const formatDate = (d) =>
-        new Date(d).toLocaleDateString('de-DE', {
-            weekday: 'long',
-            day: '2-digit',
-            month: '2-digit',
-            year: 'numeric',
-        });
-    const formatTime = (d) =>
-        new Date(d).toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' });
 
     const closeModal = () => {
         setQrTicketId(null);
@@ -254,7 +290,7 @@ export default function ProfilePage() {
                                         className="carousel-button right"
                                         onClick={handleNext}
                                         disabled={
-                                            carouselIndex >= sampleTourData.length - visibleCount
+                                            carouselIndex >= tours.length - visibleCount
                                         }
                                     >
                                         ›

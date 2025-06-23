@@ -2713,6 +2713,42 @@ app.get('/orders/:id', async (req, res) => {
     }
 });
 
+// Liefert alle Events, für die der eingeloggte User Tickets besitzt
+app.get('/my-events', async (req, res) => {
+    const userId = req.session.userId;
+    if (!userId) return res.status(401).json({ message: 'Not logged in' });
+
+    try {
+        const { rows } = await client.query(
+            `SELECT
+                e.id           AS event_id,
+                e.tour_id,
+                t.title        AS tour_title,
+                t.tour_image,
+                v.name         AS venue_name,
+                e.start_time,
+                (SELECT ta.artist_id FROM tour_artists ta
+                    WHERE ta.tour_id = t.id LIMIT 1) AS artist_id
+             FROM orders o
+                  JOIN order_tickets ot ON ot.order_id = o.id
+                  JOIN tickets ti       ON ti.id = ot.ticket_id
+                  JOIN event_categories ec ON ec.id = ti.event_category_id
+                  JOIN events e         ON e.id = ec.event_id
+                  JOIN tours t          ON t.id = e.tour_id
+                  JOIN venues v         ON v.id = e.venue_id
+             WHERE o.user_id = $1
+             GROUP BY e.id, e.tour_id, t.title, t.tour_image,
+                      v.name, e.start_time, t.id
+             ORDER BY e.start_time`,
+            [userId]
+        );
+        return res.json({ events: rows });
+    } catch (err) {
+        console.error('Error fetching my events:', err);
+        return res.status(500).json({ message: 'Server error' });
+    }
+});
+
 app.get(/.*/, (req, res) => {
     res.redirect(301, 'http://localhost:3000');
 });
