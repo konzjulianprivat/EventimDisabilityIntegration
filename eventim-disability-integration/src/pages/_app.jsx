@@ -14,6 +14,7 @@ import '../styles/footer.css';
 import '../styles/scroller.css';
 import '../styles/smallTourCard.css';
 import '../styles/navBar.css';
+import '../styles/search.css';
 import '../styles/events.css';
 import '../styles/checkout.css';
 import '../styles/404.css';

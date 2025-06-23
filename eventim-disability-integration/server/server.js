@@ -1253,6 +1253,77 @@ app.get("/artists-with-images", async (req, res) => {
     }
 });
 
+// ─────────────────────────────────────────────────────────────────────────────
+// Suche nach Touren (inkl. 2 nächster Events) mit einfacher Cache-Schicht
+// ─────────────────────────────────────────────────────────────────────────────
+const SEARCH_CACHE_TTL = 5 * 60 * 1000; // 5 Minuten
+let toursSearchCache = { data: null, timestamp: 0 };
+
+async function loadToursSearchCache() {
+    const { rows } = await client.query(
+        `SELECT *
+         FROM (
+             SELECT
+                 t.id            AS tour_id,
+                 t.title         AS tour_title,
+                 t.tour_image    AS tour_image,
+                 ta.artist_id    AS artist_id,
+                 e.id            AS event_id,
+                 e.start_time    AS start_time,
+                 v.name          AS venue_name,
+                 c.name          AS city_name,
+                 ROW_NUMBER() OVER (PARTITION BY t.id ORDER BY e.start_time) AS rn
+             FROM tours t
+                  JOIN tour_artists ta ON ta.tour_id = t.id
+                  LEFT JOIN events e      ON e.tour_id = t.id
+                  LEFT JOIN venues v      ON v.id = e.venue_id
+                  LEFT JOIN cities c      ON c.id = v.city_id
+         ) sub
+         WHERE sub.rn <= 2 OR sub.event_id IS NULL
+         ORDER BY sub.tour_title, sub.rn;`
+    );
+
+    const map = {};
+    rows.forEach((r) => {
+        if (!map[r.tour_id]) {
+            map[r.tour_id] = {
+                id: r.tour_id,
+                title: r.tour_title,
+                tour_image: r.tour_image,
+                artist_id: r.artist_id,
+                events: [],
+            };
+        }
+        if (r.event_id && r.rn <= 2) {
+            map[r.tour_id].events.push({
+                id: r.event_id,
+                start_time: r.start_time,
+                venueName: r.venue_name,
+                cityName: r.city_name,
+            });
+        }
+    });
+
+    toursSearchCache = { data: Object.values(map), timestamp: Date.now() };
+}
+
+app.get('/search-tours', async (req, res) => {
+    const query = (req.query.q || '').toLowerCase();
+    if (!toursSearchCache.data || Date.now() - toursSearchCache.timestamp > SEARCH_CACHE_TTL) {
+        try {
+            await loadToursSearchCache();
+        } catch (err) {
+            console.error('Error loading search cache:', err);
+            return res.status(500).json({ message: 'Fehler beim Laden der Suchdaten' });
+        }
+    }
+
+    const result = toursSearchCache.data.filter((t) =>
+        t.title.toLowerCase().includes(query)
+    );
+    res.json({ tours: result.slice(0, 10) });
+});
+
 app.post('/create-area', async (req, res) => {
     try {
         const { name, description } = req.body;
