@@ -200,7 +200,7 @@
 }
 .tour-meta {
     color: #555;
-    font-size: 0.9rem;
+    font-size: 1rem;
     margin-bottom: 0.5rem;
 }
 .tour-accessibility {
@@ -211,6 +211,7 @@
 }
 .header-right {
     text-align: right;
+    align-items: center;
 }
 .header-right .price {
     color: #333;
@@ -248,6 +249,11 @@
     justify-content: space-between;
     align-items: flex-start;
     padding: 1rem;
+}
+
+/* let the first child (your info block) take up all the remaining space */
+.tour-header > div:first-child {
+    flex: 1;
 }
 /* … rest of .tour-header styles unchanged … */
 
@@ -325,11 +331,11 @@
 
 /* Accessibility badge */
 .access-label-small {
-    background: #005ea5;
-    color: #fff;
+    background: #ffc107;
+    color: rgba(0, 0, 0, 1);
     padding: 0.15rem 0.45rem;
     border-radius: 12px;
-    font-size: 0.75rem;
+    font-size: 0.9rem;
 }
 
 /* Tickets in sub-event */

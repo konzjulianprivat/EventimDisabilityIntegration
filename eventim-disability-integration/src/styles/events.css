@@ -316,3 +316,13 @@ body { font-family: Arial, sans-serif; color: #333; }
     font-size: 1rem;
     color: #333;
 }
+
+.availability-message {
+    font-size: 0.9rem;
+    color: #28a745;
+    background: #e6f4ea;
+    padding: 0.5rem 0.5rem;
+    border-radius: 4px;
+    margin-right: 1rem;
+    align-self: auto;
+}

@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/router';
 import { API_BASE_URL } from '../../../../config';
+import FilterBar from "../../../../components/filter-bar";
 
 export default function TourEventsPage() {
     const router = useRouter();
@@ -43,18 +44,24 @@ export default function TourEventsPage() {
             minute: '2-digit',
         });
 
+    const totalDistinctCityNames = new Set(events.map(ev => ev.cityName)).size;
+    const totalDistinctVenueNames = new Set(events.map(ev => ev.venueName)).size;
+
     return (
         <div className="event-container">
             <header className="event-header">
                 <div className="header-info">
                     <h1 className="event-title">{tourData.title}</h1>
                     {tourData.subtitle && <p>{tourData.subtitle}</p>}
-                    <div className="event-meta">
+                    <div className="event-meta" style={{marginTop: "2rem"}}>
                         <div className="meta-item">
+                            <span className="icon-calendar" />
                             {new Date(tourData.start_date).toLocaleDateString('de-DE')} –{' '}
                             {new Date(tourData.end_date).toLocaleDateString('de-DE')}
                         </div>
-                        <div className="meta-item">{tourData.eventCount} Events</div>
+                        <div className="meta-item">
+                            <span className="icon-location" /> {totalDistinctCityNames} Städte | {totalDistinctVenueNames} Arenen | {tourData.eventCount} Events
+                        </div>
                     </div>
                 </div>
                 <div className="event-hero">
@@ -62,7 +69,7 @@ export default function TourEventsPage() {
                         src={
                             tourData.tour_image
                                 ? `${API_BASE_URL}/image/${tourData.tour_image}`
-                                : '/placeholder-tour.png'
+                                : '/pictures/placeholder.png'
                         }
                         alt={tourData.title || 'Tour'}
                     />
@@ -91,7 +98,7 @@ export default function TourEventsPage() {
                                                 </h3>
                                                 <div className="tour-meta">
                                                     <span>{formatTime(ev.start_time)}</span>
-                                                    <span>• {ev.venueName}</span>
+                                                    <span> • {ev.venueName}</span>
                                                 </div>
                                                 {evAcc.length > 0 && (
                                                     <div className="tour-accessibility">
@@ -106,6 +113,9 @@ export default function TourEventsPage() {
                                                     </div>
                                                 )}
                                             </div>
+                                            <div className="availability-message">
+                                                Tickets stehen zur Verfügung!
+                                            </div>
                                             <div className="header-right">
                                                 <button
                                                     className="btn-view-events"
@@ -118,9 +128,6 @@ export default function TourEventsPage() {
                                                 </button>
                                             </div>
                                         </div>
-                                        {ev.description && (
-                                            <div className="sub-event-details">{ev.description}</div>
-                                        )}
                                     </div>
                                 </div>
                             </div>
