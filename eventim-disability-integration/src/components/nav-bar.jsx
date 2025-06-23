@@ -219,8 +219,12 @@ export default function NavBar() {
                                     >
                                         {tour.title}
                                     </a>
+                                    <button className="btn-view-events">Tickets buchen</button>
                                     <div className="nav-search-events">
-                                        {tour.events.map((ev) => {
+                                         {(
+                                           // build a Map keyed by event.id → last-seen event, then grab unique events
+                                               [...new Map(tour.events.map(ev => [ev.id, ev])).values()]
+                                         ).map(ev => {
                                             const dt = new Date(ev.start_time);
                                             const ds = dt.toLocaleDateString('de-DE');
                                             const ts = dt.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' });

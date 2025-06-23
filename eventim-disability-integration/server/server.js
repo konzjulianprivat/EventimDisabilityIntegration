@@ -1279,7 +1279,7 @@ async function loadToursSearchCache() {
                   LEFT JOIN venues v      ON v.id = e.venue_id
                   LEFT JOIN cities c      ON c.id = v.city_id
          ) sub
-         WHERE sub.rn <= 2 OR sub.event_id IS NULL
+         WHERE sub.event_id IS NOT NULL
          ORDER BY sub.tour_title, sub.rn;`
     );
 
@@ -1294,7 +1294,7 @@ async function loadToursSearchCache() {
                 events: [],
             };
         }
-        if (r.event_id && r.rn <= 2) {
+        if (r.event_id) {
             map[r.tour_id].events.push({
                 id: r.event_id,
                 start_time: r.start_time,

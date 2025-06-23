@@ -15,21 +15,51 @@
     padding: 0.5rem 0.75rem;
     border-bottom: 1px solid #eee;
     cursor: pointer;
+
+    /* ↓ switched to grid ↓ */
+    display: grid;
+    grid-template-columns: 1fr auto;
+    grid-template-rows: auto auto;
+    grid-template-areas:
+      "title   button"
+      "events  events";
+    row-gap: 0.25rem;
+    align-items: center;
+    width: 100%;
 }
+
 .nav-search-item:last-child {
     border-bottom: none;
 }
+
 .nav-search-item:hover {
     background-color: #f5f5f5;
 }
 
 .nav-search-item .search-tour-title {
-    font-weight: 600;
-    margin-bottom: 0.25rem;
+    /* place title into the grid */
+    grid-area: title;
+
+    font-weight: bold;
+    margin-bottom: 0.5rem;
     color: #002b55;
+    flex: 1 1 auto;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    margin-right: 1rem; /* spacing between title and button */
+}
+
+.nav-search-item .btn-view-events {
+    /* place button into the grid, flush right */
+    grid-area: button;
+    justify-self: end;
 }
 
 .nav-search-events {
+    /* make events list span full width below */
+    grid-area: events;
+
     display: flex;
     flex-direction: column;
     gap: 0.25rem;
@@ -39,9 +69,11 @@
 }
 
 .nav-search-event-link {
+    margin-top: 0.5rem;
     color: #005ea5;
     text-decoration: none;
 }
+
 .nav-search-event-link:hover {
     text-decoration: underline;
 }
