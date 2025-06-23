@@ -1371,221 +1371,216 @@ app.delete('/artists/:id', async (req, res) => {
 
 // server.js (vollständiger Endpoint)
 
-async function buildToursDetailed() {
-    // 0) Vorab: Alle disability_marks abfragen (area_id → mark_code), aber trim() auf mark_code
-    const { rows: allMarks } = await client.query(`
-        SELECT area_id, mark_code
-        FROM disability_marks
-        WHERE area_id IS NOT NULL;
-    `);
-
-    // Baue eine Map: area_id → [mark_code1, mark_code2, ...] (mark_code getrimmt)
-    const marksMap = {};
-    allMarks.forEach((row) => {
-        const aid = row.area_id;
-        const code = row.mark_code.trim(); // hier trimmen
-        if (!marksMap[aid]) marksMap[aid] = [];
-        if (!marksMap[aid].includes(code)) {
-            marksMap[aid].push(code);
-        }
-    });
-
-    console.log('marksMap (disability_marks):', marksMap);
-
-    // 1) Alle Tours holen
-    const { rows: tourRows } = await client.query(`
-        SELECT
-            t.id,
-            t.title,
-            t.subtitle,
-            t.start_date,
-            t.end_date,
-            t.tour_image
-        FROM tours t
-        ORDER BY t.start_date;
-    `);
-
-    console.log('Gefundene Tours (raw):', tourRows);
-
-    // 2) Pro Tour alle Detail-Informationen zusammensetzen
-    const detailedTours = await Promise.all(
-        tourRows.map(async (tour) => {
-            // 2a) Event-Anzahl
-            const { rows: countRows } = await client.query(
-                `SELECT COUNT(*) AS "eventCount" FROM events WHERE tour_id = $1`,
-                [tour.id]
-            );
-            const eventCount = parseInt(countRows[0].eventCount, 10);
-
-            // 2b) Günstigster Preis über alle Event-Kategorien
-            const { rows: cheapestRows } = await client.query(
-                `
-                    SELECT MIN(ec.price)::numeric(10,2) AS "cheapestPrice"
-                    FROM event_categories ec
-                             JOIN events e ON e.id = ec.event_id
-                    WHERE e.tour_id = $1
-                `,
-                [tour.id]
-            );
-            const cheapestPrice = cheapestRows[0].cheapestPrice !== null
-                ? parseFloat(cheapestRows[0].cheapestPrice)
-                : null;
-
-            // 2c) Grunddaten aller Events dieser Tour (ohne Accessibility)
-            const { rows: baseEvents } = await client.query(
-                `
-                    SELECT
-                        e.id,
-                        e.start_time,
-                        v.name AS "venueName",
-                        c.name AS "cityName"
-                    FROM events e
-                             JOIN venues v ON v.id = e.venue_id
-                             JOIN cities c ON c.id = v.city_id
-                    WHERE e.tour_id = $1
-                    ORDER BY e.start_time
-                `,
-                [tour.id]
-            );
-
-            console.log(`Tour ${tour.id} – baseEvents:`, baseEvents);
-
-            // 2d) Pro Event: Disability-Labels berechnen
-            const eventsWithAccess = await Promise.all(
-                baseEvents.map(async (ev) => {
-                    // 2d.1) Alle zugehörigen venue_area_id aus event_venue_areas holen
-                    const { rows: evaRows } = await client.query(
-                        `
-                            SELECT venue_area_id
-                            FROM event_venue_areas
-                            WHERE event_id = $1
-                        `,
-                        [ev.id]
-                    );
-
-                    // 2d.2) Für jeden venue_area_id das area_id aus venue_areas holen
-                    const areaIds = [];
-                    for (const eva of evaRows) {
-                        const { rows: vaRows } = await client.query(
-                            `
-                                SELECT area_id
-                                FROM venue_areas
-                                WHERE id = $1
-                            `,
-                            [eva.venue_area_id]
-                        );
-                        if (vaRows[0] && vaRows[0].area_id) {
-                            areaIds.push(vaRows[0].area_id);
-                        }
-                    }
-
-                    console.log(`Event ${ev.id} – areaIds in venue_areas:`, areaIds);
-
-                    // 2d.3) Prüfe nun, welche dieser area_id in marksMap existieren, und sammele alle mark_code
-                    const collectedCodes = new Set();
-                    areaIds.forEach((aid) => {
-                        if (marksMap[aid]) {
-                            marksMap[aid].forEach((code) => {
-                                collectedCodes.add(code);
-                            });
-                        }
-                    });
-
-                    // 2d.4) Mappe jeden mark_code (bereits getrimmt) zu seinem Label‐Text
-                    const labels = Array.from(collectedCodes).map((code) => {
-                        switch (code) {
-                            case 'G':
-                            case 'aG':
-                                return 'Rollstuhlplätze verfügbar';
-                            case 'Gl':
-                                return 'Gehörlosenplätze verfügbar';
-                            case 'Bl':
-                                return 'Blindenplätze verfügbar';
-                            default:
-                                return null;
-                        }
-                    }).filter((lbl) => lbl !== null);
-
-                    return {
-                        id: ev.id,
-                        cityName: ev.cityName,
-                        venueName: ev.venueName,
-                        start_time: ev.start_time,
-                        accessibility: labels, // dedupliziert durch Set
-                    };
-                })
-            );
-
-            console.log(`Tour ${tour.id} – eventsWithAccess:`, eventsWithAccess);
-
-            // 2e) Künstler-Liste für diese Tour
-            const { rows: artistRows } = await client.query(
-                `
-                    SELECT a.id, a.name
-                    FROM tour_artists ta
-                             JOIN artists a ON a.id = ta.artist_id
-                    WHERE ta.tour_id = $1
-                    ORDER BY a.name
-                `,
-                [tour.id]
-            );
-            const artistsList = artistRows.map((r) => r.name);
-            const artistIds = artistRows.map((r) => r.id);
-
-            // 2f) Genres mit Subgenres:
-            const { rows: genreRows } = await client.query(
-                `
-                    SELECT
-                        g.id                AS "genreId",
-                        g.name              AS "genreName",
-                        COALESCE(
-                                        json_agg(s.name) FILTER (WHERE s.id IS NOT NULL),
-                                        '[]'
-                        ) AS "subgenreNames"
-                    FROM tour_genres tg
-                             JOIN genres g ON g.id = tg.genre_id
-                             LEFT JOIN tour_subgenres ts
-                                       ON ts.tour_id = tg.tour_id
-                             LEFT JOIN subgenres s
-                                       ON s.id = ts.subgenre_id
-                                           AND s.genre_id = tg.genre_id
-                    WHERE tg.tour_id = $1
-                    GROUP BY g.id, g.name
-                    ORDER BY g.name
-                `,
-                [tour.id]
-            );
-            const genresWithSubs = genreRows.map((r) => ({
-                genreId: r.genreId,
-                genreName: r.genreName,
-                subgenreNames: r.subgenreNames || [],
-            }));
-
-            return {
-                id: tour.id,
-                title: tour.title,
-                subtitle: tour.subtitle,
-                start_date: tour.start_date,
-                end_date: tour.end_date,
-                tour_image: tour.tour_image,
-                eventCount,
-                cheapestPrice,
-                artistsList,
-                artistIds,
-                genresWithSubs,
-                events: eventsWithAccess,
-            };
-        })
-    );
-
-    console.log('detailedTours insgesamt:', detailedTours);
-    return detailedTours;
-}
-
 app.get('/tours-detailed', async (req, res) => {
     try {
-        const tours = await buildToursDetailed();
-        return res.status(200).json({ tours });
+        // 0) Vorab: Alle disability_marks abfragen (area_id → mark_code), aber trim() auf mark_code
+        const { rows: allMarks } = await client.query(`
+            SELECT area_id, mark_code
+            FROM disability_marks
+            WHERE area_id IS NOT NULL;
+        `);
+
+        // Baue eine Map: area_id → [mark_code1, mark_code2, ...] (mark_code getrimmt)
+        const marksMap = {};
+        allMarks.forEach((row) => {
+            const aid = row.area_id;
+            const code = row.mark_code.trim(); // hier trimmen
+            if (!marksMap[aid]) marksMap[aid] = [];
+            if (!marksMap[aid].includes(code)) {
+                marksMap[aid].push(code);
+            }
+        });
+
+        console.log('marksMap (disability_marks):', marksMap);
+
+        // 1) Alle Tours holen
+        const { rows: tourRows } = await client.query(`
+            SELECT
+                t.id,
+                t.title,
+                t.subtitle,
+                t.start_date,
+                t.end_date,
+                t.tour_image
+            FROM tours t
+            ORDER BY t.start_date;
+        `);
+
+        console.log('Gefundene Tours (raw):', tourRows);
+
+        // 2) Pro Tour alle Detail-Informationen zusammensetzen
+        const detailedTours = await Promise.all(
+            tourRows.map(async (tour) => {
+                // 2a) Event-Anzahl
+                const { rows: countRows } = await client.query(
+                    `SELECT COUNT(*) AS "eventCount" FROM events WHERE tour_id = $1`,
+                    [tour.id]
+                );
+                const eventCount = parseInt(countRows[0].eventCount, 10);
+
+                // 2b) Günstigster Preis über alle Event-Kategorien
+                const { rows: cheapestRows } = await client.query(
+                    `
+                        SELECT MIN(ec.price)::numeric(10,2) AS "cheapestPrice"
+                        FROM event_categories ec
+                                 JOIN events e ON e.id = ec.event_id
+                        WHERE e.tour_id = $1
+                    `,
+                    [tour.id]
+                );
+                const cheapestPrice = cheapestRows[0].cheapestPrice !== null
+                    ? parseFloat(cheapestRows[0].cheapestPrice)
+                    : null;
+
+                // 2c) Grunddaten aller Events dieser Tour (ohne Accessibility)
+                const { rows: baseEvents } = await client.query(
+                    `
+                        SELECT
+                            e.id,
+                            e.start_time,
+                            v.name AS "venueName",
+                            c.name AS "cityName"
+                        FROM events e
+                                 JOIN venues v ON v.id = e.venue_id
+                                 JOIN cities c ON c.id = v.city_id
+                        WHERE e.tour_id = $1
+                        ORDER BY e.start_time
+                    `,
+                    [tour.id]
+                );
+
+                console.log(`Tour ${tour.id} – baseEvents:`, baseEvents);
+
+                // 2d) Pro Event: Disability-Labels berechnen
+                const eventsWithAccess = await Promise.all(
+                    baseEvents.map(async (ev) => {
+                        // 2d.1) Alle zugehörigen venue_area_id aus event_venue_areas holen
+                        const { rows: evaRows } = await client.query(
+                            `
+                                SELECT venue_area_id
+                                FROM event_venue_areas
+                                WHERE event_id = $1
+                            `,
+                            [ev.id]
+                        );
+
+                        // 2d.2) Für jeden venue_area_id das area_id aus venue_areas holen
+                        const areaIds = [];
+                        for (const eva of evaRows) {
+                            const { rows: vaRows } = await client.query(
+                                `
+                                    SELECT area_id
+                                    FROM venue_areas
+                                    WHERE id = $1
+                                `,
+                                [eva.venue_area_id]
+                            );
+                            if (vaRows[0] && vaRows[0].area_id) {
+                                areaIds.push(vaRows[0].area_id);
+                            }
+                        }
+
+                        console.log(`Event ${ev.id} – areaIds in venue_areas:`, areaIds);
+
+                        // 2d.3) Prüfe nun, welche dieser area_id in marksMap existieren, und sammele alle mark_code
+                        const collectedCodes = new Set();
+                        areaIds.forEach((aid) => {
+                            if (marksMap[aid]) {
+                                marksMap[aid].forEach((code) => {
+                                    collectedCodes.add(code);
+                                });
+                            }
+                        });
+
+                        // 2d.4) Mappe jeden mark_code (bereits getrimmt) zu seinem Label‐Text
+                        const labels = Array.from(collectedCodes).map((code) => {
+                            switch (code) {
+                                case 'G':
+                                case 'aG':
+                                    return 'Rollstuhlplätze verfügbar';
+                                case 'Gl':
+                                    return 'Gehörlosenplätze verfügbar';
+                                case 'Bl':
+                                    return 'Blindenplätze verfügbar';
+                                default:
+                                    return null;
+                            }
+                        }).filter((lbl) => lbl !== null);
+
+                        return {
+                            id: ev.id,
+                            cityName: ev.cityName,
+                            venueName: ev.venueName,
+                            start_time: ev.start_time,
+                            accessibility: labels, // dedupliziert durch Set
+                        };
+                    })
+                );
+
+                console.log(`Tour ${tour.id} – eventsWithAccess:`, eventsWithAccess);
+
+                // 2e) Künstler-Liste für diese Tour
+                const { rows: artistRows } = await client.query(
+                    `
+                        SELECT a.id, a.name
+                        FROM tour_artists ta
+                                 JOIN artists a ON a.id = ta.artist_id
+                        WHERE ta.tour_id = $1
+                        ORDER BY a.name
+                    `,
+                    [tour.id]
+                );
+                const artistsList = artistRows.map((r) => r.name);
+                const artistIds = artistRows.map((r) => r.id);
+
+                // 2f) Genres mit Subgenres:
+                const { rows: genreRows } = await client.query(
+                    `
+                        SELECT
+                            g.id                AS "genreId",
+                            g.name              AS "genreName",
+                            COALESCE(
+                                            json_agg(s.name) FILTER (WHERE s.id IS NOT NULL),
+                                            '[]'
+                            ) AS "subgenreNames"
+                        FROM tour_genres tg
+                                 JOIN genres g ON g.id = tg.genre_id
+                                 LEFT JOIN tour_subgenres ts
+                                           ON ts.tour_id = tg.tour_id
+                                 LEFT JOIN subgenres s
+                                           ON s.id = ts.subgenre_id
+                                               AND s.genre_id = tg.genre_id
+                        WHERE tg.tour_id = $1
+                        GROUP BY g.id, g.name
+                        ORDER BY g.name
+                    `,
+                    [tour.id]
+                );
+                const genresWithSubs = genreRows.map((r) => ({
+                    genreId: r.genreId,
+                    genreName: r.genreName,
+                    subgenreNames: r.subgenreNames || [],
+                }));
+
+                return {
+                    id: tour.id,
+                    title: tour.title,
+                    subtitle: tour.subtitle,
+                    start_date: tour.start_date,
+                    end_date: tour.end_date,
+                    tour_image: tour.tour_image,
+                    eventCount,
+                    cheapestPrice,
+                    artistsList,
+                    artistIds,
+                    genresWithSubs,
+                    events: eventsWithAccess,
+                };
+            })
+        );
+
+        console.log('detailedTours insgesamt:', detailedTours);
+        return res.status(200).json({ tours: detailedTours });
     } catch (err) {
         console.error('Error in /tours-detailed:', err);
         return res.status(500).json({ message: 'Fehler beim Laden der Touren' });
