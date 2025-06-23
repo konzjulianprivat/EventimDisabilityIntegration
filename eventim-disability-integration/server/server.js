@@ -515,6 +515,32 @@ app.get('/artists', async (req, res) => {
     }
 });
 
+app.get('/artist-details/:id', async (req, res) => {
+    const artistId = req.params.id;
+    try {
+        const { rows } = await client.query(
+            `SELECT a.id,
+                    a.name,
+                    a.biography,
+                    a.website,
+                    a.artist_image,
+                    COUNT(DISTINCT ta.tour_id) AS "tourCount"
+             FROM artists a
+             LEFT JOIN tour_artists ta ON ta.artist_id = a.id
+             WHERE a.id = $1
+             GROUP BY a.id, a.name, a.biography, a.website, a.artist_image`,
+            [artistId]
+        );
+        if (rows.length === 0) {
+            return res.status(404).json({ message: 'Artist nicht gefunden' });
+        }
+        return res.status(200).json({ artist: rows[0] });
+    } catch (err) {
+        console.error('Error in /artist-details:', err);
+        return res.status(500).json({ message: 'Fehler beim Laden des Künstlers' });
+    }
+});
+
 app.get('/genres', async (req, res) => {
     try {
         const result = await client.query(
