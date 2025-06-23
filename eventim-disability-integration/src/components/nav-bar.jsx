@@ -14,10 +14,14 @@ export default function NavBar() {
     const { items: cartItems, loading: cartLoading, reload: reloadCart } = useCart();
     const [showCheckoutModal, setShowCheckoutModal] = useState(false);
 
+    const [searchQuery, setSearchQuery] = useState('');
+    const [searchResults, setSearchResults] = useState([]);
+
     const eventsRef = useRef(null);
     const placesRef = useRef(null);
     const profileRef = useRef(null);
     const cartRef = useRef(null);
+    const searchRef = useRef(null);
 
     const { loading: authLoading, loggedIn, user } = useAuth();
 
@@ -28,6 +32,39 @@ export default function NavBar() {
             .then((body) => setGenres(body.genres))
             .catch((err) => console.error('Error loading genres:', err));
     }, []);
+
+    // Search tours on input
+    useEffect(() => {
+        const controller = new AbortController();
+        const q = searchQuery.trim();
+        if (!q) {
+            setSearchResults([]);
+            return;
+        }
+        const timeout = setTimeout(async () => {
+            try {
+                const res = await fetch(
+                    `${API_BASE_URL}/search-tours?q=${encodeURIComponent(q)}`,
+                    { signal: controller.signal }
+                );
+                if (res.ok) {
+                    const data = await res.json();
+                    setSearchResults(Array.isArray(data.tours) ? data.tours : []);
+                } else {
+                    setSearchResults([]);
+                }
+            } catch (err) {
+                if (err.name !== 'AbortError') {
+                    console.error('Search error:', err);
+                    setSearchResults([]);
+                }
+            }
+        }, 300);
+        return () => {
+            controller.abort();
+            clearTimeout(timeout);
+        };
+    }, [searchQuery]);
 
     // Load cities
     useEffect(() => {
@@ -44,7 +81,8 @@ export default function NavBar() {
                 eventsRef.current && !eventsRef.current.contains(e.target) &&
                 placesRef.current && !placesRef.current.contains(e.target) &&
                 profileRef.current && !profileRef.current.contains(e.target) &&
-                cartRef.current && !cartRef.current.contains(e.target)
+                cartRef.current && !cartRef.current.contains(e.target) &&
+                searchRef.current && !searchRef.current.contains(e.target)
             ) {
                 setOpenDropdown(null);
             }
@@ -149,8 +187,17 @@ export default function NavBar() {
                     </div>
                 </nav>
 
-                <div className="search">
-                    <input type="search" placeholder="Suche nach Künstlern und Events" />
+                <div className="search" ref={searchRef}>
+                    <input
+                        type="search"
+                        placeholder="Suche nach Touren"
+                        value={searchQuery}
+                        onChange={(e) => {
+                            setSearchQuery(e.target.value);
+                            if (!openDropdown) setOpenDropdown('search');
+                        }}
+                        onFocus={() => setOpenDropdown('search')}
+                    />
                     <div className="search-icon">
                         <Image
                             src="/pictures/search_icon.png"
@@ -159,6 +206,39 @@ export default function NavBar() {
                             height={20}
                         />
                     </div>
+                    {openDropdown === 'search' && (
+                        <div className="nav-search-results">
+                            {searchQuery.trim() && searchResults.length === 0 && (
+                                <div className="nav-search-no-results">Keine Ergebnisse</div>
+                            )}
+                            {searchResults.map((tour) => (
+                                <div key={tour.id} className="nav-search-item">
+                                    <a
+                                        href={`/artists/${tour.artist_id}/${tour.id}`}
+                                        className="search-tour-title"
+                                    >
+                                        {tour.title}
+                                    </a>
+                                    <div className="nav-search-events">
+                                        {tour.events.map((ev) => {
+                                            const dt = new Date(ev.start_time);
+                                            const ds = dt.toLocaleDateString('de-DE');
+                                            const ts = dt.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' });
+                                            return (
+                                                <a
+                                                    key={ev.id}
+                                                    href={`/artists/${tour.artist_id}/${tour.id}/${ev.id}`}
+                                                    className="nav-search-event-link"
+                                                >
+                                                    {ds} {ts} – {ev.cityName}, {ev.venueName}
+                                                </a>
+                                            );
+                                        })}
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    )}
                 </div>
 
                 <div className="icons">
