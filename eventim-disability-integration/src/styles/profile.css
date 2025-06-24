@@ -407,6 +407,44 @@
 }
 
 /* -----------------------------------
+   Meine Daten section
+   ----------------------------------- */
+.profile-data-form .form-field {
+    margin-bottom: 1rem;
+}
+
+.profile-data-form label {
+    display: block;
+    margin-bottom: 0.5rem;
+    font-weight: bold;
+}
+
+.profile-data-form input,
+.profile-data-form select {
+    width: 100%;
+    padding: 0.5rem;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+}
+
+.profile-data-display {
+    padding: 0.5rem 0;
+}
+
+.profile-section-divider {
+    border-top: 1px solid #e0e0e0;
+    margin: 1.5rem 0;
+}
+
+.success-message {
+    padding: 0.75rem;
+    background-color: #d4edda;
+    color: #155724;
+    border-radius: 4px;
+    margin-top: 1rem;
+}
+
+/* -----------------------------------
    11) Mobile-Fallback
    ----------------------------------- */
 @media (max-width: 768px) {
