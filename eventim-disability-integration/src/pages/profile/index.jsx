@@ -6,6 +6,7 @@ import SquareTourCard from "../../components/squareTourCard";
 import { API_BASE_URL } from "../../config";
 import { useAuth } from "../../hooks/useAuth";
 import DeleteAccountModal from "../../components/DeleteAccountModal.jsx";
+import FaqCard from "../../components/FaqCard.jsx";
 
 export async function getServerSideProps({ req }) {
     const cookie = req.headers.cookie || "";
@@ -412,22 +413,28 @@ export default function ProfilePage() {
                                 <span className="arrow">›</span>
                             </div>
                             <p className="subtitle">Alle bevorstehenden Events</p>
-                        </div>
-                        <div className="blue-placeholder">
                             <div className="content-inner">
-                                <div className="cards-container">
-                                    <div className="blue-cards">
-                                        {blueCards.map(ev => (
-                                            <SquareTourCard
-                                                key={ev.event_id}
-                                                imageId={ev.tour_image}
-                                                title={ev.tour_title}
-                                                bottomText={`${formatDate(ev.start_time)} | ${ev.venue_name}`}
-                                                link={`/artists/${ev.artist_id}/${ev.tour_id}/${ev.event_id}`}
-                                            />
-                                        ))}
+                                {myEvents.length === 0 ? (
+                                    <div className="no-orders" style={{ padding: '2rem', textAlign: 'center'}}>
+                                        <p>Du hast aktuell keine bevorstehenden Events.</p>
                                     </div>
-                                </div>
+                                ) : (
+                                    <div className="blue-placeholder">
+                                        <div className="cards-container">
+                                            <div className="blue-cards">
+                                                {blueCards.map(ev => (
+                                                    <SquareTourCard
+                                                        key={ev.event_id}
+                                                        imageId={ev.tour_image}
+                                                        title={ev.tour_title}
+                                                        bottomText={`${formatDate(ev.start_time)} | ${ev.venue_name}`}
+                                                        link={`/artists/${ev.artist_id}/${ev.tour_id}/${ev.event_id}`}
+                                                    />
+                                                ))}
+                                            </div>
+                                        </div>
+                                    </div>
+                                )}
                             </div>
                         </div>
                     </div>
@@ -562,146 +569,149 @@ export default function ProfilePage() {
                                 </div>
                                 <p className="subtitle">Übersicht deiner gespeicherten Profildaten</p>
 
-                                <form className="profile-data-form" onSubmit={e => { e.preventDefault(); saveProfile(); }}>
-                                    <div className="form-field">
-                                        <label htmlFor="salutation">Anrede</label>
-                                        {editMode ? (
-                                            <select id="salutation" name="salutation" value={profileData.salutation} onChange={handleProfileChange}>
-                                                <option value="">Bitte wählen</option>
-                                                <option value="Herr">Herr</option>
-                                                <option value="Frau">Frau</option>
-                                                <option value="Dr.">Dr.</option>
-                                                <option value="Prof.">Prof.</option>
-                                                <option value="Divers">Divers</option>
-                                            </select>
-                                        ) : (
-                                            <div className="profile-data-display">{profileData.salutation || '-'}</div>
-                                        )}
-                                    </div>
-
-                                    {['firstName', 'lastName', 'company', 'streetAddress'].map((field) => (
-                                        <div key={field} className="form-field">
-                                            <label htmlFor={field}>{{
-                                                firstName: 'Vorname',
-                                                lastName: 'Nachname',
-                                                company: 'Firma',
-                                                streetAddress: 'Straße und Hausnummer',
-                                            }[field]}</label>
+                                <div className="content-inner">
+                                    <form className="profile-data-form" onSubmit={e => { e.preventDefault(); saveProfile(); }}>
+                                        <div className="form-field">
+                                            <label htmlFor="salutation">Anrede</label>
                                             {editMode ? (
-                                                <input
-                                                    id={field}
-                                                    name={field}
-                                                    value={profileData[field] || ''}
-                                                    onChange={handleProfileChange}
-                                                />
+                                                <select id="salutation" name="salutation" value={profileData.salutation} onChange={handleProfileChange}>
+                                                    <option value="">Bitte wählen</option>
+                                                    <option value="Herr">Herr</option>
+                                                    <option value="Frau">Frau</option>
+                                                    <option value="Dr.">Dr.</option>
+                                                    <option value="Prof.">Prof.</option>
+                                                    <option value="Divers">Divers</option>
+                                                </select>
                                             ) : (
-                                                <div className="profile-data-display">{profileData[field] || '-'}</div>
+                                                <div className="profile-data-display">{profileData.salutation || '-'}</div>
                                             )}
                                         </div>
-                                    ))}
 
-                                    <div className="form-field" style={{ display: 'flex', gap: '1rem' }}>
-                                        <div style={{ flex: 1 }}>
-                                            <label htmlFor="postalCode">PLZ</label>
+                                        {['firstName', 'lastName', 'company', 'streetAddress'].map((field) => (
+                                            <div key={field} className="form-field">
+                                                <label htmlFor={field}>{{
+                                                    firstName: 'Vorname',
+                                                    lastName: 'Nachname',
+                                                    company: 'Firma',
+                                                    streetAddress: 'Straße und Hausnummer',
+                                                }[field]}</label>
+                                                {editMode ? (
+                                                    <input
+                                                        id={field}
+                                                        name={field}
+                                                        value={profileData[field] || ''}
+                                                        onChange={handleProfileChange}
+                                                    />
+                                                ) : (
+                                                    <div className="profile-data-display">{profileData[field] || '-'}</div>
+                                                )}
+                                            </div>
+                                        ))}
+
+                                        <div className="form-field" style={{ display: 'flex', gap: '1rem' }}>
+                                            <div style={{ flex: 1 }}>
+                                                <label htmlFor="postalCode">PLZ</label>
+                                                {editMode ? (
+                                                    <input id="postalCode" name="postalCode" value={profileData.postalCode} onChange={handleProfileChange} />
+                                                ) : (
+                                                    <div className="profile-data-display">{profileData.postalCode || '-'}</div>
+                                                )}
+                                            </div>
+                                            <div style={{ flex: 2 }}>
+                                                <label htmlFor="city">Stadt</label>
+                                                {editMode ? (
+                                                    <input id="city" name="city" value={profileData.city} onChange={handleProfileChange} />
+                                                ) : (
+                                                    <div className="profile-data-display">{profileData.city || '-'}</div>
+                                                )}
+                                            </div>
+                                        </div>
+
+                                        <div className="form-field">
+                                            <label htmlFor="country">Land</label>
                                             {editMode ? (
-                                                <input id="postalCode" name="postalCode" value={profileData.postalCode} onChange={handleProfileChange} />
+                                                <input id="country" name="country" value={profileData.country} onChange={handleProfileChange} />
                                             ) : (
-                                                <div className="profile-data-display">{profileData.postalCode || '-'}</div>
+                                                <div className="profile-data-display">{profileData.country || '-'}</div>
                                             )}
                                         </div>
-                                        <div style={{ flex: 2 }}>
-                                            <label htmlFor="city">Stadt</label>
-                                            {editMode ? (
-                                                <input id="city" name="city" value={profileData.city} onChange={handleProfileChange} />
-                                            ) : (
-                                                <div className="profile-data-display">{profileData.city || '-'}</div>
-                                            )}
+
+                                        {['email', 'birthDate', 'phone'].map((field) => (
+                                            <div key={field} className="form-field">
+                                                <label htmlFor={field}>{{
+                                                    email: 'E-Mail',
+                                                    birthDate: 'Geburtsdatum',
+                                                    phone: 'Telefon',
+                                                }[field]}</label>
+                                                {editMode ? (
+                                                    <input
+                                                        type={field === 'birthDate' ? 'date' : 'text'}
+                                                        id={field}
+                                                        name={field}
+                                                        value={profileData[field] || ''}
+                                                        onChange={handleProfileChange}
+                                                    />
+                                                ) : (
+                                                    <div className="profile-data-display">{profileData[field] || '-'}</div>
+                                                )}
+                                            </div>
+                                        ))}
+                                    </form>
+
+                                    {editMode && (
+                                        <div style={{ textAlign: 'left' }}>
+                                            <br/><br/>
+                                            <button type="submit" className="profile__btn-cancel">Speichern</button>
                                         </div>
-                                    </div>
+                                    )}
 
-                                    <div className="form-field">
-                                        <label htmlFor="country">Land</label>
-                                        {editMode ? (
-                                            <input id="country" name="country" value={profileData.country} onChange={handleProfileChange} />
-                                        ) : (
-                                            <div className="profile-data-display">{profileData.country || '-'}</div>
-                                        )}
-                                    </div>
-
-                                    {['email', 'birthDate', 'phone'].map((field) => (
-                                        <div key={field} className="form-field">
-                                            <label htmlFor={field}>{{
-                                                email: 'E-Mail',
-                                                birthDate: 'Geburtsdatum',
-                                                phone: 'Telefon',
-                                            }[field]}</label>
-                                            {editMode ? (
-                                                <input
-                                                    type={field === 'birthDate' ? 'date' : 'text'}
-                                                    id={field}
-                                                    name={field}
-                                                    value={profileData[field] || ''}
-                                                    onChange={handleProfileChange}
-                                                />
-                                            ) : (
-                                                <div className="profile-data-display">{profileData[field] || '-'}</div>
-                                            )}
-                                        </div>
-                                    ))}
-                                </form>
-
-                            {editMode && (
-                                <div style={{ textAlign: 'left' }}>
-                                    <br/><br/>
-                                    <button type="submit" className="profile__btn-cancel">Speichern</button>
+                                    <button
+                                        type="button"
+                                        className="profile__btn-cancel"
+                                        style={{ marginTop: '1rem', backgroundColor: 'darkred' }}
+                                        onClick={() => setShowDeleteModal(true)}
+                                      >
+                                        Account löschen
+                                      </button>
                                 </div>
-                            )}
 
-                            <button
-                                type="button"
-                                className="profile__btn-cancel"
-                                style={{ marginTop: '1rem', backgroundColor: 'darkred' }}
-                                onClick={() => setShowDeleteModal(true)}
-                              >
-                                Account löschen
-                              </button>
-
-                          {/* our new modal */}
-                          <DeleteAccountModal
-                            visible={showDeleteModal}
-                            inputValue={deleteConfirmInput}
-                            setInputValue={setDeleteConfirmInput}
-                            onCancel={() => {
-                              setShowDeleteModal(false);
-                              setDeleteConfirmInput("");
-                            }}
-                            onConfirm={() => {
-                              deleteAccount();
-                              setShowDeleteModal(false);
-                            }}
-                          />
+                                  {/* our new modal */}
+                                  <DeleteAccountModal
+                                    visible={showDeleteModal}
+                                    inputValue={deleteConfirmInput}
+                                    setInputValue={setDeleteConfirmInput}
+                                    onCancel={() => {
+                                      setShowDeleteModal(false);
+                                      setDeleteConfirmInput("");
+                                    }}
+                                    onConfirm={() => {
+                                      deleteAccount();
+                                      setShowDeleteModal(false);
+                                    }}
+                                  />
                                 <div className="profile-section-divider" />
 
                                 <div ref={eventsRef} className="events-header" style={{ display: 'flex', alignItems: 'center' }}>
                                     <h3>Passwort ändern</h3>
                                     <span className="arrow">›</span>
                                 </div>
-
-                                <form className="profile-data-form" onSubmit={submitPasswordChange}>
-                                    <div className="form-field">
-                                        <label htmlFor="currentPassword">Aktuelles Passwort</label>
-                                        <input type="password" id="currentPassword" name="currentPassword" value={passwordData.currentPassword} onChange={handlePasswordChangeField} />
-                                    </div>
-                                    <div className="form-field">
-                                        <label htmlFor="newPassword">Neues Passwort</label>
-                                        <input type="password" id="newPassword" name="newPassword" value={passwordData.newPassword} onChange={handlePasswordChangeField} />
-                                    </div>
-                                    <div className="form-field">
-                                        <label htmlFor="confirmPassword">Neues Passwort wiederholen</label>
-                                        <input type="password" id="confirmPassword" name="confirmPassword" value={passwordData.confirmPassword} onChange={handlePasswordChangeField} />
-                                    </div>
-                                    <button className="profile__btn-cancel" type="submit">Passwort ändern</button>
-                                </form>
+                                <div className="content-inner">
+                                    <form className="profile-data-form" onSubmit={submitPasswordChange}>
+                                        <div className="form-field">
+                                            <label htmlFor="currentPassword">Aktuelles Passwort</label>
+                                            <input type="password" id="currentPassword" name="currentPassword" value={passwordData.currentPassword} onChange={handlePasswordChangeField} />
+                                        </div>
+                                        <div className="form-field">
+                                            <label htmlFor="newPassword">Neues Passwort</label>
+                                            <input type="password" id="newPassword" name="newPassword" value={passwordData.newPassword} onChange={handlePasswordChangeField} />
+                                        </div>
+                                        <div className="form-field">
+                                            <label htmlFor="confirmPassword">Neues Passwort wiederholen</label>
+                                            <input type="password" id="confirmPassword" name="confirmPassword" value={passwordData.confirmPassword} onChange={handlePasswordChangeField} />
+                                        </div>
+                                        <button className="profile__btn-cancel" type="submit">Passwort ändern</button>
+                                    </form>
+                                </div>
 
                                 <div className="profile-section-divider" />
 
@@ -709,13 +719,14 @@ export default function ProfilePage() {
                                     <h3>Antrag auf Nachteilsausgleich für Menschen mit Behinderung</h3>
                                     <span className="arrow">›</span>
                                 </div>
-
+                                <p className="subtitle">Wenn du einen Schwerbehindertenausweis besitzt und einen Nachteilsausgleich benötigst, kannst du diesen hier beantragen.</p>
+                            <div className="content-inner">
                                 {user?.disabilityCheck ? (
-                                    <div className="success-message">Sie sind bereits für den Nachteilsausgleich registriert.</div>
+                                    <div className="no-orders" style={{color: "#28a745", backgroundColor: "#e6f4ea"}}>Sie sind bereits für den Nachteilsausgleich registriert.</div>
                                 ) : (
                                     <>
                                         {showDisabilityForm ? (
-                                            <form className="profile-data-form" onSubmit={submitDisability}>
+                                            <form className="profile-data-form" onSubmit={submitDisability} style={{gridTemplateColumns: "repeat(2, 1fr)"}}>
                                                 <div className="form-field">
                                                     <label htmlFor="disabilityDegree">Grad der Behinderung (0-100)</label>
                                                     <input type="number" id="disabilityDegree" value={disabilityDegree} onChange={e => setDisabilityDegree(e.target.value)} min="0" max="100" />
@@ -730,11 +741,12 @@ export default function ProfilePage() {
                                                         {marks.map(m => (
                                                             <div key={m.mark_code} className="mark-item">
                                                                 <input type="checkbox" id={`m-${m.mark_code}`} checked={selectedMarks.includes(m.mark_code)} onChange={() => toggleMark(m.mark_code)} className="mark-checkbox" />
-                                                                <label htmlFor={`m-${m.mark_code}`} className="mark-label">{m.mark_code} – {m.description}</label>
+                                                                <label htmlFor={`m-${m.mark_code}`} className="mark-label" style={{marginBottom: "0"}}>{m.mark_code} – {m.description}</label>
                                                             </div>
                                                         ))}
                                                     </div>
                                                 </div>
+                                                <br/>
                                                 <button type="submit" className="profile__btn-cancel">Antrag abschicken</button>
                                             </form>
                                         ) : (
@@ -745,7 +757,8 @@ export default function ProfilePage() {
                                     </>
                                 )}
                             </div>
-                            </div>
+                        </div>
+                        </div>
 
                         {/* Help Center / FAQ */}
                         <div className="white-box help-white-box">
@@ -755,11 +768,13 @@ export default function ProfilePage() {
                                     <span className="arrow">›</span>
                                 </div>
                                 <p className="subtitle">Die häufigst gestellten Fragen</p>
-                                <div className="faq-placeholder">
-                                    <div>FAQ-Box 1</div>
-                                    <div>FAQ-Box 2</div>
-                                    <div>FAQ-Box 3</div>
-                                    <div>FAQ-Box 4</div>
+                                <div className="content-inner">
+                                    <div className="faq-placeholder">
+                                        <FaqCard question="Wo finde ich die Tickets zu meinen Events?" answer="Gehen Sie unter Bestellungen auf die einzelne Bestellung klicken Sie auf Ticket anzeigen, der QR-Code zum Einlass wird ihnen angezeigt." />
+                                        <FaqCard question="Kann ich meine Tickets auch telefonisch buchen?" answer="Telefonisch kannst du Tickets über unsere Ticket-Hotline erwerben. Diese ist von Montag bis Samstag von 09:00 bis 18:00 Uhr erreichbar (0,20 €/Anruf inkl. MwSt.)." />
+                                        <FaqCard question="Ich bin schwerbehindert - muss ich meine Tickets Telefonisch über die Hotline buchen?" answer="Musst du nicht! Durch unsere neuste Integration kannst du deine Tickets bequem über unsere Webseite buchen - fülle dafür den Antrag auf Nachteilsausgleich aus!" />
+                                        <FaqCard question="Ich will mich bei den Entwicklern der Seite bedanken, wie kann ich dem Team eine Freude bereiten?" answer="Gehen Sie dafür einfach auf Dualis und reichen Sie der Gruppe C die maximale Anzahl an Punkten ein ;)." />
+                                    </div>
                                 </div>
                             </div>
                         </div>

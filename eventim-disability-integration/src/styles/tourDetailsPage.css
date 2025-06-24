@@ -306,14 +306,17 @@
 
 /* Checkbox Inside */
 .mark-checkbox {
-    margin-right: 0.5rem;
+    align-self:  center;
+    max-width: 30px;
+    max-height: 30px;
+
 }
 
 /* Label Inside */
 .mark-label {
     font-size: 0.9rem;
-    line-height: 1.2rem;
     word-break: break-word;
+    margin-bottom: 0;
 }
 
 .new-label {
