@@ -51,9 +51,25 @@ export default function ProfilePage() {
 
     const [activeSidebarItem, setActiveSidebarItem] = useState("Meine Events");
     // refs for each section
-    const eventsRef = useRef(null);
-    const ordersRef = useRef(null);
-    const faqRef    = useRef(null);
+    const eventsRef   = useRef(null);
+    const ordersRef   = useRef(null);
+    const dataRef     = useRef(null);
+    const faqRef      = useRef(null);
+
+    const [profileData, setProfileData] = useState(null);
+    const [editMode, setEditMode] = useState(false);
+    const [deletePrompt, setDeletePrompt] = useState(false);
+    const [deleteText, setDeleteText] = useState("");
+
+    const [passwordData, setPasswordData] = useState({
+        currentPassword: "",
+        newPassword: "",
+        confirmPassword: "",
+    });
+
+    const [disabilityMarks, setDisabilityMarks] = useState([]);
+    const [selectedMarks, setSelectedMarks] = useState([]);
+    const [showDisabilityForm, setShowDisabilityForm] = useState(false);
 
     const scrollTo = ref => {
         if (ref?.current) {
@@ -69,6 +85,9 @@ export default function ProfilePage() {
                 break;
             case "Meine Bestellungen":
                 scrollTo(ordersRef);
+                break;
+            case "Meine Daten":
+                scrollTo(dataRef);
                 break;
             case "Help Center / FAQ":
                 scrollTo(faqRef);
@@ -131,9 +150,53 @@ export default function ProfilePage() {
         }
     };
 
+    const fetchProfile = async () => {
+        try {
+            const res = await fetch(`${API_BASE_URL}/user-profile`, { credentials: 'include' });
+            if (res.ok) {
+                const data = await res.json();
+                if (data.user) {
+                    setProfileData({
+                        salutation: data.user.salutation || '',
+                        firstName: data.user.first_name || '',
+                        lastName: data.user.last_name || '',
+                        email: data.user.email || '',
+                        birthDate: data.user.birth_date ? data.user.birth_date.split('T')[0] : '',
+                        phone: data.user.phone || '',
+                        streetAddress: data.user.street_address || '',
+                        postalCode: data.user.postal_code || '',
+                        city: data.user.city || '',
+                        country: data.user.country || '',
+                        company: data.user.company || '',
+                        disabilityCheck: data.user.disability_check || false,
+                        disabilityDegree: data.user.disability_degree || '',
+                        disabilityCardImage: null,
+                    });
+                    setSelectedMarks(Array.isArray(data.user.disability_marks) ? data.user.disability_marks : []);
+                }
+            }
+        } catch (err) {
+            console.error('Error fetching profile data:', err);
+        }
+    };
+
+    const fetchMarks = async () => {
+        try {
+            const res = await fetch(`${API_BASE_URL}/disability-marks`);
+            if (res.ok) {
+                const data = await res.json();
+                setDisabilityMarks(Array.isArray(data.marks) ? data.marks : []);
+            }
+        } catch (err) {
+            console.error('Error fetching disability marks:', err);
+        }
+    };
+
     useEffect(() => {
         fetchOrders();
         fetchMyEvents();
+        fetchProfile();
+        fetchMarks();
     }, []);
 
     useEffect(() => {
@@ -188,6 +251,101 @@ export default function ProfilePage() {
         setSelectedOrder(null);
     };
 
+    const handleProfileChange = (e) => {
+        const { name, type, value, files, checked } = e.target;
+        if (!profileData) return;
+        if (type === 'file') {
+            setProfileData(prev => ({ ...prev, [name]: files[0] }));
+        } else if (type === 'checkbox') {
+            setProfileData(prev => ({ ...prev, [name]: checked }));
+        } else {
+            setProfileData(prev => ({ ...prev, [name]: value }));
+        }
+    };
+
+    const toggleMark = (code) => {
+        setSelectedMarks(prev => prev.includes(code) ? prev.filter(m => m !== code) : [...prev, code]);
+    };
+
+    const saveProfile = async (e) => {
+        e.preventDefault();
+        if (!profileData) return;
+        const payload = new FormData();
+        Object.entries(profileData).forEach(([k,v]) => {
+            if (k === 'disabilityCardImage') {
+                if (v) payload.append(k, v);
+            } else {
+                payload.append(k, v);
+            }
+        });
+        payload.append('disabilityMarks', JSON.stringify(selectedMarks));
+        try {
+            await fetch(`${API_BASE_URL}/user-profile`, {
+                method: 'PATCH',
+                credentials: 'include',
+                body: payload,
+            });
+            setEditMode(false);
+            fetchProfile();
+        } catch (err) {
+            console.error('Error saving profile:', err);
+        }
+    };
+
+    const changePassword = async (e) => {
+        e.preventDefault();
+        if (passwordData.newPassword !== passwordData.confirmPassword) return;
+        try {
+            await fetch(`${API_BASE_URL}/change-password`, {
+                method: 'POST',
+                credentials: 'include',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(passwordData),
+            });
+            setPasswordData({ currentPassword: '', newPassword: '', confirmPassword: '' });
+        } catch (err) {
+            console.error('Error changing password:', err);
+        }
+    };
+
+    const submitDisability = async (e) => {
+        e.preventDefault();
+        if (!profileData) return;
+        const payload = new FormData();
+        payload.append('disabilityCheck', profileData.disabilityCheck);
+        payload.append('disabilityDegree', profileData.disabilityDegree || '');
+        if (profileData.disabilityCardImage) {
+            payload.append('disabilityCardImage', profileData.disabilityCardImage);
+        }
+        payload.append('disabilityMarks', JSON.stringify(selectedMarks));
+        try {
+            const res = await fetch(`${API_BASE_URL}/user-disability`, {
+                method: 'POST',
+                credentials: 'include',
+                body: payload,
+            });
+            if (res.ok) {
+                fetchProfile();
+                setShowDisabilityForm(false);
+            }
+        } catch (err) {
+            console.error('Error submitting disability request:', err);
+        }
+    };
+
+    const deleteAccount = async () => {
+        try {
+            await fetch(`${API_BASE_URL}/delete-account`, {
+                method: 'DELETE',
+                credentials: 'include',
+            });
+            localStorage.removeItem('user');
+            window.location.href = '/';
+        } catch (err) {
+            console.error('Error deleting account:', err);
+        }
+    };
+
     return (
         <div className="profile-container">
             {/* Sidebar */}
@@ -219,7 +377,20 @@ export default function ProfilePage() {
                             className={`sidebar-item ${
                                 activeSidebarItem === label ? "active" : ""
                             }`}
-                            onClick={() => setActiveSidebarItem(label)}
+                            onClick={() => {
+                                setActiveSidebarItem(label);
+                                if (label === "Abmelden") {
+                                    fetch(`${API_BASE_URL}/logout`, {
+                                        method: 'POST',
+                                        credentials: 'include'
+                                    }).finally(() => {
+                                        localStorage.removeItem('user');
+                                        window.location.reload();
+                                    });
+                                } else {
+                                    onSidebarClick(label);
+                                }
+                            }}
                         >
               <span className="icon">
                 {label === "Meine Daten" ? "👤": "🚪"}
@@ -378,20 +549,170 @@ export default function ProfilePage() {
 
                     <div className="white-box events-white-box">
                         <div className="content-inner">
-                            <div ref= {eventsRef} className="events-header">
+                            <div ref={dataRef} className="events-header" style={{ alignItems: 'center' }}>
                                 <h1>Meine Daten</h1>
                                 <span className="arrow">›</span>
+                                <span
+                                    className="edit-toggle"
+                                    style={{ marginLeft: 'auto', cursor: 'pointer' }}
+                                    onClick={() => setEditMode(!editMode)}
+                                >
+                                    {editMode ? '💾' : '✎'}
+                                </span>
                             </div>
                             <p className="subtitle">Übersicht deiner gespeicherten Profildaten</p>
                         </div>
-                        In here, add the following:
-                        - add the same overview of user account data as in register.jsx (use the same display of fielda as well so it looks identical!!!) except for the fields of disability, these should be added below as explained
-                        - add an icon to switch between an edit mode, where all fields are input fields as well as a display mode where all fields are displayed as labels and cannot be edited
-                        - add a button below to delete the account (there should be a popup which asks you to type "Löschen" to confirm the deletion)
-                        - include a small divider border and below add the possibility to change the password
-                        - include a small divider border and below make it possible to register for disability requests (name it "Antrag auf Nachteilsausgleich für Menschen mit Behinderung") (this should only be displayed, if the users.disability_check == false)
-                        - if the user is disabled (disability_check == true), then display a message that the user is already registered for disability requests as success_message
-                        - if the user isnt disabled, there should be a small button to register, which opens up the disability fields from registration.jsx and lets you input the data and send it to patch the user data
+                        <div className="content-inner">
+                            {profileData && (
+                                editMode ? (
+                                    <form onSubmit={saveProfile} className="profile-form">
+                                        <div className="profile-form-field">
+                                            <label htmlFor="salutation">Anrede</label>
+                                            <select id="salutation" name="salutation" value={profileData.salutation} onChange={handleProfileChange}>
+                                                <option value="">Bitte wählen</option>
+                                                <option value="Herr">Herr</option>
+                                                <option value="Frau">Frau</option>
+                                                <option value="Dr.">Dr.</option>
+                                                <option value="Prof.">Prof.</option>
+                                                <option value="Divers">Divers</option>
+                                            </select>
+                                        </div>
+                                        <div className="profile-form-field">
+                                            <label htmlFor="firstName">Vorname *</label>
+                                            <input id="firstName" name="firstName" value={profileData.firstName} onChange={handleProfileChange} required />
+                                        </div>
+                                        <div className="profile-form-field">
+                                            <label htmlFor="lastName">Nachname *</label>
+                                            <input id="lastName" name="lastName" value={profileData.lastName} onChange={handleProfileChange} required />
+                                        </div>
+                                        <div className="profile-form-field">
+                                            <label htmlFor="company">Firma</label>
+                                            <input id="company" name="company" value={profileData.company || ''} onChange={handleProfileChange} />
+                                        </div>
+                                        <div className="profile-form-field">
+                                            <label htmlFor="streetAddress">Straße und Hausnummer *</label>
+                                            <input id="streetAddress" name="streetAddress" value={profileData.streetAddress} onChange={handleProfileChange} required />
+                                        </div>
+                                        <div style={{ display: 'flex', gap: '1rem' }}>
+                                            <div className="profile-form-field" style={{ flex: 1 }}>
+                                                <label htmlFor="postalCode">PLZ *</label>
+                                                <input id="postalCode" name="postalCode" value={profileData.postalCode} onChange={handleProfileChange} required />
+                                            </div>
+                                            <div className="profile-form-field" style={{ flex: 2 }}>
+                                                <label htmlFor="city">Stadt *</label>
+                                                <input id="city" name="city" value={profileData.city} onChange={handleProfileChange} required />
+                                            </div>
+                                        </div>
+                                        <div className="profile-form-field">
+                                            <label htmlFor="country">Land *</label>
+                                            <input id="country" name="country" value={profileData.country} onChange={handleProfileChange} required />
+                                        </div>
+                                        <div className="profile-form-field">
+                                            <label htmlFor="birthDate">Geburtsdatum</label>
+                                            <input type="date" id="birthDate" name="birthDate" value={profileData.birthDate || ''} onChange={handleProfileChange} />
+                                        </div>
+                                        <div className="profile-form-field">
+                                            <label htmlFor="phone">Telefon</label>
+                                            <input id="phone" name="phone" value={profileData.phone || ''} onChange={handleProfileChange} />
+                                        </div>
+                                        <div className="profile-form-buttons">
+                                            <button type="submit" className="btn-confirm">Speichern</button>
+                                            <button type="button" className="btn-cancel" onClick={() => { setEditMode(false); fetchProfile(); }}>Abbrechen</button>
+                                        </div>
+                                    </form>
+                                ) : (
+                                    <div className="profile-data-view">
+                                        <div className="label">Anrede</div><div className="value">{profileData.salutation || '-'}</div>
+                                        <div className="label">Vorname</div><div className="value">{profileData.firstName}</div>
+                                        <div className="label">Nachname</div><div className="value">{profileData.lastName}</div>
+                                        <div className="label">Firma</div><div className="value">{profileData.company || '-'}</div>
+                                        <div className="label">Straße</div><div className="value">{profileData.streetAddress}</div>
+                                        <div className="label">PLZ</div><div className="value">{profileData.postalCode}</div>
+                                        <div className="label">Stadt</div><div className="value">{profileData.city}</div>
+                                        <div className="label">Land</div><div className="value">{profileData.country}</div>
+                                        {profileData.birthDate && (<><div className="label">Geburtsdatum</div><div className="value">{profileData.birthDate}</div></>)}
+                                        {profileData.phone && (<><div className="label">Telefon</div><div className="value">{profileData.phone}</div></>)}
+                                    </div>
+                                )
+                            )}
+                        </div>
+
+                        <div className="content-inner">
+                            <button className="btn-cancel" onClick={() => setDeletePrompt(true)}>Konto löschen</button>
+                        </div>
+
+                        {deletePrompt && (
+                            <div className="modal-overlay" onClick={() => setDeletePrompt(false)}>
+                                <div className="modal-box" onClick={e => e.stopPropagation()}>
+                                    <p>Bitte tippe "Löschen" ein, um dein Konto zu löschen.</p>
+                                    <input type="text" value={deleteText} onChange={e => setDeleteText(e.target.value)} style={{ width: '100%', padding: '0.5rem', marginBottom: '0.5rem' }} />
+                                    <div className="modal-actions">
+                                        <button className="btn-cancel" onClick={() => setDeletePrompt(false)}>Abbrechen</button>
+                                        <button className="btn-confirm" onClick={deleteAccount} disabled={deleteText !== 'Löschen'}>Löschen</button>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+
+                        <div className="profile-section-divider" />
+
+                        <div className="content-inner">
+                            <h3>Passwort ändern</h3>
+                            <form onSubmit={changePassword} className="profile-form">
+                                <div className="profile-form-field">
+                                    <label htmlFor="currentPassword">Aktuelles Passwort</label>
+                                    <input type="password" id="currentPassword" name="currentPassword" value={passwordData.currentPassword} onChange={e => setPasswordData({ ...passwordData, currentPassword: e.target.value })} />
+                                </div>
+                                <div className="profile-form-field">
+                                    <label htmlFor="newPassword">Neues Passwort</label>
+                                    <input type="password" id="newPassword" name="newPassword" value={passwordData.newPassword} onChange={e => setPasswordData({ ...passwordData, newPassword: e.target.value })} />
+                                </div>
+                                <div className="profile-form-field">
+                                    <label htmlFor="confirmPassword">Neues Passwort bestätigen</label>
+                                    <input type="password" id="confirmPassword" name="confirmPassword" value={passwordData.confirmPassword} onChange={e => setPasswordData({ ...passwordData, confirmPassword: e.target.value })} />
+                                </div>
+                                <div className="profile-form-buttons">
+                                    <button type="submit" className="btn-confirm">Ändern</button>
+                                </div>
+                            </form>
+                        </div>
+
+                        <div className="profile-section-divider" />
+
+                        <div className="content-inner">
+                            <h3>Antrag auf Nachteilsausgleich für Menschen mit Behinderung</h3>
+                            {profileData && profileData.disabilityCheck ? (
+                                <p className="success-message">Du bist bereits für den Nachteilsausgleich registriert.</p>
+                            ) : showDisabilityForm ? (
+                                <form onSubmit={submitDisability} className="profile-form">
+                                    <div className="profile-form-field">
+                                        <label htmlFor="disabilityDegree">Grad der Behinderung (0-100)</label>
+                                        <input type="number" id="disabilityDegree" name="disabilityDegree" value={profileData.disabilityDegree || ''} onChange={handleProfileChange} min="0" max="100" />
+                                    </div>
+                                    <div className="profile-form-field">
+                                        <label htmlFor="disabilityCardImage">Behindertenausweis hochladen</label>
+                                        <input type="file" id="disabilityCardImage" name="disabilityCardImage" onChange={handleProfileChange} />
+                                    </div>
+                                    <div className="profile-form-field">
+                                        <label>Grad der Behinderung – Markierungen</label>
+                                        <div className="marks-grid">
+                                            {disabilityMarks.map(mark => (
+                                                <div key={mark.mark_code} className="mark-item">
+                                                    <input type="checkbox" id={`mark-${mark.mark_code}`} className="mark-checkbox" checked={selectedMarks.includes(mark.mark_code)} onChange={() => toggleMark(mark.mark_code)} />
+                                                    <label htmlFor={`mark-${mark.mark_code}`} className="mark-label">{mark.mark_code} – {mark.description}</label>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                    <div className="profile-form-buttons">
+                                        <button type="submit" className="btn-confirm">Absenden</button>
+                                        <button type="button" className="btn-cancel" onClick={() => setShowDisabilityForm(false)}>Abbrechen</button>
+                                    </div>
+                                </form>
+                            ) : (
+                                <button className="btn-confirm" onClick={() => setShowDisabilityForm(true)}>Jetzt registrieren</button>
+                            )}
+                        </div>
                     </div>
 
                     {/* Help Center / FAQ */}
