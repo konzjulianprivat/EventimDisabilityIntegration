@@ -142,13 +142,16 @@
     display: flex;
     align-items: center;
     gap: 0.5rem;
-    margin-bottom: 0.25rem;
+    margin-bottom: 0.5rem;
 }
 
 .events-header h1 {
     font-size: 1.5rem;
     color: #002b55;
-    margin: 0;
+}
+
+.events-header h3 {
+    color: #002b55;
 }
 
 .events-header .arrow {
@@ -400,11 +403,42 @@
     font-size: 0.95rem;
 }
 
+/* -----------------------------------
+   12) Profile Buttons → reuse nav-bar style
+   ----------------------------------- */
+
+/* Primary action buttons in “Meine Daten” */
 .profile__btn-cancel {
-    background-color: #ffc700;
-    color: #333;
-    transition: background-color 0.2s ease;
+    /* colors & typography */
+    background-color: #007bff;    /* same blue as .login-button */
+    color: #ffffff;               /* white text */
+    font-size: 0.9rem;
+    font-weight: 600;
+
+    /* sizing & shape */
+    padding: 0.5rem 1rem;       /* match nav-bar */
+    border: none;
+    border-radius: 4px;
+
+    /* interactivity */
+    cursor: pointer;
+    transition: background 0.2s;
 }
+
+/* hover / focus states */
+.profile__btn-cancel:hover,
+.profile__btn-cancel:focus {
+    background-color: #0056b3;    /* darker blue on hover */
+}
+
+/* Full-width on very narrow screens */
+@media (max-width: 480px) {
+    .profile__btn-cancel {
+        width: 100%;
+        box-sizing: border-box;
+    }
+}
+
 
 /* -----------------------------------
    11) Mobile-Fallback
@@ -439,4 +473,120 @@
 
 .no-orders p {
                       /* reset default p-margins */
+}
+
+.profile-data-form label {
+    display: block;
+    margin-bottom: 0.5rem;
+    font-weight: bold;
+}
+
+/* -----------------------------------
+   Refactored: Responsive grid for profile form
+   ----------------------------------- */
+.profile-data-form {
+    display: grid;
+    gap: 1rem;                                     /* space between fields */
+    /* by default, stack on small screens */
+    grid-template-columns: 1fr;
+}
+
+/* two-cols at tablet+ */
+@media (min-width: 768px) {
+    .profile-data-form {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+/* three-cols at desktop+ for very wide layouts */
+@media (min-width: 1200px) {
+    .profile-data-form {
+        grid-template-columns: repeat(3, 1fr);
+    }
+}
+
+/* ensure full-width on grid items, but let the grid define their size */
+.profile-data-form .form-field {
+    margin-bottom: 0;         /* grid gap handles spacing now */
+}
+
+/* inputs/selects still fill their grid cell */
+.profile-data-form input,
+.profile-data-form select {
+    width: 100%;
+    box-sizing: border-box;
+
+    /* spacing & typography */
+    padding: 0.5rem 0.75rem;
+    font-size: 1rem;
+    line-height: 1;
+    color: #333;
+    font-family: inherit;
+
+    /* border & background */
+    border: 1px solid #cccccc;
+    border-radius: 4px;
+    background-color: #ffffff;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.profile-data-form input:focus,
+.profile-data-form select:focus {
+    outline: none;
+    border-color: #007bff;               /* Eventim blue */
+    box-shadow: 0 0 0 3px rgba(0,123,255,0.25);
+}
+
+.profile-data-form input[disabled],
+.profile-data-form select[disabled] {
+    background-color: #f5f5f5;
+    color: #666666;
+    cursor: not-allowed;
+}
+
+.input-field {
+    width: 100%;
+    box-sizing: border-box;
+
+    /* spacing & typography */
+    padding: 0.5rem 0.75rem;
+    font-size: 1rem;
+    line-height: 1;
+    color: #333;
+    font-family: inherit;
+
+    /* border & background */
+    border: 1px solid #cccccc;
+    border-radius: 4px;
+    background-color: #ffffff;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.input-field:focus{
+    outline: none;
+    border-color: #007bff;               /* Eventim blue */
+    box-shadow: 0 0 0 3px rgba(0,123,255,0.25);
+}
+
+.input-field[disabled] {
+    background-color: #f5f5f5;
+    color: #666666;
+    cursor: not-allowed;
+}
+
+.profile-data-display {
+    padding: 0.5rem 0;
+}
+
+.profile-section-divider {
+    border-top: 1px solid #e0e0e0;
+    margin: 1.5rem 0;
+}
+
+.success-message {
+    padding: 0.75rem;
+    background-color: #d4edda;
+    color: #155724;
+    border-radius: 4px;
+    margin-top: 1rem;
 }
