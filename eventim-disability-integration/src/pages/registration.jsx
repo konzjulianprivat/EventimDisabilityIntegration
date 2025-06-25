@@ -15,7 +15,7 @@ export default function Registration() {
         confirmPassword: '',
         birthDate: '',
         phone: '',
-        disabilityCheck: false,
+        requestForDisability: false,
         disabilityDegree: '',
         disabilityCardImageFront: null,
         disabilityCardImageBack: null,
@@ -79,11 +79,11 @@ export default function Registration() {
                 ...formData,
                 [name]: e.target.files[0],
             });
-        } else if (type === 'checkbox' && name === 'disabilityCheck') {
+        } else if (type === 'checkbox' && name === 'requestForDisability') {
             // For the single “Ich habe einen Behindertenausweis” box:
             setFormData({
                 ...formData,
-                disabilityCheck: e.target.checked,
+                requestForDisability: e.target.checked,
                 // If unchecked, also clear degree and any selectedMarks:
                 ...(e.target.checked
                     ? {}
@@ -95,7 +95,7 @@ export default function Registration() {
                         selectedMarks: [],
                     }),
             });
-            // If the user just cleared disabilityCheck, clear selectedMarks state:
+            // If the user just cleared the disability checkbox, clear selectedMarks state:
             if (!e.target.checked) {
                 setSelectedMarks([]);
             }
@@ -466,20 +466,20 @@ export default function Registration() {
                     <div style={{ display: 'flex', alignItems: 'center' }}>
                         <input
                             type="checkbox"
-                            id="disabilityCheck"
-                            name="disabilityCheck"
-                            checked={formData.disabilityCheck || false}
+                            id="requestForDisability"
+                            name="requestForDisability"
+                            checked={formData.requestForDisability || false}
                             onChange={handleChange}
                             style={{ marginRight: '0.5rem' }}
                         />
-                        <label htmlFor="disabilityCheck" style={{ fontWeight: 'bold' }}>
+                        <label htmlFor="requestForDisability" style={{ fontWeight: 'bold' }}>
                             Ich habe einen Behindertenausweis
                         </label>
                     </div>
                 </div>
 
                 {/* ---------------- Wenn Behindertenausweis gesetzt, zeige Grad + Datei + Markierungen ---------------- */}
-                {formData.disabilityCheck && (
+                {formData.requestForDisability && (
                     <>
                         {/* Grad der Behinderung */}
                         <div style={{ marginBottom: '1rem' }}>

@@ -83,10 +83,10 @@ export default function EventPage() {
     }, [artist, tour, event]);
 
     const userMarks = (user && user.disabilityMarks) || [];
+    const notExpired = user?.disabilityCardExpiryDate && new Date(user.disabilityCardExpiryDate) >= new Date();
     const showDisabledSection =
-        loggedIn && user?.disabilityCheck && categories.some((c) =>
-            c.disability_support_for &&
-            userMarks.includes(c.disability_support_for.trim())
+        loggedIn && user?.isCurrentlyDisabled && notExpired && categories.some(
+            (c) => c.disability_support_for && userMarks.includes(c.disability_support_for.trim())
         );
 
     const requiresAssistance = userMarks.some((mark) => mark.trim() === 'B');
@@ -95,7 +95,8 @@ export default function EventPage() {
         (c) =>
             c.disability_support_for != null &&
             loggedIn &&
-            user?.disabilityCheck &&
+            user?.isCurrentlyDisabled &&
+            notExpired &&
             userMarks.includes(c.disability_support_for.trim())
     );
 
