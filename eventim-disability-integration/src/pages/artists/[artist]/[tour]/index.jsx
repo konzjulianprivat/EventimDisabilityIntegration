@@ -113,9 +113,16 @@ export default function TourEventsPage() {
                                                     </div>
                                                 )}
                                             </div>
+                                            <div className="no-availability-message">
+                                                Das Event ist ausverkauft!
+                                            </div>
+                                            <div className="availability-limited-message">
+                                                Es sind nur noch weniger als 20% der Tickets verfügbar!
+                                            </div>
                                             <div className="availability-message">
                                                 Tickets stehen zur Verfügung!
                                             </div>
+
                                             <div className="header-right">
                                                 <button
                                                     className="btn-view-events"
@@ -126,6 +133,22 @@ export default function TourEventsPage() {
                                                 >
                                                     Tickets
                                                 </button>
+                                                <button
+                                                    className="btn-view-events"
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        router.push(evUrl);
+                                                    }}
+                                                    style={{backgroundColor: 'lightgrey'}}
+                                                >
+                                                    Tickets (but diabled)
+                                                </button>
+                                                Here, your task is to implement that only one of the labels above is displayed depending on the capacity of the event.
+                                                For that event, the total capacity of all event_categories should be looked at (total of all event_category capacities)
+                                                If it hits 20% rest capacity the orange label should be displayed if all event_categories that are bookable for that person are 0 the red label should be displayed.
+                                                Sometimes, if the user is disabled and can book more categories, the label shows 20% whereas for regular users it shows sold out.
+                                                If the red label is presented, the ticket label should be displayed as grey.
+                                                You can get the current capacity by counting the total tickets for that event for that event_category and substracting that from the total of that event_category.
                                             </div>
                                         </div>
                                     </div>

@@ -14,7 +14,8 @@ export default function DeleteAccountModal({
     return (
         <div className="modal-overlay" onClick={onCancel}>
             <div className="modal-box" onClick={e => e.stopPropagation()}>
-                <h3>Account löschen</h3>
+                <h2>Account löschen</h2>
+                <br/>
                 <p>Bitte geben Sie <strong>“Löschen”</strong> ein, um Ihr Konto endgültig zu löschen:</p>
                 <input
                     type="text"

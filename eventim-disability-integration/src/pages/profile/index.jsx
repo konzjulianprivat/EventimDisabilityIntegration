@@ -668,7 +668,7 @@ export default function ProfilePage() {
                                     <button
                                         type="button"
                                         className="profile__btn-cancel"
-                                        style={{ marginTop: '1rem', backgroundColor: 'darkred' }}
+                                        style={{ marginTop: '1rem', backgroundColor: 'red' }}
                                         onClick={() => setShowDeleteModal(true)}
                                       >
                                         Account löschen
