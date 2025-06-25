@@ -116,7 +116,8 @@ export default function TourEventsPage() {
                             if (info.categories) {
                                 info.categories.forEach((c) => {
                                     const code = c.disability_support_for && c.disability_support_for.trim();
-                                    const canBook = !code || (loggedIn && user?.disabilityCheck && (user.disabilityMarks || []).includes(code));
+                                    const notExpired = user?.disabilityCardExpiryDate && new Date(user.disabilityCardExpiryDate) >= new Date();
+                                    const canBook = !code || (loggedIn && user?.isCurrentlyDisabled && notExpired && (user.disabilityMarks || []).includes(code));
                                     if (canBook) userRem += c.remaining;
                                 });
                             }

@@ -88,10 +88,9 @@ app.post('/register-user', upload.fields([
             password,
             birthDate,
             phone,
-            disabilityCheck,
+            requestForDisability,
             disabilityDegree,
             disabilityCardExpiryDate,
-            isCurrentlyDisabled,
             streetAddress,
             city,
             postalCode,
@@ -155,7 +154,7 @@ app.post('/register-user', upload.fields([
                     password,
                     birth_date,
                     phone,
-                    disability_check,
+                    request_for_disability,
                     disability_degree,
                     street_address,
                     city,
@@ -182,7 +181,7 @@ app.post('/register-user', upload.fields([
                 hashedPass,
                 birthDate || null,
                 phone || null,
-                disabilityCheck === 'true',
+                requestForDisability === 'true',
                 disabilityDegree || null,
                 streetAddress.trim(),
                 city.trim(),
@@ -193,7 +192,7 @@ app.post('/register-user', upload.fields([
                 imageFrontId,
                 imageBackId,
                 disabilityCardExpiryDate || '9999-01-01',
-                isCurrentlyDisabled === 'true',
+                false,
             ]
         );
 
@@ -248,7 +247,9 @@ app.post('/login-user', async (req, res) => {
                     password,
                     first_name,
                     last_name,
-                    disability_check,
+                    request_for_disability,
+                    is_currently_disabled,
+                    disability_card_expiry_date,
                     created_at,
                     updated_at
                 FROM users
@@ -283,7 +284,9 @@ app.post('/login-user', async (req, res) => {
                 email: user.email,
                 firstName: user.first_name,
                 lastName: user.last_name,
-                disabilityCheck: user.disability_check,
+                requestForDisability: user.request_for_disability,
+                isCurrentlyDisabled: user.is_currently_disabled,
+                disabilityCardExpiryDate: user.disability_card_expiry_date,
                 disabilityMarks: markRows.map((m) => m.mark_code && m.mark_code.trim()),
             },
         });
@@ -305,7 +308,10 @@ app.get('/session-status', async (req, res) => {
     try {
         // Hole first_name + last_name + email aus der DB via userId
         const { rows } = await client.query(
-            `SELECT first_name, last_name, email, disability_check
+            `SELECT first_name, last_name, email,
+                    request_for_disability,
+                    is_currently_disabled,
+                    disability_card_expiry_date
        FROM users
        WHERE user_id = $1
        LIMIT 1`,
@@ -317,7 +323,14 @@ app.get('/session-status', async (req, res) => {
             return res.status(200).json({ loggedIn: false });
         }
 
-        const { first_name, last_name, email, disability_check } = rows[0];
+        const {
+            first_name,
+            last_name,
+            email,
+            request_for_disability,
+            is_currently_disabled,
+            disability_card_expiry_date,
+        } = rows[0];
 
         const { rows: markRows } = await client.query(
             'SELECT mark_code FROM user_disability_marks WHERE user_id = $1',
@@ -327,11 +340,13 @@ app.get('/session-status', async (req, res) => {
         return res.status(200).json({
             loggedIn: true,
             user: {
-                userId:    req.session.userId,
-                email:     email,
+                userId: req.session.userId,
+                email,
                 firstName: first_name,
-                lastName:  last_name,
-                disabilityCheck: disability_check,
+                lastName: last_name,
+                requestForDisability: request_for_disability,
+                isCurrentlyDisabled: is_currently_disabled,
+                disabilityCardExpiryDate: disability_card_expiry_date,
                 disabilityMarks: markRows.map((m) => m.mark_code && m.mark_code.trim()),
             },
         });
@@ -2367,6 +2382,18 @@ app.post('/cart-items', async (req, res) => {
         }
         const catEventId = catInfo[0].event_id;
         const isDisabledCat = catInfo[0].disability_support_for !== null;
+
+        if (isDisabledCat) {
+            const { rows: uRows } = await client.query(
+                'SELECT is_currently_disabled, disability_card_expiry_date FROM users WHERE user_id = $1',
+                [userId]
+            );
+            const u = uRows[0] || {};
+            const expiry = u.disability_card_expiry_date;
+            if (!u.is_currently_disabled || (expiry && new Date(expiry) < new Date())) {
+                return res.status(403).json({ message: 'Not eligible for disabled tickets' });
+            }
+        }
 
         if (!isAssistanceTicket) {
 

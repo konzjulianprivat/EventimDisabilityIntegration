@@ -272,7 +272,7 @@ export default function ProfilePage() {
     const submitDisability = async (e) => {
         e.preventDefault();
         const fd = new FormData();
-        fd.append('disabilityCheck', true);
+        fd.append('requestForDisability', true);
         fd.append('disabilityDegree', disabilityDegree);
         fd.append('disabilityCardExpiryDate', disabilityCardExpiryDate);
         fd.append('isCurrentlyDisabled', false);
@@ -729,7 +729,7 @@ export default function ProfilePage() {
                                 </div>
                                 <p className="subtitle">Wenn du einen Schwerbehindertenausweis besitzt und einen Nachteilsausgleich benötigst, kannst du diesen hier beantragen.</p>
                             <div className="content-inner">
-                                {user?.disabilityCheck ? (
+                                {user?.requestForDisability ? (
                                     <div className="no-orders" style={{color: "#28a745", backgroundColor: "#e6f4ea"}}>Sie sind bereits für den Nachteilsausgleich registriert.</div>
                                 ) : (
                                     <>

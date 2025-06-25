@@ -51,11 +51,13 @@ export default function LoginPage() {
                 localStorage.setItem(
                     'user',
                     JSON.stringify({
-                        userId:    data.user.userId,
-                        email:     data.user.email,
+                        userId: data.user.userId,
+                        email: data.user.email,
                         firstName: data.user.firstName,
-                        lastName:  data.user.lastName,
-                        disabilityCheck: data.user.disabilityCheck,
+                        lastName: data.user.lastName,
+                        requestForDisability: data.user.requestForDisability,
+                        isCurrentlyDisabled: data.user.isCurrentlyDisabled,
+                        disabilityCardExpiryDate: data.user.disabilityCardExpiryDate,
                         disabilityMarks: data.user.disabilityMarks,
                     })
                 );
