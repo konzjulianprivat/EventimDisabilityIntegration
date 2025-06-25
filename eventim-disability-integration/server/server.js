@@ -76,7 +76,10 @@ app.get('/image/:id', async (req, res) => {
 //     const multer = require('multer');
 //     const upload = multer({ storage: multer.memoryStorage() });
 
-app.post('/register-user', upload.single('disabilityCardImage'), async (req, res) => {
+app.post('/register-user', upload.fields([
+    { name: 'disabilityCardImageFront', maxCount: 1 },
+    { name: 'disabilityCardImageBack', maxCount: 1 }
+]), async (req, res) => {
     try {
         const {
             firstName,
@@ -87,6 +90,8 @@ app.post('/register-user', upload.single('disabilityCardImage'), async (req, res
             phone,
             disabilityCheck,
             disabilityDegree,
+            disabilityCardExpiryDate,
+            isCurrentlyDisabled,
             streetAddress,
             city,
             postalCode,
@@ -117,14 +122,25 @@ app.post('/register-user', upload.single('disabilityCardImage'), async (req, res
         const saltRounds = 10;
         const hashedPass = await bcrypt.hash(password, saltRounds);
 
-        // 5) Behindertenausweis‐Bild verarbeiten (falls vorhanden)
-        let imageId = null;
-        if (req.file) {
-            imageId = uuidv4();
+        // 5) Behindertenausweis-Bilder verarbeiten (falls vorhanden)
+        let imageFrontId = null;
+        let imageBackId = null;
+        if (req.files && req.files['disabilityCardImageFront']) {
+            const f = req.files['disabilityCardImageFront'][0];
+            imageFrontId = uuidv4();
             await client.query(
                 `INSERT INTO images (id, image_data, image_type, entity_type, entity_id)
                  VALUES ($1, $2, $3, $4, $5)`,
-                [imageId, req.file.buffer, req.file.mimetype, 'user', userId]
+                [imageFrontId, f.buffer, f.mimetype, 'user', userId]
+            );
+        }
+        if (req.files && req.files['disabilityCardImageBack']) {
+            const b = req.files['disabilityCardImageBack'][0];
+            imageBackId = uuidv4();
+            await client.query(
+                `INSERT INTO images (id, image_data, image_type, entity_type, entity_id)
+                 VALUES ($1, $2, $3, $4, $5)`,
+                [imageBackId, b.buffer, b.mimetype, 'user', userId]
             );
         }
 
@@ -147,13 +163,16 @@ app.post('/register-user', upload.single('disabilityCardImage'), async (req, res
                     country,
                     company,
                     salutation,
-                    disability_card_image,
+                    disability_card_image_front,
+                    disability_card_image_back,
+                    disability_card_expiry_date,
+                    is_currently_disabled,
                     created_at,
                     updated_at
                 ) VALUES (
-                             $1, $2, $3, $4, $5, $6, $7, $8, $9,
-                             $10, $11, $12, $13, $14, $15, $16, NOW(), NOW()
-                         ) RETURNING *;
+                    $1, $2, $3, $4, $5, $6, $7, $8, $9,
+                    $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, NOW(), NOW()
+                ) RETURNING *;
             `,
             [
                 userId,
@@ -171,7 +190,10 @@ app.post('/register-user', upload.single('disabilityCardImage'), async (req, res
                 country?.trim() || 'Deutschland',
                 company?.trim() || null,
                 salutation?.trim() || null,
-                imageId,
+                imageFrontId,
+                imageBackId,
+                disabilityCardExpiryDate || '9999-01-01',
+                isCurrentlyDisabled === 'true',
             ]
         );
 
