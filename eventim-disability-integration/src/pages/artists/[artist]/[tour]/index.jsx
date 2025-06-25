@@ -2,13 +2,17 @@ import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/router';
 import { API_BASE_URL } from '../../../../config';
 import FilterBar from "../../../../components/filter-bar";
+import { useAuth } from '../../../../hooks/useAuth';
 
 export default function TourEventsPage() {
     const router = useRouter();
     const { artist, tour } = router.query;
 
+    const { loggedIn, user } = useAuth();
+
     const [tourData, setTourData] = useState(null);
     const [events, setEvents] = useState([]);
+    const [availability, setAvailability] = useState({});
 
     useEffect(() => {
         if (!tour) return;
@@ -28,6 +32,23 @@ export default function TourEventsPage() {
         };
         load();
     }, [tour]);
+
+    useEffect(() => {
+        if (events.length === 0) return;
+        const fetchCaps = async () => {
+            const map = {};
+            for (const ev of events) {
+                try {
+                    const res = await fetch(`${API_BASE_URL}/event-capacities/${ev.id}`);
+                    if (!res.ok) continue;
+                    const data = await res.json();
+                    map[ev.id] = data;
+                } catch {}
+            }
+            setAvailability(map);
+        };
+        fetchCaps();
+    }, [events]);
 
     if (!tourData) return <div>Loading …</div>;
 
@@ -84,6 +105,25 @@ export default function TourEventsPage() {
                     {events.map((ev) => {
                         const evUrl = `/artists/${artist}/${tour}/${ev.id}`;
                         const evAcc = Array.from(new Set(ev.accessibility || []));
+
+                        const info = availability[ev.id];
+                        let soldOut = false;
+                        let limited = false;
+                        if (info) {
+                            const totalCap = info.totalCapacity || 0;
+                            const totalRem = info.totalRemaining || 0;
+                            let userRem = 0;
+                            if (info.categories) {
+                                info.categories.forEach((c) => {
+                                    const code = c.disability_support_for && c.disability_support_for.trim();
+                                    const canBook = !code || (loggedIn && user?.disabilityCheck && (user.disabilityMarks || []).includes(code));
+                                    if (canBook) userRem += c.remaining;
+                                });
+                            }
+                            soldOut = userRem <= 0;
+                            limited = !soldOut && totalCap > 0 && totalRem / totalCap <= 0.2;
+                        }
+
                         return (
                             <div className="artist-card" key={ev.id}>
                                 <div className="card-body">
@@ -113,15 +153,21 @@ export default function TourEventsPage() {
                                                     </div>
                                                 )}
                                             </div>
-                                            <div className="no-availability-message">
-                                                Das Event ist ausverkauft!
-                                            </div>
-                                            <div className="availability-limited-message">
-                                                Es sind nur noch weniger als 20% der Tickets verfügbar!
-                                            </div>
-                                            <div className="availability-message">
-                                                Tickets stehen zur Verfügung!
-                                            </div>
+                                            {soldOut && (
+                                                <div className="no-availability-message">
+                                                    Das Event ist ausverkauft!
+                                                </div>
+                                            )}
+                                            {!soldOut && limited && (
+                                                <div className="availability-limited-message">
+                                                    Es sind nur noch weniger als 20% der Tickets verfügbar!
+                                                </div>
+                                            )}
+                                            {!soldOut && !limited && (
+                                                <div className="availability-message">
+                                                    Tickets stehen zur Verfügung!
+                                                </div>
+                                            )}
 
                                             <div className="header-right">
                                                 <button
@@ -130,25 +176,11 @@ export default function TourEventsPage() {
                                                         e.stopPropagation();
                                                         router.push(evUrl);
                                                     }}
+                                                    style={soldOut ? { backgroundColor: 'lightgrey' } : undefined}
+                                                    disabled={soldOut}
                                                 >
                                                     Tickets
                                                 </button>
-                                                <button
-                                                    className="btn-view-events"
-                                                    onClick={(e) => {
-                                                        e.stopPropagation();
-                                                        router.push(evUrl);
-                                                    }}
-                                                    style={{backgroundColor: 'lightgrey'}}
-                                                >
-                                                    Tickets (but diabled)
-                                                </button>
-                                                Here, your task is to implement that only one of the labels above is displayed depending on the capacity of the event.
-                                                For that event, the total capacity of all event_categories should be looked at (total of all event_category capacities)
-                                                If it hits 20% rest capacity the orange label should be displayed if all event_categories that are bookable for that person are 0 the red label should be displayed.
-                                                Sometimes, if the user is disabled and can book more categories, the label shows 20% whereas for regular users it shows sold out.
-                                                If the red label is presented, the ticket label should be displayed as grey.
-                                                You can get the current capacity by counting the total tickets for that event for that event_category and substracting that from the total of that event_category.
                                             </div>
                                         </div>
                                     </div>

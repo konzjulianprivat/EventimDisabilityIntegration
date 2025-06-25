@@ -2241,6 +2241,47 @@ app.get('/event-details/:id', async (req, res) => {
     }
 });
 
+// Liefert verbleibende Kapazitäten pro Kategorie eines Events
+app.get('/event-capacities/:id', async (req, res) => {
+    const eventId = req.params.id;
+    try {
+        const { rows: catRows } = await client.query(
+            `SELECT ec.id,
+                    ec.disability_support_for,
+                    COALESCE(SUM(eva.capacity),0) AS capacity
+             FROM event_categories ec
+                  LEFT JOIN event_venue_areas eva ON eva.category_id = ec.id
+             WHERE ec.event_id = $1
+             GROUP BY ec.id, ec.disability_support_for`,
+            [eventId]
+        );
+
+        const categories = [];
+        for (const r of catRows) {
+            const { rows: soldRows } = await client.query(
+                'SELECT COUNT(*) AS sold FROM tickets WHERE event_category_id = $1',
+                [r.id]
+            );
+            const sold = parseInt(soldRows[0].sold, 10) || 0;
+            const capacity = parseInt(r.capacity, 10) || 0;
+            categories.push({
+                id: r.id,
+                disability_support_for: r.disability_support_for,
+                capacity,
+                remaining: capacity - sold,
+            });
+        }
+
+        const totalCapacity = categories.reduce((s, c) => s + c.capacity, 0);
+        const totalRemaining = categories.reduce((s, c) => s + c.remaining, 0);
+
+        return res.json({ eventId, totalCapacity, totalRemaining, categories });
+    } catch (err) {
+        console.error('Error in /event-capacities:', err);
+        return res.status(500).json({ message: 'Fehler beim Laden der Kapazität' });
+    }
+});
+
 // ── just after your session / client setup ──
 
 // Helper to find-or-create a cart
