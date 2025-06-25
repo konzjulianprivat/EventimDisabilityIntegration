@@ -78,7 +78,10 @@ export default function ProfilePage() {
     });
 
     const [disabilityDegree, setDisabilityDegree] = useState('');
-    const [disabilityCardImage, setDisabilityCardImage] = useState(null);
+    const [disabilityCardImageFront, setDisabilityCardImageFront] = useState(null);
+    const [disabilityCardImageBack, setDisabilityCardImageBack] = useState(null);
+    const [disabilityCardExpiryDate, setDisabilityCardExpiryDate] = useState('9999-01-01');
+    const [hasExpiry, setHasExpiry] = useState(false);
     const [marks, setMarks] = useState([]);
     const [selectedMarks, setSelectedMarks] = useState([]);
     const [showDisabilityForm, setShowDisabilityForm] = useState(false);
@@ -271,8 +274,13 @@ export default function ProfilePage() {
         const fd = new FormData();
         fd.append('disabilityCheck', true);
         fd.append('disabilityDegree', disabilityDegree);
-        if (disabilityCardImage) {
-            fd.append('disabilityCardImage', disabilityCardImage);
+        fd.append('disabilityCardExpiryDate', disabilityCardExpiryDate);
+        fd.append('isCurrentlyDisabled', false);
+        if (disabilityCardImageFront) {
+            fd.append('disabilityCardImageFront', disabilityCardImageFront);
+        }
+        if (disabilityCardImageBack) {
+            fd.append('disabilityCardImageBack', disabilityCardImageBack);
         }
         fd.append('disabilityMarks', JSON.stringify(selectedMarks));
         try {
@@ -732,8 +740,44 @@ export default function ProfilePage() {
                                                     <input type="number" id="disabilityDegree" value={disabilityDegree} onChange={e => setDisabilityDegree(e.target.value)} min="0" max="100" />
                                                 </div>
                                                 <div className="form-field">
-                                                    <label htmlFor="disabilityCardImage">Behindertenausweis hochladen</label>
-                                                    <input type="file" id="disabilityCardImage" onChange={e => setDisabilityCardImage(e.target.files[0])} />
+                                                    <label htmlFor="disabilityCardImageFront">Behindertenausweis hochladen (Vorderseite)</label>
+                                                    <input type="file" id="disabilityCardImageFront" onChange={e => setDisabilityCardImageFront(e.target.files[0])} />
+                                                </div>
+                                                <div className="form-field">
+                                                    <label htmlFor="disabilityCardImageBack">Behindertenausweis hochladen (Rückseite)</label>
+                                                    <input type="file" id="disabilityCardImageBack" onChange={e => setDisabilityCardImageBack(e.target.files[0])} />
+                                                </div>
+                                                <div className="form-field" style={{ gridColumn: 'span 2' }}>
+                                                    <label>Gültigkeit des Ausweises</label>
+                                                    <div>
+                                                        <input
+                                                            type="checkbox"
+                                                            id="hasExpiryProfile"
+                                                            checked={hasExpiry}
+                                                            onChange={(e) => {
+                                                                setHasExpiry(e.target.checked);
+                                                                if (!e.target.checked) {
+                                                                    setDisabilityCardExpiryDate('9999-01-01');
+                                                                } else {
+                                                                    const t = new Date().toISOString().split('T')[0];
+                                                                    setDisabilityCardExpiryDate(t);
+                                                                }
+                                                            }}
+                                                            style={{ marginRight: '0.5rem' }}
+                                                        />
+                                                        <label htmlFor="hasExpiryProfile" style={{ fontWeight: 'bold' }}>
+                                                            {hasExpiry ? 'befristet' : 'unbefristet'}
+                                                        </label>
+                                                    </div>
+                                                    {hasExpiry && (
+                                                        <input
+                                                            type="date"
+                                                            id="disabilityCardExpiryDateProfile"
+                                                            value={disabilityCardExpiryDate}
+                                                            onChange={e => setDisabilityCardExpiryDate(e.target.value)}
+                                                            style={{ marginTop: '0.5rem' }}
+                                                        />
+                                                    )}
                                                 </div>
                                                 <div className="form-field">
                                                     <label>Grad der Behinderung – Markierungen</label>

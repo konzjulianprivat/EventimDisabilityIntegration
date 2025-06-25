@@ -195,12 +195,15 @@ class users {
    varchar(255) email
    varchar(20) phone
    date birth_date
-   boolean disability_check
+   boolean request_for_disability
    integer disability_degree
-   uuid disability_card_image
+   uuid disability_card_image_front
    timestamp with time zone created_at
    timestamp with time zone updated_at
    text password
+   uuid disability_card_image_back
+   boolean is_currently_disabled
+   date disability_card_expiry_date
    uuid user_id
 }
 class venue_areas {

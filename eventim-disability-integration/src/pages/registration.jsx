@@ -17,7 +17,10 @@ export default function Registration() {
         phone: '',
         disabilityCheck: false,
         disabilityDegree: '',
-        disabilityCardImage: null,
+        disabilityCardImageFront: null,
+        disabilityCardImageBack: null,
+        disabilityCardExpiryDate: '9999-01-01',
+        isCurrentlyDisabled: false,
         streetAddress: '',
         city: '',
         postalCode: '',
@@ -25,6 +28,8 @@ export default function Registration() {
         company: '',
         salutation: '',
     });
+
+    const [hasExpiry, setHasExpiry] = useState(false);
 
     // Holds all marks fetched from server:
     const [disabilityMarks, setDisabilityMarks] = useState([]);
@@ -84,7 +89,8 @@ export default function Registration() {
                     ? {}
                     : {
                         disabilityDegree: '',
-                        disabilityCardImage: null,
+                        disabilityCardImageFront: null,
+                        disabilityCardImageBack: null,
                         // Clear any mark‐checkboxes if user unticks “I have a card”
                         selectedMarks: [],
                     }),
@@ -115,6 +121,22 @@ export default function Registration() {
         });
     };
 
+    const handleExpiryToggle = (checked) => {
+        setHasExpiry(checked);
+        if (!checked) {
+            setFormData(prev => ({
+                ...prev,
+                disabilityCardExpiryDate: '9999-01-01',
+            }));
+        } else {
+            const today = new Date().toISOString().split('T')[0];
+            setFormData(prev => ({
+                ...prev,
+                disabilityCardExpiryDate: today,
+            }));
+        }
+    };
+
     const handleSubmit = async (e) => {
         e.preventDefault();
         setLoading(true);
@@ -130,16 +152,17 @@ export default function Registration() {
         try {
             // Build FormData
             const payload = new FormData();
-            // Append all existing simple fields except file and except we’ll handle marks separately
+            // Append all existing simple fields except files; handle marks separately
             Object.keys(formData).forEach((key) => {
-                // We’ll append the file later. Also skip disabilityCardImage if null
-                if (key === 'disabilityCardImage') return;
+                if (key === 'disabilityCardImageFront' || key === 'disabilityCardImageBack') return;
                 payload.append(key, formData[key]);
             });
 
-            // Append the file if present
-            if (formData.disabilityCardImage) {
-                payload.append('disabilityCardImage', formData.disabilityCardImage);
+            if (formData.disabilityCardImageFront) {
+                payload.append('disabilityCardImageFront', formData.disabilityCardImageFront);
+            }
+            if (formData.disabilityCardImageBack) {
+                payload.append('disabilityCardImageBack', formData.disabilityCardImageBack);
             }
 
             // Append the selected marks as a JSON string
@@ -483,18 +506,18 @@ export default function Registration() {
                             />
                         </div>
 
-                        {/* Behindertenausweis hochladen */}
+                        {/* Behindertenausweis Vorderseite hochladen */}
                         <div style={{ marginBottom: '1rem' }}>
                             <label
-                                htmlFor="disabilityCardImage"
+                                htmlFor="disabilityCardImageFront"
                                 style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 'bold' }}
                             >
-                                Behindertenausweis hochladen
+                                Behindertenausweis hochladen (Vorderseite)
                             </label>
                             <input
                                 type="file"
-                                id="disabilityCardImage"
-                                name="disabilityCardImage"
+                                id="disabilityCardImageFront"
+                                name="disabilityCardImageFront"
                                 onChange={handleChange}
                                 style={{
                                     width: '100%',
@@ -503,6 +526,63 @@ export default function Registration() {
                                     border: '1px solid #ccc',
                                 }}
                             />
+                        </div>
+
+                        {/* Behindertenausweis Rückseite hochladen */}
+                        <div style={{ marginBottom: '1rem' }}>
+                            <label
+                                htmlFor="disabilityCardImageBack"
+                                style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 'bold' }}
+                            >
+                                Behindertenausweis hochladen (Rückseite)
+                            </label>
+                            <input
+                                type="file"
+                                id="disabilityCardImageBack"
+                                name="disabilityCardImageBack"
+                                onChange={handleChange}
+                                style={{
+                                    width: '100%',
+                                    padding: '0.5rem',
+                                    borderRadius: '4px',
+                                    border: '1px solid #ccc',
+                                }}
+                            />
+                        </div>
+
+                        {/* Befristung des Ausweises */}
+                        <div style={{ marginBottom: '1rem' }}>
+                            <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 'bold' }}>
+                                Gültigkeit des Ausweises
+                            </label>
+                            <div>
+                                <input
+                                    type="checkbox"
+                                    id="hasExpiry"
+                                    checked={hasExpiry}
+                                    onChange={(e) => handleExpiryToggle(e.target.checked)}
+                                    style={{ marginRight: '0.5rem' }}
+                                />
+                                <label htmlFor="hasExpiry" style={{ fontWeight: 'bold' }}>
+                                    {hasExpiry ? 'befristet' : 'unbefristet'}
+                                </label>
+                            </div>
+                            {hasExpiry && (
+                                <input
+                                    type="date"
+                                    id="disabilityCardExpiryDate"
+                                    name="disabilityCardExpiryDate"
+                                    value={formData.disabilityCardExpiryDate}
+                                    onChange={handleChange}
+                                    style={{
+                                        width: '100%',
+                                        padding: '0.5rem',
+                                        borderRadius: '4px',
+                                        border: '1px solid #ccc',
+                                        marginTop: '0.5rem',
+                                    }}
+                                />
+                            )}
                         </div>
 
                         {/* ---------------- Grad der Behinderung: Auswahl der Markierungen ---------------- */}
