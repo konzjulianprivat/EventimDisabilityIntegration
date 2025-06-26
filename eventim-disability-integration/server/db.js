@@ -3,10 +3,17 @@ const credentials = require('./credentials.json');
 
 let pool = new Pool(credentials);
 
+pool.on('error', async (err) => {
+    console.error('Unexpected database error, reconnecting...', err.message);
+    await reconnect();
+});
+
 function isConnectionError(err) {
     return [
         'ECONNREFUSED',
         'ECONNRESET',
+        'ECONNABORTED',
+        'EPIPE',
         '57P01', // admin shutdown
         '57P02', // crash shutdown
         '57P03'

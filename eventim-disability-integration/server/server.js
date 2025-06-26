@@ -849,6 +849,14 @@ app.post('/create-venue', upload.single('venueImage'), async (req, res) => {
         venueAreas = [],
     } = req.body;
 
+    let areas = [];
+    try {
+        areas = typeof venueAreas === 'string' ? JSON.parse(venueAreas) : venueAreas;
+        if (!Array.isArray(areas)) areas = [];
+    } catch {
+        areas = [];
+    }
+
     if (!name?.trim() || !address?.trim() || !cityId) {
         return res.status(400).json({
             message: 'Name, Adresse und Stadt sind erforderlich'
@@ -876,7 +884,7 @@ app.post('/create-venue', upload.single('venueImage'), async (req, res) => {
             [venueId, name.trim(), address.trim(), cityId, website || null, imageId]
         );
 
-        for (const va of venueAreas) {
+        for (const va of areas) {
             await client.query(
                 `INSERT INTO venue_areas
                      (id, venue_id, area_id, max_capacity)
