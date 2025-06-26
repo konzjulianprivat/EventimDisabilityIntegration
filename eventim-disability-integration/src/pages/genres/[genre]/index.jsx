@@ -235,13 +235,6 @@ export default function GenrePage() {
                         return (
                             <div className="artist-card" key={sg.id}>
                                 <div className="card-body">
-                                    <div className="image-wrapper tour-image-large">
-                                        <img
-                                            className="artist-image"
-                                            src={'/pictures/placeholder.png'}
-                                            alt={sg.title}
-                                        />
-                                    </div>
                                     <div className="details-wrapper">
                                         <div
                                             className="tour-header hoverable"
@@ -300,19 +293,16 @@ export default function GenrePage() {
                                                             className="sub-event-row hoverable"
                                                             onClick={() => router.push(evUrl)}
                                                         >
-                                                            <div
-                                                                className="sub-event-info"
-                                                                style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}
-                                                            >
-                                                                <img
-                                                                    src={
-                                                                        ev.tourImage
-                                                                            ? `${API_BASE_URL}/image/${ev.tourImage}`
-                                                                            : '/pictures/placeholder.png'
-                                                                    }
-                                                                    alt={ev.tourTitle || 'Tour'}
-                                                                    style={{ width: '60px' }}
-                                                                />
+                                                            <img
+                                                                src={
+                                                                    ev.tourImage
+                                                                        ? `${API_BASE_URL}/image/${ev.tourImage}`
+                                                                        : '/pictures/placeholder.png'
+                                                                }
+                                                                alt={ev.tourTitle || 'Tour'}
+                                                                style={{ width: '80px', height: '80px', objectFit: 'cover' }}
+                                                            />
+                                                            <div className="sub-event-info">
                                                                 <div className="sub-event-details">
                                                                     <h3>{ev.tourTitle}</h3>
                                                                 </div>
@@ -330,15 +320,6 @@ export default function GenrePage() {
                                                                     </div>
                                                                 )}
                                                             </div>
-                                                            <button
-                                                                className="btn-tickets"
-                                                                onClick={(e) => {
-                                                                    e.stopPropagation();
-                                                                    router.push(evUrl);
-                                                                }}
-                                                            >
-                                                                Tickets
-                                                            </button>
                                                         </div>
                                                     );
                                                 })}

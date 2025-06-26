@@ -18,6 +18,7 @@ body { font-family: Arial, sans-serif; color: #333; }
     align-items: flex-start;
     padding: 24px 10%;
     gap: 3rem;
+    min-height: 7vh;
 }
 .header-info { display: flex; flex-direction: column; gap: 12px; flex: 1 1 0; min-width: 0; }
 .event-title { font-size: 2rem; color: white; }
@@ -213,6 +214,7 @@ body { font-family: Arial, sans-serif; color: #333; }
         flex-direction: row;
         align-items: flex-start;
         gap: 16px;
+        min-height: 7vh;
     }
     .event-hero img {
         width: 100%;

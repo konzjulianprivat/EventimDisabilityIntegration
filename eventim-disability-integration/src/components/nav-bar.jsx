@@ -143,7 +143,7 @@ export default function NavBar() {
                         <div className="dropdown-menu">
                             {genres.map((g) => (
                                 <div key={g.id} className="dropdown-item">
-                                    <a href={`/genres/${g.id}`} className="label">
+                                    <a href={`/genres/${g.id}`} className="label" style={{color: 'black'}}>
                                         {g.name}
                                     </a>
                                     <div className="sub-menu">
@@ -152,6 +152,7 @@ export default function NavBar() {
                                                 key={s.id}
                                                 href={`/genres/${g.id}/${s.id}`}
                                                 className="dropdown-item"
+                                                style={{color: 'black'}}
                                             >
                                                 {s.name}
                                             </a>
@@ -179,7 +180,7 @@ export default function NavBar() {
                         <div className="dropdown-menu">
                             {cities.map((c) => (
                                 <div key={c.id} className="dropdown-item">
-                                    <a href={`/locations/${c.id}`} className="label">
+                                    <a href={`/locations/${c.id}`} className="label" style={{color: 'black'}}>
                                         {c.name}
                                     </a>
                                     <div className="sub-menu">
@@ -188,6 +189,7 @@ export default function NavBar() {
                                                 key={v.id}
                                                 href={`/locations/${c.id}/${v.id}`}
                                                 className="dropdown-item"
+                                                style={{color: 'black'}}
                                             >
                                                 {v.name}
                                             </a>
