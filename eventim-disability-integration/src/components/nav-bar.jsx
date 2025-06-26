@@ -143,7 +143,9 @@ export default function NavBar() {
                         <div className="dropdown-menu">
                             {genres.map((g) => (
                                 <div key={g.id} className="dropdown-item">
-                                    <span className="label">{g.name}</span>
+                                    <a href={`/genres/${g.id}`} className="label">
+                                        {g.name}
+                                    </a>
                                     <div className="sub-menu">
                                         {g.subgenres.map((s) => (
                                             <a
@@ -177,7 +179,9 @@ export default function NavBar() {
                         <div className="dropdown-menu">
                             {cities.map((c) => (
                                 <div key={c.id} className="dropdown-item">
-                                    <span className="label">{c.name}</span>
+                                    <a href={`/locations/${c.id}`} className="label">
+                                        {c.name}
+                                    </a>
                                     <div className="sub-menu">
                                         {c.venues.map((v) => (
                                             <a
