@@ -143,16 +143,10 @@ export default function NavBar() {
                         <div className="dropdown-menu">
                             {genres.map((g) => (
                                 <div key={g.id} className="dropdown-item">
-                                    <a href={`/genres/${g.id}`} className="label">
-                                        {g.name}
-                                    </a>
+                                    <span className="label">{g.name}</span>
                                     <div className="sub-menu">
                                         {g.subgenres.map((s) => (
-                                            <a
-                                                key={s.id}
-                                                href={`/genres/${g.id}/${s.id}`}
-                                                className="dropdown-item"
-                                            >
+                                            <a key={s.id} href="#" className="dropdown-item">
                                                 {s.name}
                                             </a>
                                         ))}
@@ -179,16 +173,10 @@ export default function NavBar() {
                         <div className="dropdown-menu">
                             {cities.map((c) => (
                                 <div key={c.id} className="dropdown-item">
-                                    <a href={`/locations/${c.id}`} className="label">
-                                        {c.name}
-                                    </a>
+                                    <span className="label">{c.name}</span>
                                     <div className="sub-menu">
                                         {c.venues.map((v) => (
-                                            <a
-                                                key={v.id}
-                                                href={`/locations/${c.id}/${v.id}`}
-                                                className="dropdown-item"
-                                            >
+                                            <a key={v.id} href="#" className="dropdown-item">
                                                 {v.name}
                                             </a>
                                         ))}
