@@ -1,16 +1,16 @@
 import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/router';
-import FilterBar from '../../../components/filter-bar';
-import { API_BASE_URL } from '../../../config';
+import FilterBar from '../../components/filter-bar';
+import { API_BASE_URL } from '../../config';
 
-export default function GenrePage() {
+export default function CityPage() {
     const router = useRouter();
-    const { genre } = router.query;
+    const { city } = router.query;
 
-    const [genreData, setGenreData] = useState(null);
-    const [subgenres, setSubgenres] = useState([]);
-    const [basicFilteredSubgenres, setBasicFilteredSubgenres] = useState([]);
-    const [filteredSubgenres, setFilteredSubgenres] = useState([]);
+    const [cityData, setCityData] = useState(null);
+    const [venues, setVenues] = useState([]);
+    const [basicFilteredVenues, setBasicFilteredVenues] = useState([]);
+    const [filteredVenues, setFilteredVenues] = useState([]);
 
     const [filterStartDate, setFilterStartDate] = useState('');
     const [filterEndDate, setFilterEndDate] = useState('');
@@ -27,25 +27,25 @@ export default function GenrePage() {
     ];
 
     useEffect(() => {
-        if (!genre) return;
-        const loadGenre = async () => {
+        if (!city) return;
+        const loadCity = async () => {
             try {
-                const res = await fetch(`${API_BASE_URL}/genres-with-subgenres`);
+                const res = await fetch(`${API_BASE_URL}/cities-with-venues`);
                 if (!res.ok) throw new Error();
                 const data = await res.json();
-                const g = (data.genres || []).find((gr) => gr.id === genre);
-                if (g) {
-                    setGenreData({ id: g.id, name: g.name });
-                    setFilterArtistsInternal([g.name]);
-                    setSubgenres(g.subgenres || []);
+                const c = (data.cities || []).find((ci) => ci.id === city);
+                if (c) {
+                    setCityData({ id: c.id, name: c.name });
+                    setFilterArtistsInternal([c.name]);
+                    setVenues(c.venues || []);
                 }
             } catch {
-                setGenreData(null);
-                setSubgenres([]);
+                setCityData(null);
+                setVenues([]);
             }
         };
-        loadGenre();
-    }, [genre]);
+        loadCity();
+    }, [city]);
 
     const [tours, setTours] = useState([]);
     useEffect(() => {
@@ -63,63 +63,60 @@ export default function GenrePage() {
     }, []);
 
     useEffect(() => {
-        if (!genreData) return;
-        const arr = subgenres.map((sg) => {
-            const sgEvents = [];
+        if (!cityData) return;
+        const arr = venues.map((v) => {
+            const vEvents = [];
             let cheapest = null;
             tours.forEach((t) => {
-                const match = t.genresWithSubs?.find(
-                    (g) => g.genreId === genre && g.subgenreNames.includes(sg.name)
-                );
-                if (match) {
-                    if (cheapest == null || (t.cheapestPrice != null && t.cheapestPrice < cheapest)) {
-                        cheapest = t.cheapestPrice;
+                (t.events || []).forEach((ev) => {
+                    if (ev.cityName === cityData.name && ev.venueName === v.name) {
+                        if (cheapest == null || (t.cheapestPrice != null && t.cheapestPrice < cheapest)) {
+                            cheapest = t.cheapestPrice;
+                        }
+                        vEvents.push({ ...ev, tourId: t.id, artistIds: t.artistIds });
                     }
-                    (t.events || []).forEach((ev) => {
-                        sgEvents.push({ ...ev, tourId: t.id, artistIds: t.artistIds });
-                    });
-                }
+                });
             });
-            sgEvents.sort((a, b) => new Date(a.start_time) - new Date(b.start_time));
+            vEvents.sort((a, b) => new Date(a.start_time) - new Date(b.start_time));
             return {
-                id: sg.id,
-                title: sg.name,
+                id: v.id,
+                title: v.name,
                 subtitle: '',
-                start_date: sgEvents[0]?.start_time || '',
-                end_date: sgEvents[sgEvents.length - 1]?.start_time || '',
-                events: sgEvents,
-                eventCount: sgEvents.length,
+                start_date: vEvents[0]?.start_time || '',
+                end_date: vEvents[vEvents.length - 1]?.start_time || '',
+                events: vEvents,
+                eventCount: vEvents.length,
                 cheapestPrice: cheapest,
             };
         });
-        setBasicFilteredSubgenres(arr);
-        setFilteredSubgenres(arr);
-    }, [genreData, subgenres, tours, genre]);
+        setBasicFilteredVenues(arr);
+        setFilteredVenues(arr);
+    }, [cityData, venues, tours]);
 
     const categoryOptions = React.useMemo(() => {
         const s = new Set();
-        basicFilteredSubgenres.forEach((t) =>
+        basicFilteredVenues.forEach((t) =>
             t.events?.forEach((ev) => ev.accessibility?.forEach((lbl) => s.add(lbl)))
         );
         return Array.from(s);
-    }, [basicFilteredSubgenres]);
+    }, [basicFilteredVenues]);
     const venueOptions = React.useMemo(() => {
         const s = new Set();
-        basicFilteredSubgenres.forEach((t) =>
+        basicFilteredVenues.forEach((t) =>
             t.events?.forEach((ev) => ev.venueName && s.add(ev.venueName))
         );
         return Array.from(s);
-    }, [basicFilteredSubgenres]);
+    }, [basicFilteredVenues]);
     const cityOptions = React.useMemo(() => {
         const s = new Set();
-        basicFilteredSubgenres.forEach((t) =>
+        basicFilteredVenues.forEach((t) =>
             t.events?.forEach((ev) => ev.cityName && s.add(ev.cityName))
         );
         return Array.from(s);
-    }, [basicFilteredSubgenres]);
+    }, [basicFilteredVenues]);
 
     useEffect(() => {
-        let resArr = basicFilteredSubgenres;
+        let resArr = basicFilteredVenues;
         if (filterStartDate) {
             const s = new Date(filterStartDate);
             resArr = resArr.filter((t) => new Date(t.start_date) >= s);
@@ -139,9 +136,7 @@ export default function GenrePage() {
             );
         }
         if (filterArtists.length) {
-            resArr = resArr.filter((t) =>
-                filterArtists.includes(genreData.name)
-            );
+            resArr = resArr.filter((t) => filterArtists.includes(cityData.name));
         }
         if (filterCategories.length) {
             resArr = resArr.filter((t) =>
@@ -150,28 +145,28 @@ export default function GenrePage() {
                 )
             );
         }
-        setFilteredSubgenres(resArr);
+        setFilteredVenues(resArr);
     }, [
-        basicFilteredSubgenres,
+        basicFilteredVenues,
         filterStartDate,
         filterEndDate,
         filterVenue,
         filterCity,
         filterArtists,
         filterCategories,
-        genreData,
+        cityData,
     ]);
 
-    const lockedName = genreData?.name || '';
+    const lockedName = cityData?.name || '';
     const setFilterArtists = (arr) => {
         if (!lockedName) return;
         const copy = arr.includes(lockedName) ? arr : [...arr, lockedName];
         setFilterArtistsInternal(copy);
     };
 
-    if (!genreData) return <div>Loading …</div>;
+    if (!cityData) return <div>Loading …</div>;
 
-    const totalEventCount = filteredSubgenres.reduce(
+    const totalEventCount = filteredVenues.reduce(
         (total, sg) => total + sg.eventCount,
         0
     );
@@ -180,10 +175,10 @@ export default function GenrePage() {
         <div className="event-container">
             <header className="event-header">
                 <div className="header-info">
-                    <h1 className="event-title">{genreData.name}</h1>
+                    <h1 className="event-title">{cityData.name}</h1>
                     <div className="event-meta">
                         <div className="meta-item">
-                            {subgenres.length} Subgenres | {totalEventCount} Events
+                            {venues.length} Venues | {totalEventCount} Events
                         </div>
                     </div>
                 </div>
@@ -192,8 +187,8 @@ export default function GenrePage() {
             <div className="artists-wrapper">
                 <div className="filter-container">
                     <FilterBar
-                        items={basicFilteredSubgenres}
-                        onFiltered={setBasicFilteredSubgenres}
+                        items={basicFilteredVenues}
+                        onFiltered={setBasicFilteredVenues}
                         entityName="Tour"
                         entityRoute="tours"
                         filterFields={filterFields}
@@ -217,11 +212,11 @@ export default function GenrePage() {
                 </div>
 
                 <div className="tours-grid">
-                    {filteredSubgenres.length === 0 && (
+                    {filteredVenues.length === 0 && (
                         <div className="no-artists">Keine Touren vorhanden.</div>
                     )}
-                    {filteredSubgenres.map((sg) => {
-                        const sgUrl = `/genres/${genre}/${sg.id}`;
+                    {filteredVenues.map((sg) => {
+                        const sgUrl = `/locations/${city}/${sg.id}`;
                         const access = Array.from(
                             new Set((sg.events || []).flatMap((ev) => ev.accessibility || []))
                         );
