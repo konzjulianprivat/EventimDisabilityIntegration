@@ -3,28 +3,27 @@ import { useRouter } from 'next/router';
 import { API_BASE_URL } from '../../../../config';
 import { useAuth } from '../../../../hooks/useAuth';
 
-export default function SubgenreEventsPage() {
+export default function VenueEventsPage() {
     const router = useRouter();
-    const { genre, subgenre } = router.query;
+    const { city, venue } = router.query;
 
     const { loggedIn, user } = useAuth();
 
-    const [subgenreData, setSubgenreData] = useState(null);
+    const [venueData, setVenueData] = useState(null);
     const [events, setEvents] = useState([]);
     const [availability, setAvailability] = useState({});
 
     useEffect(() => {
-        if (!genre || !subgenre) return;
+        if (!city || !venue) return;
         const load = async () => {
             try {
-                const res = await fetch(`${API_BASE_URL}/genres-with-subgenres`);
+                const res = await fetch(`${API_BASE_URL}/cities-with-venues`);
                 if (!res.ok) throw new Error();
                 const data = await res.json();
-                const g = (data.genres || []).find((gr) => gr.id === genre);
-                if (!g) throw new Error();
-                const sg = (g.subgenres || []).find((s) => s.id === subgenre);
-                if (!sg) throw new Error();
-                setSubgenreData({ id: sg.id, name: sg.name, genreName: g.name });
+                const c = (data.cities || []).find((ci) => ci.id === city);
+                const v = c && (c.venues || []).find((ve) => ve.id === venue);
+                if (!c || !v) throw new Error();
+                setVenueData({ id: v.id, name: v.name, cityName: c.name });
 
                 const toursRes = await fetch(`${API_BASE_URL}/tours-detailed`);
                 if (!toursRes.ok) throw new Error();
@@ -32,24 +31,21 @@ export default function SubgenreEventsPage() {
                 const tours = Array.isArray(toursJson.tours) ? toursJson.tours : [];
                 const evs = [];
                 tours.forEach((t) => {
-                    const match = t.genresWithSubs?.find(
-                        (gws) => gws.genreId === genre && gws.subgenreNames.includes(sg.name)
-                    );
-                    if (match) {
-                        (t.events || []).forEach((ev) => {
+                    (t.events || []).forEach((ev) => {
+                        if (ev.cityName === c.name && ev.venueName === v.name) {
                             evs.push({ ...ev, tourId: t.id, artistIds: t.artistIds });
-                        });
-                    }
+                        }
+                    });
                 });
                 evs.sort((a, b) => new Date(a.start_time) - new Date(b.start_time));
                 setEvents(evs);
             } catch {
-                setSubgenreData(null);
+                setVenueData(null);
                 setEvents([]);
             }
         };
         load();
-    }, [genre, subgenre]);
+    }, [city, venue]);
 
     useEffect(() => {
         if (events.length === 0) return;
@@ -68,7 +64,7 @@ export default function SubgenreEventsPage() {
         fetchCaps();
     }, [events]);
 
-    if (!subgenreData) return <div>Loading …</div>;
+    if (!venueData) return <div>Loading …</div>;
 
     const formatDate = (d) =>
         new Date(d).toLocaleDateString('de-DE', {
@@ -90,7 +86,7 @@ export default function SubgenreEventsPage() {
         <div className="event-container">
             <header className="event-header">
                 <div className="header-info">
-                    <h1 className="event-title">{subgenreData.name}</h1>
+                    <h1 className="event-title">{venueData.name}</h1>
                     <div className="event-meta" style={{ marginTop: '2rem' }}>
                         <div className="meta-item">
                             <span className="icon-location" /> {totalDistinctCityNames} Städte |{' '}
