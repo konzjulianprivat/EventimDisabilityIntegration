@@ -840,7 +840,7 @@ app.get('/areas', async (req, res) => {
 });
 
 // POST: Venue erstellen (inkl. area capacities)
-app.post('/create-venue', express.json(), async (req, res) => {
+app.post('/create-venue', upload.single('venueImage'), async (req, res) => {
     const {
         name,
         address,
@@ -859,12 +859,21 @@ app.post('/create-venue', express.json(), async (req, res) => {
         await client.query('BEGIN');
         const venueId = uuidv4();
 
+        let imageId = null;
+        if (req.file) {
+            imageId = uuidv4();
+            await client.query(
+                'INSERT INTO images (id, image_data, image_type, entity_type, entity_id) VALUES ($1,$2,$3,$4,$5)',
+                [imageId, req.file.buffer, req.file.mimetype, 'venue', venueId]
+            );
+        }
+
         const { rows } = await client.query(
             `INSERT INTO venues
-                 (id, name, address, city_id, website)
-             VALUES ($1,$2,$3,$4,$5)
+                 (id, name, address, city_id, website, venue_image)
+             VALUES ($1,$2,$3,$4,$5,$6)
              RETURNING *`,
-            [venueId, name.trim(), address.trim(), cityId, website || null]
+            [venueId, name.trim(), address.trim(), cityId, website || null, imageId]
         );
 
         for (const va of venueAreas) {
@@ -890,7 +899,7 @@ app.get('/tours', async (req, res) => {
     res.json({ tours: result.rows });
 });
 app.get('/venues', async (req, res) => {
-    const result = await client.query('SELECT id, name FROM venues ORDER BY name');
+    const result = await client.query('SELECT id, name, venue_image FROM venues ORDER BY name');
     res.json({ venues: result.rows });
 });
 
@@ -930,6 +939,7 @@ app.get('/venues-detailed', async (req, res) => {
                     v.address,
                     v.city_id    AS "cityId",
                     v.website,
+                    v.venue_image,
                     c.name       AS city_name
              FROM venues v
                       LEFT JOIN cities c ON c.id = v.city_id
@@ -1227,7 +1237,8 @@ app.get('/cities-with-venues', async (req, res) => {
           json_agg(
             json_build_object(
               'id', v.id,
-              'name', v.name
+              'name', v.name,
+              'venue_image', v.venue_image
             )
           ) FILTER (WHERE v.id IS NOT NULL),
           '[]'
