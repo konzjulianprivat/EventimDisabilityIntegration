@@ -8,7 +8,8 @@ export default function VenueCreation() {
         name: '',
         address: '',
         cityId: '',
-        website: ''
+        website: '',
+        venueImage: null
     });
     const [cities, setCities] = useState([]);
     const [areas, setAreas] = useState([]);
@@ -24,8 +25,12 @@ export default function VenueCreation() {
     }, []);
 
     const handleChange = e => {
-        const { name, value } = e.target;
-        setFormData(f => ({ ...f, [name]: value }));
+        const { name, value, files, type } = e.target;
+        if (type === 'file') {
+            setFormData(f => ({ ...f, [name]: files[0] }));
+        } else {
+            setFormData(f => ({ ...f, [name]: value }));
+        }
     };
 
     const addArea = () => {
@@ -56,19 +61,23 @@ export default function VenueCreation() {
         }
 
         try {
-            const payload = {
-                ...formData,
-                venueAreas
-            };
+            const fd = new FormData();
+            fd.append('name', formData.name.trim());
+            fd.append('address', formData.address.trim());
+            fd.append('cityId', formData.cityId);
+            fd.append('website', formData.website || '');
+            fd.append('venueAreasJson', JSON.stringify(venueAreas));
+            if (formData.venueImage) {
+                fd.append('venueImage', formData.venueImage);
+            }
             const res = await fetch('http://localhost:4000/create-venue', {
                 method:'POST',
-                headers:{ 'Content-Type':'application/json' },
-                body: JSON.stringify(payload)
+                body: fd
             });
             const data = await res.json();
             if (res.ok) {
                 setMessage(`Venue „${data.venue.name}“ erstellt`);
-                setFormData({ name:'', address:'', cityId:'', website:'' });
+                setFormData({ name:'', address:'', cityId:'', website:'', venueImage:null });
                 setVenueAreas([]);
             } else {
                 setMessage(data.message || 'Fehler beim Erstellen');
@@ -126,6 +135,17 @@ export default function VenueCreation() {
                     <input id="website" name="website" type="url" value={formData.website}
                            onChange={handleChange} placeholder="https://example.com"
                            style={{ width:'100%', padding:'.5rem', borderRadius:'4px', border:'1px solid #ccc' }}
+                    />
+                </div>
+                {/* Venue Image */}
+                <div style={{ marginBottom:'1rem' }}>
+                    <label htmlFor="venueImage" style={{ display:'block', fontWeight:'bold', marginBottom:'.5rem' }}>Bild hochladen</label>
+                    <input
+                        id="venueImage"
+                        name="venueImage"
+                        type="file"
+                        onChange={handleChange}
+                        style={{ width:'100%', padding:'.5rem', borderRadius:'4px', border:'1px solid #ccc' }}
                     />
                 </div>
                 {/* Areas */}

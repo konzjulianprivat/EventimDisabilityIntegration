@@ -33,7 +33,13 @@ export default function VenueEventsPage() {
                 tours.forEach((t) => {
                     (t.events || []).forEach((ev) => {
                         if (ev.cityName === c.name && ev.venueName === v.name) {
-                            evs.push({ ...ev, tourId: t.id, artistIds: t.artistIds });
+                            evs.push({
+                                ...ev,
+                                tourId: t.id,
+                                artistIds: t.artistIds,
+                                tourTitle: t.title,
+                                tourImage: t.tour_image,
+                            });
                         }
                     });
                 });
@@ -143,18 +149,20 @@ export default function VenueEventsPage() {
                                             <img
                                                 className="artist-image"
                                                 src={
-                                                    eventData.tourImage
-                                                        ? `${API_BASE_URL}/image/${eventData.tourImage}`
+                                                    ev.tourImage
+                                                        ? `${API_BASE_URL}/image/${ev.tourImage}`
                                                         : '/pictures/placeholder.png'
                                                 }
-                                                alt={ev.tourName || 'Tour'}
-                                                style={{maxWidth:'120px'}}
+                                                alt={ev.tourTitle || 'Tour'}
+                                                style={{ maxWidth: '120px' }}
                                             />
-                                            Instead of the placeholder picture the picture of the events tour should be displayed before each entry, also the image and the title should be displayed on the left side and the label ans Tickets button on the right, so that the gap is in the middle
                                             <div>
                                                 <h3 className="tour-title">
-                                                    {formatDate(ev.start_time)} | {ev.cityName}
+                                                    {ev.tourTitle}
                                                 </h3>
+                                                <div className="tour-meta">
+                                                    <span>{formatDate(ev.start_time)} | {ev.cityName}</span>
+                                                </div>
                                                 <div className="tour-meta">
                                                     <span>{formatTime(ev.start_time)}</span>
                                                     <span> • {ev.venueName}</span>
