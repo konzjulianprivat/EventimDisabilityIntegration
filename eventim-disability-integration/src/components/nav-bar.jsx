@@ -146,7 +146,11 @@ export default function NavBar() {
                                     <span className="label">{g.name}</span>
                                     <div className="sub-menu">
                                         {g.subgenres.map((s) => (
-                                            <a key={s.id} href="#" className="dropdown-item">
+                                            <a
+                                                key={s.id}
+                                                href={`/genres/${g.id}/${s.id}`}
+                                                className="dropdown-item"
+                                            >
                                                 {s.name}
                                             </a>
                                         ))}
@@ -176,7 +180,11 @@ export default function NavBar() {
                                     <span className="label">{c.name}</span>
                                     <div className="sub-menu">
                                         {c.venues.map((v) => (
-                                            <a key={v.id} href="#" className="dropdown-item">
+                                            <a
+                                                key={v.id}
+                                                href={`/locations/${c.id}/${v.id}`}
+                                                className="dropdown-item"
+                                            >
                                                 {v.name}
                                             </a>
                                         ))}
