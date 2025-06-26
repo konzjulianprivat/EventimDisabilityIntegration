@@ -249,6 +249,7 @@
     justify-content: space-between;
     align-items: flex-start;
     padding: 1rem;
+    flex: 1 1 50%;
 }
 
 /* let the first child (your info block) take up all the remaining space */

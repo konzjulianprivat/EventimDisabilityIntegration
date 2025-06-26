@@ -140,6 +140,17 @@ export default function VenueEventsPage() {
                                             className="tour-header hoverable"
                                             onClick={() => router.push(evUrl)}
                                         >
+                                            <img
+                                                className="artist-image"
+                                                src={
+                                                    eventData.tourImage
+                                                        ? `${API_BASE_URL}/image/${eventData.tourImage}`
+                                                        : '/pictures/placeholder.png'
+                                                }
+                                                alt={ev.tourName || 'Tour'}
+                                                style={{maxWidth:'120px'}}
+                                            />
+                                            Instead of the placeholder picture the picture of the events tour should be displayed before each entry, also the image and the title should be displayed on the left side and the label ans Tickets button on the right, so that the gap is in the middle
                                             <div>
                                                 <h3 className="tour-title">
                                                     {formatDate(ev.start_time)} | {ev.cityName}

@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/router';
-import FilterBar from '../../components/filter-bar';
-import { API_BASE_URL } from '../../config';
+import FilterBar from '../../../components/filter-bar';
+import { API_BASE_URL } from '../../../config';
 
 export default function CityPage() {
     const router = useRouter();
@@ -258,12 +258,6 @@ export default function CityPage() {
                                                         ? sg.cheapestPrice.toFixed(2)
                                                         : '–'}
                                                 </div>
-                                                <button
-                                                    className="btn-view-events"
-                                                    onClick={() => router.push(sgUrl)}
-                                                >
-                                                    Alle {sg.eventCount} Events anzeigen
-                                                </button>
                                             </div>
                                         </div>
                                         <div className="sub-events">
@@ -290,6 +284,9 @@ export default function CityPage() {
                                                             onClick={() => router.push(evUrl)}
                                                         >
                                                             <div className="sub-event-info">
+                                                                <div className="sub-event-details">
+                                                                    <h3>ADD THE TOUR TITLE HERE</h3>
+                                                                </div>
                                                                 <div className="sub-event-details">
                                                                     {ev.cityName}, {ds}, {ts}
                                                                 </div>
