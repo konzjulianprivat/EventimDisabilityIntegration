@@ -70,19 +70,10 @@ export default function CityPage() {
             tours.forEach((t) => {
                 (t.events || []).forEach((ev) => {
                     if (ev.cityName === cityData.name && ev.venueName === v.name) {
-                        if (
-                            cheapest == null ||
-                            (t.cheapestPrice != null && t.cheapestPrice < cheapest)
-                        ) {
+                        if (cheapest == null || (t.cheapestPrice != null && t.cheapestPrice < cheapest)) {
                             cheapest = t.cheapestPrice;
                         }
-                        vEvents.push({
-                            ...ev,
-                            tourId: t.id,
-                            artistIds: t.artistIds,
-                            tourTitle: t.title,
-                            tourImage: t.tour_image,
-                        });
+                        vEvents.push({ ...ev, tourId: t.id, artistIds: t.artistIds });
                     }
                 });
             });
@@ -96,7 +87,6 @@ export default function CityPage() {
                 events: vEvents,
                 eventCount: vEvents.length,
                 cheapestPrice: cheapest,
-                venueImage: v.venue_image,
             };
         });
         setBasicFilteredVenues(arr);
@@ -237,11 +227,7 @@ export default function CityPage() {
                                     <div className="image-wrapper tour-image-large">
                                         <img
                                             className="artist-image"
-                                            src={
-                                                sg.venueImage
-                                                    ? `${API_BASE_URL}/image/${sg.venueImage}`
-                                                    : '/pictures/placeholder.png'
-                                            }
+                                            src={'/pictures/placeholder.png'}
                                             alt={sg.title}
                                         />
                                     </div>
@@ -297,22 +283,13 @@ export default function CityPage() {
                                                             className="sub-event-row hoverable"
                                                             onClick={() => router.push(evUrl)}
                                                         >
-                                                            <div className="sub-event-info" style={{display:'flex',gap:'0.5rem',alignItems:'center'}}>
-                                                                <img
-                                                                    src={
-                                                                        ev.tourImage
-                                                                            ? `${API_BASE_URL}/image/${ev.tourImage}`
-                                                                            : '/pictures/placeholder.png'
-                                                                    }
-                                                                    alt={ev.tourTitle || 'Event'}
-                                                                    style={{width:'40px',height:'40px',objectFit:'cover'}}
-                                                                />
+                                                            <div className="sub-event-info">
                                                                 <div className="sub-event-details">
-                                                                    <h3>{ev.tourTitle}</h3>
+                                                                    <h3>ADD THE TOUR TITLE HERE</h3>
                                                                 </div>
-                                                            <div className="sub-event-details">
-                                                                {ev.cityName}, {ds}, {ts}
-                                                            </div>
+                                                                <div className="sub-event-details">
+                                                                    {ev.cityName}, {ds}, {ts}
+                                                                </div>
                                                                 <div className="sub-event-arena">{ev.venueName}</div>
                                                                 {evAcc.length > 0 && (
                                                                     <div className="sub-event-accessibility">
