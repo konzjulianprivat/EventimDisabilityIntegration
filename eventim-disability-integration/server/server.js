@@ -841,14 +841,13 @@ app.get('/areas', async (req, res) => {
 
 // POST: Venue erstellen (inkl. area capacities)
 app.post('/create-venue', upload.single('venueImage'), async (req, res) => {
-    let { name, address, cityId, website, venueAreas = [] } = req.body;
-    if (typeof venueAreas === 'string') {
-        try {
-            venueAreas = JSON.parse(venueAreas);
-        } catch (_) {
-            venueAreas = [];
-        }
-    }
+    const {
+        name,
+        address,
+        cityId,
+        website,
+        venueAreas = [],
+    } = req.body;
 
     if (!name?.trim() || !address?.trim() || !cityId) {
         return res.status(400).json({

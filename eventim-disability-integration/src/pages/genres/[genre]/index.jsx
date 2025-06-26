@@ -294,34 +294,20 @@ export default function GenrePage() {
                                                             className="sub-event-row hoverable"
                                                             onClick={() => router.push(evUrl)}
                                                         >
-                                                            <div
-                                                                className="sub-event-info"
-                                                                style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}
-                                                            >
-                                                                <img
-                                                                    src={
-                                                                        ev.tourImage
-                                                                            ? `${API_BASE_URL}/image/${ev.tourImage}`
-                                                                            : '/pictures/placeholder.png'
-                                                                    }
-                                                                    alt={ev.tourTitle || 'Tour'}
-                                                                    style={{ width: '60px' }}
-                                                                />
-                                                                <div style={{ display: 'flex', flexDirection: 'column' }}>
-                                                                    <div className="sub-event-details">
-                                                                        {ev.cityName}, {ds}, {ts}
-                                                                    </div>
-                                                                    <div className="sub-event-arena">{ev.venueName}</div>
-                                                                    {evAcc.length > 0 && (
-                                                                        <div className="sub-event-accessibility">
-                                                                            {evAcc.map((lbl) => (
-                                                                                <span key={lbl} className="access-label-small">
-                                                                                    {lbl}
-                                                                                </span>
-                                                                            ))}
-                                                                        </div>
-                                                                    )}
+                                                            <div className="sub-event-info">
+                                                                <div className="sub-event-details">
+                                                                    {ev.cityName}, {ds}, {ts}
                                                                 </div>
+                                                                <div className="sub-event-arena">{ev.venueName}</div>
+                                                                {evAcc.length > 0 && (
+                                                                    <div className="sub-event-accessibility">
+                                                                        {evAcc.map((lbl) => (
+                                                                            <span key={lbl} className="access-label-small">
+                                                                                {lbl}
+                                                                            </span>
+                                                                        ))}
+                                                                    </div>
+                                                                )}
                                                             </div>
                                                             <button
                                                                 className="btn-tickets"

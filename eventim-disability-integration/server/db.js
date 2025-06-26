@@ -24,13 +24,9 @@ async function reconnect() {
 
 async function query(text, params) {
     for (let attempt = 0; attempt < 2; attempt++) {
-        const client = await pool.connect();
         try {
-            const res = await client.query(text, params);
-            client.release();
-            return res;
+            return await pool.query(text, params);
         } catch (err) {
-            client.release();
             if (attempt === 0 && isConnectionError(err)) {
                 console.error('Database query failed, reconnecting...', err.message);
                 await reconnect();
@@ -39,10 +35,6 @@ async function query(text, params) {
             throw err;
         }
     }
-}
-
-async function getClient() {
-    return pool.connect();
 }
 
 async function healthCheck() {
@@ -56,4 +48,4 @@ async function healthCheck() {
 
 setInterval(healthCheck, 10000);
 
-module.exports = { query, getClient };
+module.exports = { query };
