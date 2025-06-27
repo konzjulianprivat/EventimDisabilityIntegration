@@ -1,7 +1,15 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 
-export default function DisabilityRequestModal({ user, detail, imgFrontUrl, imgBackUrl, onClose }) {
+export default function DisabilityRequestModal({
+    user,
+    detail,
+    imgFrontUrl,
+    imgBackUrl,
+    onClose,
+    onAccept,
+    onDecline,
+}) {
     if (!user || !detail) return null;
 
     const formatDate = (d) =>
@@ -32,9 +40,21 @@ export default function DisabilityRequestModal({ user, detail, imgFrontUrl, imgB
                     )}
                 </div>
                 <div className="request-modal-actions">
-                    <button className="profile__btn-cancel" style={{backgroundColor: "green"}}>✓ </button>
+                    <button
+                        className="profile__btn-cancel"
+                        style={{ backgroundColor: 'green' }}
+                        onClick={onAccept}
+                    >
+                        ✓
+                    </button>
                     <button className="profile__btn-cancel" onClick={onClose}>Schließen</button>
-                    <button className="profile__btn-cancel" style={{backgroundColor: "red"}}> x </button>
+                    <button
+                        className="profile__btn-cancel"
+                        style={{ backgroundColor: 'red' }}
+                        onClick={onDecline}
+                    >
+                        x
+                    </button>
                 </div>
             </div>
         </div>
@@ -47,4 +67,6 @@ DisabilityRequestModal.propTypes = {
     imgFrontUrl: PropTypes.string,
     imgBackUrl: PropTypes.string,
     onClose: PropTypes.func,
+    onAccept: PropTypes.func,
+    onDecline: PropTypes.func,
 };
