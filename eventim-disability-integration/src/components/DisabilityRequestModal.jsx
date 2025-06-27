@@ -47,7 +47,7 @@ export default function DisabilityRequestModal({
                     >
                         ✓
                     </button>
-                    <button className="profile__btn-cancel" onClick={onClose}>Schließen</button>
+                    <button className="profile__btn-cancel" onClick={onClose} style={{backgroundColor: "grey"}}>Schließen</button>
                     <button
                         className="profile__btn-cancel"
                         style={{ backgroundColor: 'red' }}

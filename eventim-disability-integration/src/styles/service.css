@@ -3,6 +3,7 @@
 .profile-orders-table {
     width: 100%;
     border-collapse: collapse;
+    table-layout: fixed;      /* ← enforce fixed layout */
     margin-bottom: 1rem;
 }
 
@@ -17,6 +18,36 @@
     background-color: #f0f0f0;
     color: #002b55;
     font-weight: 600;
+}
+
+/* 1st column = 24% */
+.profile-orders-table th:nth-child(1),
+.profile-orders-table td:nth-child(1) {
+    width: 24%;
+}
+
+/* 2nd column = 24% */
+.profile-orders-table th:nth-child(2),
+.profile-orders-table td:nth-child(2) {
+    width: 24%;
+}
+
+/* 3rd column = 24% */
+.profile-orders-table th:nth-child(3),
+.profile-orders-table td:nth-child(3) {
+    width: 24%;
+}
+
+/* 4th column = 24% */
+.profile-orders-table th:nth-child(4),
+.profile-orders-table td:nth-child(4) {
+    width: 24%;
+}
+
+/* 5th column = 4% */
+.profile-orders-table th:nth-child(5),
+.profile-orders-table td:nth-child(5) {
+    width: 4%;
 }
 
 .clickable-row:hover {

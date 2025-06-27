@@ -119,7 +119,7 @@ export default function CompensationRequests() {
                 <div className="white-box events-white-box">
                     <div className="content-inner">
                     <div className="events-header">
-                        <h1>Offene Anfragen</h1>
+                        <h1>Offene Anträge</h1>
                         <span className="arrow">›</span>
                     </div>
                     <p className="subtitle">Zuletzt gestellte Anträge auf Nachteilsausgleiche</p>
@@ -140,7 +140,7 @@ export default function CompensationRequests() {
                                         <td>{r.visible_user_id}</td>
                                         <td>{formatDate(r.birth_date)}</td>
                                         <td>{formatDate(r.updated_at)}</td>
-                                        <td>Offen</td>
+                                        <td><p style={{color: "orange", fontWeight: "bold"}}>Offen</p></td>
                                         <td><span className="arrow">›</span></td>
                                     </tr>
                                 ))}
@@ -179,7 +179,7 @@ export default function CompensationRequests() {
                                             <td>{r.visible_user_id}</td>
                                             <td>{formatDate(r.birth_date)}</td>
                                             <td>{formatDate(r.updated_at)}</td>
-                                            <td>Akzeptiert</td>
+                                            <td><p style={{color: "green", fontWeight: "bold"}}>Akzeptiert</p></td>
                                             <td><span className="arrow">›</span></td>
                                         </tr>
                                     ))}
