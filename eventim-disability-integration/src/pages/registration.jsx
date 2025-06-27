@@ -158,6 +158,10 @@ export default function Registration() {
                 payload.append(key, formData[key]);
             });
 
+            // Generate an 8 digit visible user id
+            const visibleUserId = Math.floor(10000000 + Math.random() * 90000000);
+            payload.append('visibleUserId', visibleUserId);
+
             if (formData.disabilityCardImageFront) {
                 payload.append('disabilityCardImageFront', formData.disabilityCardImageFront);
             }

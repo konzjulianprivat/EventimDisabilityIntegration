@@ -44,6 +44,7 @@ export default function LoginPage() {
                         email:     data.user.email,
                         firstName: data.user.firstName,
                         lastName:  data.user.lastName,
+                        visibleUserId: data.user.visibleUserId,
                     })
                 );
                 router.push('/').then(() => window.location.reload());

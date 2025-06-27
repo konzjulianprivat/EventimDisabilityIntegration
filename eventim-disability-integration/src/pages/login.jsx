@@ -59,6 +59,7 @@ export default function LoginPage() {
                         isCurrentlyDisabled: data.user.isCurrentlyDisabled,
                         disabilityCardExpiryDate: data.user.disabilityCardExpiryDate,
                         disabilityMarks: data.user.disabilityMarks,
+                        visibleUserId: data.user.visibleUserId,
                     })
                 );
                 router.push(redirect || '/').then(() => window.location.reload());

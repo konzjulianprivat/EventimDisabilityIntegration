@@ -397,6 +397,7 @@ export default function NavBar() {
                                         <p>Angemeldet als</p>
                                         <h3>
                                             {user.firstName} {user.lastName}
+                                            {user.visibleUserId ? ` (${user.visibleUserId})` : ''}
                                         </h3>
                                     </div>
                                 </div>
