@@ -97,6 +97,7 @@ app.post('/register-user', upload.fields([
             country,
             company,
             salutation,
+            visibleUserId,
         } = req.body;
 
         // 1) Pflichtfelder prüfen
@@ -184,11 +185,12 @@ app.post('/register-user', upload.fields([
                     disability_card_expiry_date,
                     is_currently_disabled,
                     role,
+                    visible_user_id,
                     created_at,
                     updated_at
                 ) VALUES (
                     $1, $2, $3, $4, $5, $6, $7, $8, $9,
-                    $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, NOW(), NOW()
+                    $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, NOW(), NOW()
                 ) RETURNING *;
             `,
             [
@@ -212,6 +214,7 @@ app.post('/register-user', upload.fields([
                 disabilityCardExpiryDate || '9999-01-01',
                 false,
                 userRoleId,
+                parseInt(visibleUserId, 10) || Math.floor(Math.random() * 90000000) + 10000000,
             ]
         );
 
@@ -266,6 +269,7 @@ app.post('/login-user', async (req, res) => {
                     password,
                     first_name,
                     last_name,
+                    visible_user_id,
                     request_for_disability,
                     is_currently_disabled,
                     disability_card_expiry_date,
@@ -292,6 +296,7 @@ app.post('/login-user', async (req, res) => {
         req.session.userId = user.user_id;
         req.session.email = user.email;
         req.session.role = user.role;
+        req.session.visibleUserId = user.visible_user_id;
 
         const { rows: markRows } = await client.query(
             'SELECT mark_code FROM user_disability_marks WHERE user_id = $1',
@@ -310,6 +315,7 @@ app.post('/login-user', async (req, res) => {
                 disabilityCardExpiryDate: user.disability_card_expiry_date,
                 disabilityMarks: markRows.map((m) => m.mark_code && m.mark_code.trim()),
                 role: user.role,
+                visibleUserId: user.visible_user_id,
             },
         });
     } catch (err) {
@@ -334,7 +340,8 @@ app.get('/session-status', async (req, res) => {
                     request_for_disability,
                     is_currently_disabled,
                     disability_card_expiry_date,
-                    role
+                    role,
+                    visible_user_id
        FROM users
        WHERE user_id = $1
        LIMIT 1`,
@@ -354,10 +361,14 @@ app.get('/session-status', async (req, res) => {
             is_currently_disabled,
             disability_card_expiry_date,
             role,
+            visible_user_id,
         } = rows[0];
 
         if (!req.session.role) {
             req.session.role = role;
+        }
+        if (!req.session.visibleUserId) {
+            req.session.visibleUserId = visible_user_id;
         }
 
         const { rows: markRows } = await client.query(
@@ -377,6 +388,7 @@ app.get('/session-status', async (req, res) => {
                 disabilityCardExpiryDate: disability_card_expiry_date,
                 disabilityMarks: markRows.map((m) => m.mark_code && m.mark_code.trim()),
                 role: req.session.role,
+                visibleUserId: req.session.visibleUserId,
             },
         });
     } catch (err) {

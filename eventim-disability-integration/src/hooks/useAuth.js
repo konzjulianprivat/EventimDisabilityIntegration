@@ -28,6 +28,7 @@ export function useAuth() {
                         isCurrentlyDisabled: u.isCurrentlyDisabled,
                         disabilityCardExpiryDate: u.disabilityCardExpiryDate,
                         disabilityMarks: u.disabilityMarks || [],
+                        visibleUserId: u.visibleUserId,
                     },
                 });
             } catch {
@@ -56,6 +57,7 @@ export function useAuth() {
                             isCurrentlyDisabled: data.user.isCurrentlyDisabled,
                             disabilityCardExpiryDate: data.user.disabilityCardExpiryDate,
                             disabilityMarks: data.user.disabilityMarks || [],
+                            visibleUserId: data.user.visibleUserId,
                         },
                     });
                     localStorage.setItem(
@@ -69,6 +71,7 @@ export function useAuth() {
                             isCurrentlyDisabled: data.user.isCurrentlyDisabled,
                             disabilityCardExpiryDate: data.user.disabilityCardExpiryDate,
                             disabilityMarks: data.user.disabilityMarks || [],
+                            visibleUserId: data.user.visibleUserId,
                         })
                     );
                 } else {
