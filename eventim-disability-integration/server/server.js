@@ -143,7 +143,24 @@ app.post('/register-user', upload.fields([
             );
         }
 
-        // 6) Benutzer in users‐Tabelle einfügen
+        // 6) ID der Standardrolle ermitteln
+        const { rows: roleRows } = await client.query(
+            `SELECT id
+               FROM user_roles
+              WHERE COALESCE(has_viewing_access, false) = false
+                AND COALESCE(has_editing_access, false) = false
+                AND COALESCE(has_creation_access, false) = false
+                AND COALESCE(has_role_appointing_capability, false) = false
+              LIMIT 1`
+        );
+
+        if (roleRows.length === 0) {
+            return res.status(500).json({ message: 'Standardrolle nicht gefunden' });
+        }
+
+        const userRoleId = roleRows[0].id;
+
+        // 7) Benutzer in users‐Tabelle einfügen
         const result = await client.query(
             `
                 INSERT INTO users (
@@ -166,11 +183,12 @@ app.post('/register-user', upload.fields([
                     disability_card_image_back,
                     disability_card_expiry_date,
                     is_currently_disabled,
+                    role,
                     created_at,
                     updated_at
                 ) VALUES (
                     $1, $2, $3, $4, $5, $6, $7, $8, $9,
-                    $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, NOW(), NOW()
+                    $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, NOW(), NOW()
                 ) RETURNING *;
             `,
             [
@@ -193,6 +211,7 @@ app.post('/register-user', upload.fields([
                 imageBackId,
                 disabilityCardExpiryDate || '9999-01-01',
                 false,
+                userRoleId,
             ]
         );
 
@@ -250,6 +269,7 @@ app.post('/login-user', async (req, res) => {
                     request_for_disability,
                     is_currently_disabled,
                     disability_card_expiry_date,
+                    role,
                     created_at,
                     updated_at
                 FROM users
@@ -271,6 +291,7 @@ app.post('/login-user', async (req, res) => {
 
         req.session.userId = user.user_id;
         req.session.email = user.email;
+        req.session.role = user.role;
 
         const { rows: markRows } = await client.query(
             'SELECT mark_code FROM user_disability_marks WHERE user_id = $1',
@@ -288,6 +309,7 @@ app.post('/login-user', async (req, res) => {
                 isCurrentlyDisabled: user.is_currently_disabled,
                 disabilityCardExpiryDate: user.disability_card_expiry_date,
                 disabilityMarks: markRows.map((m) => m.mark_code && m.mark_code.trim()),
+                role: user.role,
             },
         });
     } catch (err) {
@@ -311,7 +333,8 @@ app.get('/session-status', async (req, res) => {
             `SELECT first_name, last_name, email,
                     request_for_disability,
                     is_currently_disabled,
-                    disability_card_expiry_date
+                    disability_card_expiry_date,
+                    role
        FROM users
        WHERE user_id = $1
        LIMIT 1`,
@@ -330,7 +353,12 @@ app.get('/session-status', async (req, res) => {
             request_for_disability,
             is_currently_disabled,
             disability_card_expiry_date,
+            role,
         } = rows[0];
+
+        if (!req.session.role) {
+            req.session.role = role;
+        }
 
         const { rows: markRows } = await client.query(
             'SELECT mark_code FROM user_disability_marks WHERE user_id = $1',
@@ -348,6 +376,7 @@ app.get('/session-status', async (req, res) => {
                 isCurrentlyDisabled: is_currently_disabled,
                 disabilityCardExpiryDate: disability_card_expiry_date,
                 disabilityMarks: markRows.map((m) => m.mark_code && m.mark_code.trim()),
+                role: req.session.role,
             },
         });
     } catch (err) {
