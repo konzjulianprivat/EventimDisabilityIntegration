@@ -13,31 +13,31 @@ export default function CompensationRequests() {
     const [imgFrontUrl, setImgFrontUrl] = useState(null);
     const [imgBackUrl, setImgBackUrl] = useState(null);
 
+    const fetchPending = async () => {
+        try {
+            const r = await fetch(`${API_BASE_URL}/pending-disability-requests`);
+            if (r.ok) {
+                const js = await r.json();
+                setRequests(Array.isArray(js.requests) ? js.requests : []);
+            }
+        } catch (err) {
+            console.error('Error loading requests:', err);
+        }
+    };
+
+    const fetchAccepted = async () => {
+        try {
+            const r = await fetch(`${API_BASE_URL}/accepted-disability-requests`);
+            if (r.ok) {
+                const js = await r.json();
+                setAcceptedRequests(Array.isArray(js.requests) ? js.requests : []);
+            }
+        } catch (err) {
+            console.error('Error loading accepted requests:', err);
+        }
+    };
+
     useEffect(() => {
-        async function fetchPending() {
-            try {
-                const r = await fetch(`${API_BASE_URL}/pending-disability-requests`);
-                if (r.ok) {
-                    const js = await r.json();
-                    setRequests(Array.isArray(js.requests) ? js.requests : []);
-                }
-            } catch (err) {
-                console.error('Error loading requests:', err);
-            }
-        }
-
-        async function fetchAccepted() {
-            try {
-                const r = await fetch(`${API_BASE_URL}/accepted-disability-requests`);
-                if (r.ok) {
-                    const js = await r.json();
-                    setAcceptedRequests(Array.isArray(js.requests) ? js.requests : []);
-                }
-            } catch (err) {
-                console.error('Error loading accepted requests:', err);
-            }
-        }
-
         fetchPending();
         fetchAccepted();
     }, []);
@@ -81,6 +81,28 @@ export default function CompensationRequests() {
         setImgBackUrl(null);
         setSelectedUser(null);
         setDetail(null);
+    };
+
+    const acceptRequest = async () => {
+        if (!selectedUser) return;
+        try {
+            await fetch(`${API_BASE_URL}/disability-requests/${selectedUser.user_id}/accept`, { method: 'POST' });
+        } catch (err) {
+            console.error('Error accepting request:', err);
+        }
+        closeModal();
+        await Promise.all([fetchPending(), fetchAccepted()]);
+    };
+
+    const declineRequest = async () => {
+        if (!selectedUser) return;
+        try {
+            await fetch(`${API_BASE_URL}/disability-requests/${selectedUser.user_id}/decline`, { method: 'POST' });
+        } catch (err) {
+            console.error('Error declining request:', err);
+        }
+        closeModal();
+        await Promise.all([fetchPending(), fetchAccepted()]);
     };
 
     const formatDate = (d) =>
@@ -179,6 +201,8 @@ export default function CompensationRequests() {
                         imgFrontUrl={imgFrontUrl}
                         imgBackUrl={imgBackUrl}
                         onClose={closeModal}
+                        onAccept={acceptRequest}
+                        onDecline={declineRequest}
                     />
                 )}
             </div>

@@ -508,6 +508,42 @@ app.get('/users/:id/disability', async (req, res) => {
     }
 });
 
+// Accept a disability request
+app.post('/disability-requests/:id/accept', async (req, res) => {
+    const userId = req.params.id;
+    try {
+        await client.query(
+            `UPDATE users
+                SET is_currently_disabled = true,
+                    updated_at = NOW()
+              WHERE user_id = $1`,
+            [userId]
+        );
+        return res.json({ message: 'Request accepted' });
+    } catch (err) {
+        console.error('Error accepting disability request:', err);
+        return res.status(500).json({ message: 'Server error' });
+    }
+});
+
+// Decline a disability request
+app.post('/disability-requests/:id/decline', async (req, res) => {
+    const userId = req.params.id;
+    try {
+        await client.query(
+            `UPDATE users
+                SET request_for_disability = false,
+                    updated_at = NOW()
+              WHERE user_id = $1`,
+            [userId]
+        );
+        return res.json({ message: 'Request declined' });
+    } catch (err) {
+        console.error('Error declining disability request:', err);
+        return res.status(500).json({ message: 'Server error' });
+    }
+});
+
 // Temporäres Speichern der Versandinformationen in der Session (wird später in der DB gespeichert)
 app.post('/checkout-shipping', (req, res) => {
     if (!req.session.userId) {
