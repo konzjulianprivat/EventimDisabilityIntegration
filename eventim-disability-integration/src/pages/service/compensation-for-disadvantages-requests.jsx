@@ -3,7 +3,6 @@
 
 import React, { useEffect, useState } from 'react';
 import { API_BASE_URL } from '../../config';
-import '../../styles/service.css';
 
 export default function CompensationRequests() {
     const [requests, setRequests] = useState([]);
@@ -63,6 +62,14 @@ export default function CompensationRequests() {
         setDetail(null);
     };
 
+    const formatDate = (d) =>
+        new Date(d).toLocaleDateString('de-DE', {
+            weekday: 'long',
+            day: '2-digit',
+            month: '2-digit',
+            year: 'numeric',
+        });
+
     return (
         <div className="admin-container">
             <h1 className="admin-heading">Offene Anträge</h1>
@@ -79,8 +86,8 @@ export default function CompensationRequests() {
                     {requests.map((r) => (
                         <tr key={r.user_id} className="clickable-row" onClick={() => loadDetail(r)}>
                             <td>{r.visible_user_id}</td>
-                            <td>{r.birth_date}</td>
-                            <td>{new Date(r.updated_at).toLocaleDateString()}</td>
+                            <td>{formatDate(r.birth_date)}</td>
+                            <td>{formatDate(r.updated_at)}</td>
                             <td>Offen</td>
                         </tr>
                     ))}
@@ -99,7 +106,7 @@ export default function CompensationRequests() {
                         <div className="request-modal-content">
                             <div className="request-modal-info">
                                 <p>Grad der Behinderung: {detail.disability_degree}</p>
-                                <p>Ausweis gültig bis: {detail.disability_card_expiry_date}</p>
+                                <p>Ausweis gültig bis: {detail.disability_card_expiry_date === '9998-12-31T23:00:00.000Z' ? 'unbegrenzt' : formatDate(detail.disability_card_expiry_date)}</p>
                                 <p>Merkzeichen: {detail.marks && detail.marks.length ? detail.marks.join(', ') : 'Keine'}</p>
                             </div>
                             <div className="request-modal-images">

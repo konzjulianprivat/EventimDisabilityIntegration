@@ -18,6 +18,7 @@ import '../styles/events.css';
 import '../styles/checkout.css';
 import '../styles/404.css';
 import '../styles/loadingOverlay.css';
+import '../styles/service.css';
 
 import NavBar from '../components/nav-bar.jsx';
 import Footer from '../components/footer.jsx';
