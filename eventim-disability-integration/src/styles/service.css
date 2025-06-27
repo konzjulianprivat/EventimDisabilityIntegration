@@ -1,0 +1,53 @@
+/* src/styles/service.css */
+
+.profile-orders-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 1rem;
+}
+
+.profile-orders-table th,
+.profile-orders-table td {
+    padding: 0.5rem;
+    border-bottom: 1px solid #e0e0e0;
+    text-align: left;
+}
+
+.profile-orders-table th {
+    background-color: #f0f0f0;
+    color: #002b55;
+    font-weight: 600;
+}
+
+.clickable-row:hover {
+    background-color: #f9f9f9;
+    cursor: pointer;
+}
+
+.request-modal-content {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+}
+
+.request-modal-info {
+    flex: 1 1 50%;
+}
+
+.request-modal-images {
+    flex: 1 1 50%;
+    text-align: center;
+}
+
+.disability-card-image {
+    width: 240px;
+    height: 160px;
+    object-fit: contain;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    margin-bottom: 0.5rem;
+}
+
+.modal-close {
+    margin-top: 1rem;
+}
