@@ -3,16 +3,18 @@
 
 import React, { useEffect, useState } from 'react';
 import { API_BASE_URL } from '../../config';
+import DisabilityRequestModal from '../../components/DisabilityRequestModal';
 
 export default function CompensationRequests() {
     const [requests, setRequests] = useState([]);
+    const [acceptedRequests, setAcceptedRequests] = useState([]);
     const [selectedUser, setSelectedUser] = useState(null);
     const [detail, setDetail] = useState(null);
     const [imgFrontUrl, setImgFrontUrl] = useState(null);
     const [imgBackUrl, setImgBackUrl] = useState(null);
 
     useEffect(() => {
-        async function fetchRequests() {
+        async function fetchPending() {
             try {
                 const r = await fetch(`${API_BASE_URL}/pending-disability-requests`);
                 if (r.ok) {
@@ -23,7 +25,21 @@ export default function CompensationRequests() {
                 console.error('Error loading requests:', err);
             }
         }
-        fetchRequests();
+
+        async function fetchAccepted() {
+            try {
+                const r = await fetch(`${API_BASE_URL}/accepted-disability-requests`);
+                if (r.ok) {
+                    const js = await r.json();
+                    setAcceptedRequests(Array.isArray(js.requests) ? js.requests : []);
+                }
+            } catch (err) {
+                console.error('Error loading accepted requests:', err);
+            }
+        }
+
+        fetchPending();
+        fetchAccepted();
     }, []);
 
     const loadDetail = async (req) => {
@@ -32,7 +48,12 @@ export default function CompensationRequests() {
             if (!r.ok) return;
             const js = await r.json();
             setDetail(js.disabilityData || null);
-            setSelectedUser(req);
+            setSelectedUser({
+                ...req,
+                salutation: js.user?.salutation || '',
+                firstName: js.user?.firstName || '',
+                lastName: js.user?.lastName || '',
+            });
 
             if (js.disabilityData?.disability_card_image_front) {
                 const fr = await fetch(`${API_BASE_URL}/image/${js.disabilityData.disability_card_image_front}`);
@@ -99,30 +120,41 @@ export default function CompensationRequests() {
                 </tbody>
             </table>
 
+            <h1 className="admin-heading">Akzeptierte Anfragen (letzte 30 Tage)</h1>
+            <table className="profile-orders-table">
+                <thead>
+                    <tr>
+                        <th>User-ID</th>
+                        <th>Geburtsdatum</th>
+                        <th>Letzte Änderung</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {acceptedRequests.map((r) => (
+                        <tr key={r.user_id} className="clickable-row" onClick={() => loadDetail(r)}>
+                            <td>{r.visible_user_id}</td>
+                            <td>{formatDate(r.birth_date)}</td>
+                            <td>{formatDate(r.updated_at)}</td>
+                            <td>Akzeptiert</td>
+                        </tr>
+                    ))}
+                    {acceptedRequests.length === 0 && (
+                        <tr>
+                            <td colSpan="4">Keine akzeptierten Anträge</td>
+                        </tr>
+                    )}
+                </tbody>
+            </table>
+
             {selectedUser && detail && (
-                <div className="modal-overlay" onClick={closeModal}>
-                    <div className="modal-box" onClick={(e) => e.stopPropagation()}>
-                        <h2>User {selectedUser.visible_user_id}</h2>
-                        <div className="request-modal-content">
-                            <div className="request-modal-info">
-                                <p>Grad der Behinderung: {detail.disability_degree}</p>
-                                <p>Ausweis gültig bis: {detail.disability_card_expiry_date === '9998-12-31T23:00:00.000Z' ? 'unbegrenzt' : formatDate(detail.disability_card_expiry_date)}</p>
-                                <p>Merkzeichen: {detail.marks && detail.marks.length ? detail.marks.join(', ') : 'Keine'}</p>
-                            </div>
-                            <div className="request-modal-images">
-                                {imgFrontUrl && (
-                                    <img src={imgFrontUrl} alt="Vorderseite" className="disability-card-image" />
-                                )}
-                                {imgBackUrl && (
-                                    <img src={imgBackUrl} alt="Rückseite" className="disability-card-image" />
-                                )}
-                            </div>
-                        </div>
-                        <button className="profile__btn-cancel modal-close" onClick={closeModal}>
-                            Schließen
-                        </button>
-                    </div>
-                </div>
+                <DisabilityRequestModal
+                    user={selectedUser}
+                    detail={detail}
+                    imgFrontUrl={imgFrontUrl}
+                    imgBackUrl={imgBackUrl}
+                    onClose={closeModal}
+                />
             )}
         </div>
     );

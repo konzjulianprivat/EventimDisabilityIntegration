@@ -449,12 +449,31 @@ app.get('/pending-disability-requests', async (req, res) => {
     }
 });
 
+// Liefert akzeptierte Anträge der letzten 30 Tage
+app.get('/accepted-disability-requests', async (req, res) => {
+    try {
+        const { rows } = await client.query(
+            `SELECT user_id, visible_user_id, birth_date, updated_at
+               FROM users
+              WHERE is_currently_disabled = true
+                AND request_for_disability = true
+                AND updated_at >= NOW() - interval '30 days'
+              ORDER BY updated_at DESC`
+        );
+        return res.json({ requests: rows });
+    } catch (err) {
+        console.error('Error fetching accepted disability requests:', err);
+        return res.status(500).json({ message: 'Server error' });
+    }
+});
+
 // Liefert die hinterlegten Disability-Daten eines Users
 app.get('/users/:id/disability', async (req, res) => {
     const userId = req.params.id;
     try {
         const { rows } = await client.query(
-            `SELECT disability_degree, disability_card_expiry_date,
+            `SELECT salutation, first_name, last_name,
+                    disability_degree, disability_card_expiry_date,
                     disability_card_image_front, disability_card_image_back
                FROM users
               WHERE user_id = $1
@@ -476,6 +495,11 @@ app.get('/users/:id/disability', async (req, res) => {
                 disability_card_image_front: user.disability_card_image_front,
                 disability_card_image_back: user.disability_card_image_back,
                 marks: markRows.map((m) => m.mark_code && m.mark_code.trim()),
+            },
+            user: {
+                salutation: user.salutation,
+                firstName: user.first_name,
+                lastName: user.last_name,
             },
         });
     } catch (err) {
