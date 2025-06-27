@@ -13,14 +13,15 @@ export default function DisabilityRequestModal({ user, detail, imgFrontUrl, imgB
         });
 
     return (
-        <div className="modal-overlay" onClick={onClose}>
+        <div className="service__modal-overlay" onClick={onClose}>
             <div className="request-modal-grid" onClick={(e) => e.stopPropagation()}>
-                <h2>{user.visible_user_id}</h2>
+                <h2>{user.visible_user_id ? user.visible_user_id : 'User'}</h2>
                 <div className="request-modal-grid-left">
-                    <p><strong>Name:</strong> {user.salutation} {user.firstName} {user.lastName}</p>
-                    <p><strong>Grad der Behinderung:</strong> {detail.disability_degree}</p>
-                    <p><strong>Ausweis gültig bis:</strong> {detail.disability_card_expiry_date === '9998-12-31T23:00:00.000Z' ? 'unbegrenzt' : formatDate(detail.disability_card_expiry_date)}</p>
-                    <p><strong>Merkzeichen:</strong> {detail.marks && detail.marks.length ? detail.marks.join(', ') : 'Keine'}</p>
+                    <p><strong>Name:</strong> <br/>{user.salutation} {user.firstName} {user.lastName}</p>
+                    <p><strong>Geburtsdatum:</strong> <br/>{formatDate(user.birth_date)}</p>
+                    <p><strong>Grad der Behinderung:</strong> <br/>{detail.disability_degree}</p>
+                    <p><strong>Ausweis gültig bis:</strong> <br/>{detail.disability_card_expiry_date === '9998-12-31T23:00:00.000Z' ? 'unbegrenzt' : formatDate(detail.disability_card_expiry_date)}</p>
+                    <p><strong>Merkzeichen:</strong> <br/>{detail.marks && detail.marks.length ? detail.marks.join(', ') : 'Keine'}</p>
                 </div>
                 <div className="request-modal-grid-images">
                     {imgFrontUrl && (
@@ -31,9 +32,9 @@ export default function DisabilityRequestModal({ user, detail, imgFrontUrl, imgB
                     )}
                 </div>
                 <div className="request-modal-actions">
-                    <button className="profile__btn-cancel">Annehmen</button>
+                    <button className="profile__btn-cancel" style={{backgroundColor: "green"}}>✓ </button>
                     <button className="profile__btn-cancel" onClick={onClose}>Schließen</button>
-                    <button className="profile__btn-cancel">Ablehnen</button>
+                    <button className="profile__btn-cancel" style={{backgroundColor: "red"}}> x </button>
                 </div>
             </div>
         </div>

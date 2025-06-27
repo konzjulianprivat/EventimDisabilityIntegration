@@ -92,71 +92,98 @@ export default function CompensationRequests() {
         });
 
     return (
-        <div className="admin-container">
-            <h1 className="admin-heading">Offene Anträge</h1>
-            <table className="profile-orders-table">
-                <thead>
-                    <tr>
-                        <th>User-ID</th>
-                        <th>Geburtsdatum</th>
-                        <th>Letzte Änderung</th>
-                        <th>Status</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {requests.map((r) => (
-                        <tr key={r.user_id} className="clickable-row" onClick={() => loadDetail(r)}>
-                            <td>{r.visible_user_id}</td>
-                            <td>{formatDate(r.birth_date)}</td>
-                            <td>{formatDate(r.updated_at)}</td>
-                            <td>Offen</td>
-                        </tr>
-                    ))}
-                    {requests.length === 0 && (
-                        <tr>
-                            <td colSpan="4">Keine offenen Anträge</td>
-                        </tr>
-                    )}
-                </tbody>
-            </table>
+        <div className="profile-container" style={{flexDirection: "column"}}>
+            <div className="content-inner" style={{paddingTop: '24px'}}>
+                <div className="white-box events-white-box">
+                    <div className="content-inner">
+                    <div className="events-header">
+                        <h1>Offene Anfragen</h1>
+                        <span className="arrow">›</span>
+                    </div>
+                    <p className="subtitle">Zuletzt gestellte Anträge auf Nachteilsausgleiche</p>
+                    <div className="content-inner">
+                        <table className="profile-orders-table">
+                            <thead>
+                                <tr>
+                                    <th>User-ID</th>
+                                    <th>Geburtsdatum</th>
+                                    <th>Letzte Änderung</th>
+                                    <th>Status</th>
+                                    <th> </th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {requests.map((r) => (
+                                    <tr key={r.user_id} className="clickable-row" onClick={() => loadDetail(r)}>
+                                        <td>{r.visible_user_id}</td>
+                                        <td>{formatDate(r.birth_date)}</td>
+                                        <td>{formatDate(r.updated_at)}</td>
+                                        <td>Offen</td>
+                                        <td><span className="arrow">›</span></td>
+                                    </tr>
+                                ))}
+                                {requests.length === 0 && (
+                                    <tr>
+                                        <td colSpan="4">Keine offenen Anträge</td>
+                                    </tr>
+                                )}
+                            </tbody>
+                        </table>
+                    </div>
+                    </div>
+                </div>
 
-            <h1 className="admin-heading">Akzeptierte Anfragen (letzte 30 Tage)</h1>
-            <table className="profile-orders-table">
-                <thead>
-                    <tr>
-                        <th>User-ID</th>
-                        <th>Geburtsdatum</th>
-                        <th>Letzte Änderung</th>
-                        <th>Status</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {acceptedRequests.map((r) => (
-                        <tr key={r.user_id} className="clickable-row" onClick={() => loadDetail(r)}>
-                            <td>{r.visible_user_id}</td>
-                            <td>{formatDate(r.birth_date)}</td>
-                            <td>{formatDate(r.updated_at)}</td>
-                            <td>Akzeptiert</td>
-                        </tr>
-                    ))}
-                    {acceptedRequests.length === 0 && (
-                        <tr>
-                            <td colSpan="4">Keine akzeptierten Anträge</td>
-                        </tr>
-                    )}
-                </tbody>
-            </table>
+                <div className="white-box events-white-box">
+                    <div className="content-inner">
+                        <div className="events-header">
+                            <h1>Zuletzt akzeptierte Anträge</h1>
+                            <span className="arrow">›</span>
+                        </div>
+                        <p className="subtitle">Historie aller Annahmen der letzten 30 Tage</p>
+                        <div className="content-inner">
+                            <table className="profile-orders-table">
+                                <thead>
+                                    <tr>
+                                        <th>User-ID</th>
+                                        <th>Geburtsdatum</th>
+                                        <th>Letzte Änderung</th>
+                                        <th>Status</th>
+                                        <th> </th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {acceptedRequests.map((r) => (
+                                        <tr key={r.user_id} className="clickable-row" onClick={() => loadDetail(r)}>
+                                            <td>{r.visible_user_id}</td>
+                                            <td>{formatDate(r.birth_date)}</td>
+                                            <td>{formatDate(r.updated_at)}</td>
+                                            <td>Akzeptiert</td>
+                                            <td><span className="arrow">›</span></td>
+                                        </tr>
+                                    ))}
+                                    {acceptedRequests.length === 0 && (
+                                        <tr>
+                                            <td colSpan="4">Keine akzeptierten Anträge</td>
+                                        </tr>
+                                    )}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
 
-            {selectedUser && detail && (
-                <DisabilityRequestModal
-                    user={selectedUser}
-                    detail={detail}
-                    imgFrontUrl={imgFrontUrl}
-                    imgBackUrl={imgBackUrl}
-                    onClose={closeModal}
-                />
-            )}
+                {selectedUser && detail && (
+                    <DisabilityRequestModal
+                        user={selectedUser}
+                        detail={detail}
+                        imgFrontUrl={imgFrontUrl}
+                        imgBackUrl={imgBackUrl}
+                        onClose={closeModal}
+                    />
+                )}
+            </div>
         </div>
     );
+
 }
 

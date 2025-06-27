@@ -246,7 +246,6 @@ export default function Registration() {
                         <option value="Frau">Frau</option>
                         <option value="Dr.">Dr.</option>
                         <option value="Prof.">Prof.</option>
-                        <option value="Divers">Divers</option>
                     </select>
                 </div>
 
