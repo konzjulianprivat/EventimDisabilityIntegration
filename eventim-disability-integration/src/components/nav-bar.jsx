@@ -397,8 +397,8 @@ export default function NavBar() {
                                         <p>Angemeldet als</p>
                                         <h3>
                                             {user.firstName} {user.lastName}
-                                            {user.visibleUserId ? ` (${user.visibleUserId})` : ''}
                                         </h3>
+                                        <p style={{fontSize: "0.75rem", color: "grey"}}>{user.visibleUserId ? ` User-ID: ${user.visibleUserId}` : ''}</p>
                                     </div>
                                 </div>
 
