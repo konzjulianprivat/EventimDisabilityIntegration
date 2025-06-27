@@ -432,6 +432,58 @@ app.get('/user-address', async (req, res) => {
     }
 });
 
+// Liefert alle offenen Anträge auf Nachteilsausgleich
+app.get('/pending-disability-requests', async (req, res) => {
+    try {
+        const { rows } = await client.query(
+            `SELECT user_id, visible_user_id, birth_date, updated_at
+               FROM users
+              WHERE is_currently_disabled = false
+                AND request_for_disability = true
+              ORDER BY updated_at DESC`
+        );
+        return res.json({ requests: rows });
+    } catch (err) {
+        console.error('Error fetching pending disability requests:', err);
+        return res.status(500).json({ message: 'Server error' });
+    }
+});
+
+// Liefert die hinterlegten Disability-Daten eines Users
+app.get('/users/:id/disability', async (req, res) => {
+    const userId = req.params.id;
+    try {
+        const { rows } = await client.query(
+            `SELECT disability_degree, disability_card_expiry_date,
+                    disability_card_image_front, disability_card_image_back
+               FROM users
+              WHERE user_id = $1
+              LIMIT 1`,
+            [userId]
+        );
+        if (!rows.length) {
+            return res.status(404).json({ message: 'User not found' });
+        }
+        const user = rows[0];
+        const { rows: markRows } = await client.query(
+            'SELECT mark_code FROM user_disability_marks WHERE user_id = $1',
+            [userId]
+        );
+        return res.json({
+            disabilityData: {
+                disability_degree: user.disability_degree,
+                disability_card_expiry_date: user.disability_card_expiry_date,
+                disability_card_image_front: user.disability_card_image_front,
+                disability_card_image_back: user.disability_card_image_back,
+                marks: markRows.map((m) => m.mark_code && m.mark_code.trim()),
+            },
+        });
+    } catch (err) {
+        console.error('Error fetching disability data:', err);
+        return res.status(500).json({ message: 'Server error' });
+    }
+});
+
 // Temporäres Speichern der Versandinformationen in der Session (wird später in der DB gespeichert)
 app.post('/checkout-shipping', (req, res) => {
     if (!req.session.userId) {
