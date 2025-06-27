@@ -3,6 +3,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { API_BASE_URL } from '../../config';
+import '../../styles/service.css';
 
 export default function CompensationRequests() {
     const [requests, setRequests] = useState([]);
@@ -95,22 +96,22 @@ export default function CompensationRequests() {
                 <div className="modal-overlay" onClick={closeModal}>
                     <div className="modal-box" onClick={(e) => e.stopPropagation()}>
                         <h2>User {selectedUser.visible_user_id}</h2>
-                        <div style={{ display: 'flex', gap: '1rem' }}>
-                            <div style={{ flex: '1 1 50%' }}>
+                        <div className="request-modal-content">
+                            <div className="request-modal-info">
                                 <p>Grad der Behinderung: {detail.disability_degree}</p>
                                 <p>Ausweis gültig bis: {detail.disability_card_expiry_date}</p>
                                 <p>Merkzeichen: {detail.marks && detail.marks.length ? detail.marks.join(', ') : 'Keine'}</p>
                             </div>
-                            <div style={{ flex: '1 1 50%' }}>
+                            <div className="request-modal-images">
                                 {imgFrontUrl && (
-                                    <img src={imgFrontUrl} alt="Vorderseite" style={{ maxWidth: '100%', marginBottom: '0.5rem' }} />
+                                    <img src={imgFrontUrl} alt="Vorderseite" className="disability-card-image" />
                                 )}
                                 {imgBackUrl && (
-                                    <img src={imgBackUrl} alt="Rückseite" style={{ maxWidth: '100%' }} />
+                                    <img src={imgBackUrl} alt="Rückseite" className="disability-card-image" />
                                 )}
                             </div>
                         </div>
-                        <button className="profile__btn-cancel" onClick={closeModal} style={{ marginTop: '1rem' }}>
+                        <button className="profile__btn-cancel modal-close" onClick={closeModal}>
                             Schließen
                         </button>
                     </div>
