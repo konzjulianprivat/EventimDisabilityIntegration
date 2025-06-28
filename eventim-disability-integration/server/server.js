@@ -734,6 +734,10 @@ app.get('/users/:id/orders', async (req, res) => {
         const { rows } = await client.query(
             `SELECT o.id,
                     o.created_at,
+                    o.street_address,
+                    o.postal_code,
+                    o.city,
+                    o.country,
                     COUNT(ot.ticket_id) AS ticket_count
                FROM orders o
                     LEFT JOIN order_tickets ot ON ot.order_id = o.id
@@ -2666,36 +2670,36 @@ app.post('/cart-items', async (req, res) => {
 
         if (!isAssistanceTicket) {
 
-        // 4) enforce quantity limits
-        if (isDisabledCat) {
-            // one disabled ticket per event max
-            const { rows: dRows } = await client.query(
-                `SELECT COALESCE(SUM(ci.quantity),0) AS qty
+            // 4) enforce quantity limits
+            if (isDisabledCat) {
+                // one disabled ticket per event max
+                const { rows: dRows } = await client.query(
+                    `SELECT COALESCE(SUM(ci.quantity),0) AS qty
                  FROM cart_items ci
                  JOIN event_categories ec ON ec.id = ci.event_category_id
                  WHERE ci.cart_id = $1
                    AND ec.event_id = $2
                    AND ec.disability_support_for IS NOT NULL`,
-                [cartId, catEventId]
-            );
-            if (Number(dRows[0].qty) >= 1 || quantity > 1) {
-                return res.status(400).json({ message: 'Disabled ticket limit exceeded' });
-            }
-        } else {
-            // up to 8 regular tickets per event
-            const { rows: rRows } = await client.query(
-                `SELECT COALESCE(SUM(ci.quantity),0) AS qty
+                    [cartId, catEventId]
+                );
+                if (Number(dRows[0].qty) >= 1 || quantity > 1) {
+                    return res.status(400).json({ message: 'Disabled ticket limit exceeded' });
+                }
+            } else {
+                // up to 8 regular tickets per event
+                const { rows: rRows } = await client.query(
+                    `SELECT COALESCE(SUM(ci.quantity),0) AS qty
                  FROM cart_items ci
                  JOIN event_categories ec ON ec.id = ci.event_category_id
                  WHERE ci.cart_id = $1
                    AND ec.event_id = $2
                    AND ec.disability_support_for IS NULL`,
-                [cartId, catEventId]
-            );
-            if (Number(rRows[0].qty) + Number(quantity) > 8) {
-                return res.status(400).json({ message: 'Regular ticket limit exceeded' });
+                    [cartId, catEventId]
+                );
+                if (Number(rRows[0].qty) + Number(quantity) > 8) {
+                    return res.status(400).json({ message: 'Regular ticket limit exceeded' });
+                }
             }
-        }
         } // end quantity limits check
 
         // 5) insert the new cart_item (no price column!)
