@@ -89,8 +89,8 @@ export default function UserDetailModal({ user, orders, onClose }) {
                                                 <tr>
                                                     <th>Event</th>
                                                     <th>Kategorie</th>
+                                                    <th> </th>
                                                     <th>Sitz</th>
-                                                    <th>Preis</th>
                                                 </tr>
                                                 </thead>
                                                 <tbody>
@@ -98,8 +98,8 @@ export default function UserDetailModal({ user, orders, onClose }) {
                                                     <tr key={t.id}>
                                                         <td>{t.event_title}</td>
                                                         <td>{t.event_category}</td>
+                                                        <td>{t.is_assistance_ticket ? <span className="assist-flag">B</span> : ''}</td>
                                                         <td>{t.seat_number}</td>
-                                                        <td>{t.price}</td>
                                                     </tr>
                                                 ))}
                                                 {tickets.length === 0 && (
