@@ -113,7 +113,6 @@ export default function UserDetailModal({ user, orders, onClose }) {
                                     </tr>
                                 )}
                             </React.Fragment>
-                            <tr key={o.id}>
                         ))}
                         {orders.length === 0 && (
                             <tr>
