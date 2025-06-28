@@ -94,9 +94,9 @@
 
     /* make it adapt to viewport but not get ridiculously large */
     width: 90vw;                       /* 90% of viewport width */
-    max-width: 60rem;                  /* but no wider than 60rem */
+    max-width: 80vw;                  /* but no wider than 60rem */
     height: 80vh;                      /* 80% of viewport height */
-    max-height: 30rem;                 /* but no taller than 50rem */
+    max-height: 80vh;                 /* but no taller than 50rem */
 
     box-sizing: border-box;            /* include padding in those dims */
     overflow: auto;                    /* scroll if content overflows */
@@ -117,9 +117,9 @@
 
 .request-modal-grid-images {
     /* make the column span 80% of viewport width, capped at a rem-based max */
-    width: 50vw;
-    max-width: 80rem;
-    max-height: 20rem;
+    width: 70vw;
+    max-width: 60vw;
+    max-height: 70vh;
 
     /* keep your existing flex rules */
     display: flex;

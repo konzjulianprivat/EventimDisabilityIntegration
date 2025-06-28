@@ -78,18 +78,19 @@ export default function UserOverview() {
                     <div className="white-box events-white-box">
                         <div className="content-inner">
                             <div className="events-header">
-                                <h1>{role.name}-Accounts</h1>
+                                <h1>{(role.name).toUpperCase()}-Accounts</h1>
                                 <span className="arrow">›</span>
                             </div>
-                            <p className="subtitle">Übersicht aller Accounts der Rolle {role.name}</p>
+                            <p className="subtitle">Übersicht aller Accounts der Rolle {(role.name).toUpperCase()}</p>
                             <div className="content-inner">
                                 <table className="profile-orders-table">
                                     <thead>
                                     <tr>
                                         <th>User-ID</th>
                                         <th>Erstellt am</th>
-                                        <th>Rolle</th>
                                         <th>Bestellungen</th>
+                                        <th>Rolle</th>
+                                        <th> </th>
                                     </tr>
                                     </thead>
                                     <tbody>
@@ -97,8 +98,9 @@ export default function UserOverview() {
                                         <tr key={u.user_id} className="clickable-row" onClick={() => openUser(u.user_id)}>
                                             <td>{u.visible_user_id}</td>
                                             <td>{formatDate(u.created_at)}</td>
-                                            <td>{u.role_name}</td>
                                             <td>{u.order_count}</td>
+                                            <td>{(u.role_name).toUpperCase()}</td>
+                                            <td><span className="arrow">›</span></td>
                                         </tr>
                                     ))}
                                     {(usersByRole[role.id] || []).length === 0 && (

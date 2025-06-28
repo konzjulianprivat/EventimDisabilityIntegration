@@ -22,9 +22,11 @@ export default function UserDetailModal({ user, orders, onClose }) {
                 <div className="request-modal-grid-left">
                     <p><strong>Name:</strong><br/>{user.salutation} {user.first_name} {user.last_name}</p>
                     <p><strong>E-Mail:</strong><br/>{user.email}</p>
+                    <p><strong>Geburtsdatum:</strong><br/>{formatDate(user.birth_date)}</p>
+                    <p><strong>E-Mail:</strong><br/>{user.email}</p>
                     <p><strong>Rolle:</strong><br/>{user.role_name}</p>
                     <p><strong>Account erstellt:</strong><br/>{formatDate(user.created_at)}</p>
-                    {user.request_for_disability && (
+                    {user.is_currently_disabled && (
                         <>
                             <p><strong>Grad der Behinderung:</strong><br/>{user.disability_degree}</p>
                             <p><strong>Ausweis gültig bis:</strong><br/>{user.disability_card_expiry_date === '9999-01-01' || user.disability_card_expiry_date === '9998-12-31T23:00:00.000Z' ? 'unbegrenzt' : formatDate(user.disability_card_expiry_date)}</p>
@@ -33,14 +35,6 @@ export default function UserDetailModal({ user, orders, onClose }) {
                     )}
                 </div>
                 <div className="request-modal-grid-images">
-                    {user.disability_card_image_front && (
-                        <img src={`${API_BASE_URL}/image/${user.disability_card_image_front}`} alt="Vorderseite" className="disability-card-image" />
-                    )}
-                    {user.disability_card_image_back && (
-                        <img src={`${API_BASE_URL}/image/${user.disability_card_image_back}`} alt="Rückseite" className="disability-card-image" />
-                    )}
-                </div>
-                <div style={{ gridColumn: 'span 2' }}>
                     <table className="orders-table">
                         <thead>
                         <tr>
