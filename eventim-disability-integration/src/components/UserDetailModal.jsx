@@ -1,9 +1,12 @@
-import React from 'react';
+import React, { useState } from 'react';
 import PropTypes from 'prop-types';
 import { API_BASE_URL } from '../config';
 
 export default function UserDetailModal({ user, orders, onClose }) {
     if (!user) return null;
+
+    const [expandedOrderId, setExpandedOrderId] = useState(null);
+    const [tickets, setTickets] = useState([]);
 
     const formatDate = (d) => new Date(d).toLocaleDateString('de-DE', {
         weekday: 'long',
@@ -14,6 +17,24 @@ export default function UserDetailModal({ user, orders, onClose }) {
     const formatTime = (d) => new Date(d).toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' });
 
     const isSent = (oDate) => new Date(oDate).getTime() < Date.now() - 3 * 24 * 60 * 60 * 1000;
+
+    const handleOrderClick = async (orderId) => {
+        if (expandedOrderId === orderId) {
+            setExpandedOrderId(null);
+            setTickets([]);
+            return;
+        }
+        try {
+            const res = await fetch(`${API_BASE_URL}/orders/${orderId}`, { credentials: 'include' });
+            if (res.ok) {
+                const data = await res.json();
+                setTickets(Array.isArray(data.tickets) ? data.tickets : []);
+                setExpandedOrderId(orderId);
+            }
+        } catch (err) {
+            console.error('Error fetching order detail:', err);
+        }
+    };
 
     return (
         <div className="service__modal-overlay" onClick={onClose}>
@@ -46,12 +67,50 @@ export default function UserDetailModal({ user, orders, onClose }) {
                         </thead>
                         <tbody>
                         {orders.map((o, idx) => (
-                            <tr key={o.id}>
-                                <td>#{orders.length - idx}</td>
-                                <td>{formatDate(o.created_at)} | {formatTime(o.created_at)}</td>
-                                <td>{o.ticket_count}</td>
-                                <td><span className={`order-status ${isSent(o.created_at) ? 'send' : 'progress'}`}>{isSent(o.created_at) ? 'In Zustellung' : 'In Bearbeitung'}</span></td>
-                            </tr>
+                            <React.Fragment key={o.id}>
+                                <tr
+                                    className="order-row"
+                                    onClick={() => handleOrderClick(o.id)}
+                                >
+                                    <td>#{orders.length - idx}</td>
+                                    <td>{formatDate(o.created_at)} | {formatTime(o.created_at)}</td>
+                                    <td>{o.ticket_count}</td>
+                                    <td>
+                                        <span className={`order-status ${isSent(o.created_at) ? 'send' : 'progress'}`}>{isSent(o.created_at) ? 'In Zustellung' : 'In Bearbeitung'}</span>
+                                    </td>
+                                </tr>
+                                {expandedOrderId === o.id && (
+                                    <tr>
+                                        <td colSpan="4" style={{ padding: 0 }}>
+                                            <table className="tickets-table" style={{ marginLeft: '2rem' }}>
+                                                <thead>
+                                                <tr>
+                                                    <th>Event</th>
+                                                    <th>Kategorie</th>
+                                                    <th>Sitz</th>
+                                                    <th>Preis</th>
+                                                </tr>
+                                                </thead>
+                                                <tbody>
+                                                {tickets.map(t => (
+                                                    <tr key={t.id}>
+                                                        <td>{t.event_title}</td>
+                                                        <td>{t.event_category}</td>
+                                                        <td>{t.seat_number}</td>
+                                                        <td>{t.price}</td>
+                                                    </tr>
+                                                ))}
+                                                {tickets.length === 0 && (
+                                                    <tr>
+                                                        <td colSpan="4">Keine Tickets</td>
+                                                    </tr>
+                                                )}
+                                                </tbody>
+                                            </table>
+                                        </td>
+                                    </tr>
+                                )}
+                            </React.Fragment>
                         ))}
                         {orders.length === 0 && (
                             <tr>
