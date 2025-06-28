@@ -62,6 +62,7 @@ export default function UserDetailModal({ user, orders, onClose }) {
                             <th>Bestellungsnummer</th>
                             <th>Bestellt am</th>
                             <th>Anzahl d. Tickets</th>
+                            <th>Lieferadresse</th>
                             <th>Status</th>
                         </tr>
                         </thead>
@@ -72,6 +73,7 @@ export default function UserDetailModal({ user, orders, onClose }) {
                                     <td>#{orders.length - idx}</td>
                                     <td>{formatDate(o.created_at)} | {formatTime(o.created_at)}</td>
                                     <td>{o.ticket_count}</td>
+                                    <td>{o.street_address}, {o.postal_code} {o.city}, {o.country}</td>
                                     <td><span className={`order-status ${isSent(o.created_at) ? 'send' : 'progress'}`}>{isSent(o.created_at) ? 'In Zustellung' : 'In Bearbeitung'}</span></td>
                                 </tr>
                                 {expandedOrder === o.id && (
