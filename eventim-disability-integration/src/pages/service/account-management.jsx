@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import UserDetailModal from '../../../components/UserDetailModal';
-import { API_BASE_URL } from '../../../config';
+import UserDetailModal from '../../components/UserDetailModal';
+import { API_BASE_URL } from '../../config';
 
 export default function UserOverview() {
     const [roles, setRoles] = useState([]);
