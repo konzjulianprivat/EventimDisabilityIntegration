@@ -652,6 +652,103 @@ app.get('/countries', async (req, res) => {
     }
 });
 
+// ---------- Admin: User Management ----------
+// Liefert alle Rollen
+app.get('/user-roles', async (req, res) => {
+    try {
+        const { rows } = await client.query('SELECT id, name FROM user_roles ORDER BY name');
+        return res.json({ roles: rows });
+    } catch (err) {
+        console.error('Error fetching user roles:', err);
+        return res.status(500).json({ message: 'Server error' });
+    }
+});
+
+// Liefert alle Nutzer, optional gefiltert nach Rolle
+app.get('/users', async (req, res) => {
+    const roleId = req.query.roleId;
+    const params = [];
+    let where = '';
+    if (roleId) {
+        params.push(roleId);
+        where = 'WHERE u.role = $1';
+    }
+    try {
+        const { rows } = await client.query(
+            `SELECT u.user_id,
+                    u.visible_user_id,
+                    u.created_at,
+                    u.role,
+                    ur.name AS role_name,
+                    COUNT(o.id) AS order_count
+             FROM users u
+                  JOIN user_roles ur ON ur.id = u.role
+                  LEFT JOIN orders o ON o.user_id = u.user_id
+             ${where}
+             GROUP BY u.user_id, u.visible_user_id, u.created_at, u.role, ur.name
+             ORDER BY u.created_at DESC`,
+            params
+        );
+        return res.json({ users: rows });
+    } catch (err) {
+        console.error('Error fetching users:', err);
+        return res.status(500).json({ message: 'Server error' });
+    }
+});
+
+// Detaildaten eines Nutzers inkl. Rolle und Disability Info
+app.get('/users/:id', async (req, res) => {
+    const userId = req.params.id;
+    try {
+        const { rows } = await client.query(
+            `SELECT u.*, ur.name AS role_name
+               FROM users u
+               JOIN user_roles ur ON ur.id = u.role
+              WHERE u.user_id = $1
+              LIMIT 1`,
+            [userId]
+        );
+        if (!rows.length) return res.status(404).json({ message: 'User not found' });
+
+        const user = rows[0];
+        const { rows: marks } = await client.query(
+            'SELECT mark_code FROM user_disability_marks WHERE user_id = $1',
+            [userId]
+        );
+        return res.json({
+            user: {
+                ...user,
+                marks: marks.map(m => m.mark_code && m.mark_code.trim()),
+            },
+        });
+    } catch (err) {
+        console.error('Error fetching user detail:', err);
+        return res.status(500).json({ message: 'Server error' });
+    }
+});
+
+// Bestellungen eines bestimmten Nutzers (Admin)
+app.get('/users/:id/orders', async (req, res) => {
+    const userId = req.params.id;
+    try {
+        const { rows } = await client.query(
+            `SELECT o.id,
+                    o.created_at,
+                    COUNT(ot.ticket_id) AS ticket_count
+               FROM orders o
+                    LEFT JOIN order_tickets ot ON ot.order_id = o.id
+              WHERE o.user_id = $1
+              GROUP BY o.id, o.created_at
+              ORDER BY o.created_at DESC`,
+            [userId]
+        );
+        return res.json({ orders: rows });
+    } catch (err) {
+        console.error('Error fetching user orders:', err);
+        return res.status(500).json({ message: 'Server error' });
+    }
+});
+
 // Liefert alle verfügbaren Versandoptionen
 app.get('/shipping-options', async (req, res) => {
     try {
