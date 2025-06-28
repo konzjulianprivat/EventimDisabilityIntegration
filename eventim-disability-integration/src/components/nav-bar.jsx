@@ -381,13 +381,13 @@ export default function NavBar() {
                             </a>
                             <div className="dropdown-menu">
                                 <a href="/profile" className="dropdown-item">
-                                    Übersicht
+                                    EVENTIM - Profil
                                 </a>
-                                <a href="#" className="dropdown-item">
-                                    Persönliche Daten
+                                <a href="/service" className="dropdown-item">
+                                    EVENTIM - Service Center
                                 </a>
-                                <a href="#" className="dropdown-item">
-                                    Meine Bestellungen
+                                <a href="/admin" className="dropdown-item">
+                                    EVENTIM - Admin Tooling
                                 </a>
 
                                 <div className="dropdown-divider" />
