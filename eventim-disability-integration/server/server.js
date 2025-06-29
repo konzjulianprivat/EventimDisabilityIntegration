@@ -304,14 +304,24 @@ app.post('/login-user', async (req, res) => {
         );
 
         const { rows: roleRows } = await client.query(
-            'SELECT has_role_appointing_capability FROM user_roles WHERE id = $1',
+            `SELECT has_role_appointing_capability,
+                    has_disability_approval_access,
+                    has_account_management_access,
+                    has_creation_access,
+                    has_editing_access,
+                    has_deletion_permission
+               FROM user_roles WHERE id = $1`,
             [user.role]
         );
 
-        const canAppoint =
-            roleRows.length && roleRows[0].has_role_appointing_capability;
-
-        req.session.hasRoleAppointingCapability = !!canAppoint;
+        const perms = roleRows[0] || {};
+        const canAppoint = !!perms.has_role_appointing_capability;
+        req.session.hasRoleAppointingCapability = canAppoint;
+        req.session.hasDisabilityApprovalAccess = !!perms.has_disability_approval_access;
+        req.session.hasAccountManagementAccess = !!perms.has_account_management_access;
+        req.session.hasCreationAccess = !!perms.has_creation_access;
+        req.session.hasEditingAccess = !!perms.has_editing_access;
+        req.session.hasDeletionPermission = !!perms.has_deletion_permission;
 
         return res.status(200).json({
             message: 'Login erfolgreich',
@@ -326,7 +336,12 @@ app.post('/login-user', async (req, res) => {
                 disabilityMarks: markRows.map((m) => m.mark_code && m.mark_code.trim()),
                 role: user.role,
                 visibleUserId: user.visible_user_id,
-                hasRoleAppointingCapability: !!canAppoint,
+                hasRoleAppointingCapability: canAppoint,
+                hasDisabilityApprovalAccess: !!perms.has_disability_approval_access,
+                hasAccountManagementAccess: !!perms.has_account_management_access,
+                hasCreationAccess: !!perms.has_creation_access,
+                hasEditingAccess: !!perms.has_editing_access,
+                hasDeletionPermission: !!perms.has_deletion_permission,
             },
         });
     } catch (err) {
@@ -388,15 +403,34 @@ app.get('/session-status', async (req, res) => {
         );
 
         const { rows: roleRows } = await client.query(
-            'SELECT has_role_appointing_capability FROM user_roles WHERE id = $1',
+            `SELECT has_role_appointing_capability,
+                    has_disability_approval_access,
+                    has_account_management_access,
+                    has_creation_access,
+                    has_editing_access,
+                    has_deletion_permission
+               FROM user_roles WHERE id = $1`,
             [req.session.role]
         );
-
-        const canAppoint =
-            roleRows.length && roleRows[0].has_role_appointing_capability;
-
+        const perms = roleRows[0] || {};
+        const canAppoint = !!perms.has_role_appointing_capability;
         if (req.session.hasRoleAppointingCapability === undefined) {
-            req.session.hasRoleAppointingCapability = !!canAppoint;
+            req.session.hasRoleAppointingCapability = canAppoint;
+        }
+        if (req.session.hasDisabilityApprovalAccess === undefined) {
+            req.session.hasDisabilityApprovalAccess = !!perms.has_disability_approval_access;
+        }
+        if (req.session.hasAccountManagementAccess === undefined) {
+            req.session.hasAccountManagementAccess = !!perms.has_account_management_access;
+        }
+        if (req.session.hasCreationAccess === undefined) {
+            req.session.hasCreationAccess = !!perms.has_creation_access;
+        }
+        if (req.session.hasEditingAccess === undefined) {
+            req.session.hasEditingAccess = !!perms.has_editing_access;
+        }
+        if (req.session.hasDeletionPermission === undefined) {
+            req.session.hasDeletionPermission = !!perms.has_deletion_permission;
         }
 
         return res.status(200).json({
@@ -412,7 +446,12 @@ app.get('/session-status', async (req, res) => {
                 disabilityMarks: markRows.map((m) => m.mark_code && m.mark_code.trim()),
                 role: req.session.role,
                 visibleUserId: req.session.visibleUserId,
-                hasRoleAppointingCapability: !!canAppoint,
+                hasRoleAppointingCapability: canAppoint,
+                hasDisabilityApprovalAccess: req.session.hasDisabilityApprovalAccess,
+                hasAccountManagementAccess: req.session.hasAccountManagementAccess,
+                hasCreationAccess: req.session.hasCreationAccess,
+                hasEditingAccess: req.session.hasEditingAccess,
+                hasDeletionPermission: req.session.hasDeletionPermission,
             },
         });
     } catch (err) {

@@ -1,8 +1,10 @@
 // genres.jsx
 import React, { useState } from 'react';
 import { useRouter } from 'next/router';
+import { useRequireAccess } from '../../../hooks/useRequireAccess';
 
 export default function GenreCreation() {
+    useRequireAccess(['hasCreationAccess']);
     const router = useRouter();
     const [formData, setFormData] = useState({
         name: '',

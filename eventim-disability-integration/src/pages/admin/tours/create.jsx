@@ -2,8 +2,10 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
+import { useRequireAccess } from '../../../hooks/useRequireAccess';
 
 export default function TourCreation() {
+    useRequireAccess(['hasCreationAccess']);
     // --------------------------------------------------
     // 1) State
     // --------------------------------------------------

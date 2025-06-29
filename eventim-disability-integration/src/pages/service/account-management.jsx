@@ -2,8 +2,10 @@ import React, { useEffect, useState } from 'react';
 import UserDetailModal from '../../components/UserDetailModal';
 import { API_BASE_URL } from '../../config';
 import { useAuth } from '../../hooks/useAuth';
+import { useRequireAccess } from '../../hooks/useRequireAccess';
 
 export default function UserOverview() {
+    useRequireAccess(['hasDisabilityApprovalAccess', 'hasAccountManagementAccess']);
     const [roles, setRoles] = useState([]);
     const [usersByRole, setUsersByRole] = useState({});
     const [selectedUser, setSelectedUser] = useState(null);
@@ -137,6 +139,7 @@ export default function UserOverview() {
                     onClose={closeModal}
                     roles={roles}
                     canEditRole={user?.hasRoleAppointingCapability}
+                    currentUserId={user?.userId}
                     onRoleUpdated={handleRoleUpdated}
                 />
             )}

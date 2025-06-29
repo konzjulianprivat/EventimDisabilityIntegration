@@ -1,8 +1,10 @@
 // country.jsx (in your Next.js pages or components folder)
 import React, { useState } from 'react';
 import { useRouter } from 'next/router';
+import { useRequireAccess } from '../../../hooks/useRequireAccess';
 
 export default function CountryCreation() {
+    useRequireAccess(['hasCreationAccess']);
     const router = useRouter();
     const [formData, setFormData] = useState({ name: '', code: '' });
     const [message, setMessage] = useState('');

@@ -40,21 +40,25 @@ export default function DisabilityRequestModal({
                     )}
                 </div>
                 <div className="request-modal-actions">
-                    <button
-                        className="profile__btn-cancel"
-                        style={{ backgroundColor: 'green' }}
-                        onClick={onAccept}
-                    >
-                        ✓
-                    </button>
-                    <button className="profile__btn-cancel" onClick={onClose} style={{backgroundColor: "grey"}}>Schließen</button>
-                    <button
-                        className="profile__btn-cancel"
-                        style={{ backgroundColor: 'red' }}
-                        onClick={onDecline}
-                    >
-                        x
-                    </button>
+                    {onAccept && (
+                        <button
+                            className="profile__btn-cancel"
+                            style={{ backgroundColor: 'green' }}
+                            onClick={onAccept}
+                        >
+                            ✓
+                        </button>
+                    )}
+                    <button className="profile__btn-cancel" onClick={onClose} style={{backgroundColor: 'grey'}}>Schließen</button>
+                    {onDecline && (
+                        <button
+                            className="profile__btn-cancel"
+                            style={{ backgroundColor: 'red' }}
+                            onClick={onDecline}
+                        >
+                            x
+                        </button>
+                    )}
                 </div>
             </div>
         </div>

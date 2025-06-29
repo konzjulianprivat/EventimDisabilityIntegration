@@ -29,7 +29,13 @@ export function useAuth() {
                         disabilityCardExpiryDate: u.disabilityCardExpiryDate,
                         disabilityMarks: u.disabilityMarks || [],
                         visibleUserId: u.visibleUserId,
+                        role: u.role,
                         hasRoleAppointingCapability: u.hasRoleAppointingCapability,
+                        hasDisabilityApprovalAccess: u.hasDisabilityApprovalAccess,
+                        hasAccountManagementAccess: u.hasAccountManagementAccess,
+                        hasCreationAccess: u.hasCreationAccess,
+                        hasEditingAccess: u.hasEditingAccess,
+                        hasDeletionPermission: u.hasDeletionPermission,
                     },
                 });
             } catch {
@@ -60,6 +66,16 @@ export function useAuth() {
                             disabilityMarks: data.user.disabilityMarks || [],
                             visibleUserId: data.user.visibleUserId,
                             hasRoleAppointingCapability: data.user.hasRoleAppointingCapability,
+                            hasDisabilityApprovalAccess: data.user.hasDisabilityApprovalAccess,
+                            hasAccountManagementAccess: data.user.hasAccountManagementAccess,
+                            hasCreationAccess: data.user.hasCreationAccess,
+                            hasEditingAccess: data.user.hasEditingAccess,
+                            hasDeletionPermission: data.user.hasDeletionPermission,
+                            hasDisabilityApprovalAccess: data.user.hasDisabilityApprovalAccess,
+                            hasAccountManagementAccess: data.user.hasAccountManagementAccess,
+                            hasCreationAccess: data.user.hasCreationAccess,
+                            hasEditingAccess: data.user.hasEditingAccess,
+                            hasDeletionPermission: data.user.hasDeletionPermission,
                         },
                     });
                     localStorage.setItem(
@@ -74,7 +90,13 @@ export function useAuth() {
                             disabilityCardExpiryDate: data.user.disabilityCardExpiryDate,
                             disabilityMarks: data.user.disabilityMarks || [],
                             visibleUserId: data.user.visibleUserId,
+                            role: data.user.role,
                             hasRoleAppointingCapability: data.user.hasRoleAppointingCapability,
+                            hasDisabilityApprovalAccess: data.user.hasDisabilityApprovalAccess,
+                            hasAccountManagementAccess: data.user.hasAccountManagementAccess,
+                            hasCreationAccess: data.user.hasCreationAccess,
+                            hasEditingAccess: data.user.hasEditingAccess,
+                            hasDeletionPermission: data.user.hasDeletionPermission,
                         })
                     );
                 } else {

@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import PropTypes from 'prop-types';
 import { API_BASE_URL } from '../config';
 
-export default function UserDetailModal({ user, orders, onClose, roles = [], canEditRole = false, onRoleUpdated }) {
+export default function UserDetailModal({ user, orders, onClose, roles = [], canEditRole = false, currentUserId, onRoleUpdated }) {
     if (!user) return null;
 
     const [expandedOrderId, setExpandedOrderId] = useState(null);
@@ -74,20 +74,6 @@ export default function UserDetailModal({ user, orders, onClose, roles = [], can
                             <p><strong>Merkzeichen:</strong><br/>{user.marks && user.marks.length ? user.marks.join(', ') : 'Keine'}</p>
                         </>
                     )}
-                    {canEditRole && (
-                        !editMode ? (
-                            <button className="profile__btn-cancel" onClick={() => setEditMode(true)}>Rolle anpassen</button>
-                        ) : (
-                            <>
-                                <select className="role-select" value={selectedRole} onChange={e => setSelectedRole(e.target.value)}>
-                                    {roles.map(r => (
-                                        <option key={r.id} value={r.id}>{r.name}</option>
-                                    ))}
-                                </select>
-                                <button className="profile__btn-cancel" onClick={handleSaveRole}>Speichern</button>
-                            </>
-                        )
-                    )}
                 </div>
                 <div className="request-modal-grid-images">
                     <table className="orders-table">
@@ -157,6 +143,20 @@ export default function UserDetailModal({ user, orders, onClose, roles = [], can
                     </table>
                 </div>
                 <div className="request-modal-actions">
+                    {canEditRole && user.user_id !== currentUserId && (
+                        !editMode ? (
+                            <button className="profile__btn-cancel" onClick={() => setEditMode(true)}>Rolle anpassen</button>
+                        ) : (
+                            <>
+                                <select className="role-select" value={selectedRole} onChange={e => setSelectedRole(e.target.value)}>
+                                    {roles.map(r => (
+                                        <option key={r.id} value={r.id}>{r.name}</option>
+                                    ))}
+                                </select>
+                                <button className="profile__btn-cancel" onClick={handleSaveRole}>Speichern</button>
+                            </>
+                        )
+                    )}
                     <button className="profile__btn-cancel" style={{backgroundColor: '#ccc'}} onClick={onClose}>Schließen</button>
                 </div>
             </div>
@@ -170,5 +170,6 @@ UserDetailModal.propTypes = {
     onClose: PropTypes.func,
     roles: PropTypes.array,
     canEditRole: PropTypes.bool,
+    currentUserId: PropTypes.string,
     onRoleUpdated: PropTypes.func,
 };

@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import FilterBar from '../../../components/filter-bar';
 import { useRouter } from 'next/router';
+import { useAuth } from '../../../hooks/useAuth';
 
 export default function VenuesContent() {
     const [venues, setVenues] = useState([]);
@@ -19,6 +20,7 @@ export default function VenuesContent() {
     const [confirmDeleteId, setConfirmDeleteId] = useState(null);
 
     const router = useRouter();
+    const { user } = useAuth();
 
     const filterFields = [
         { key: 'name', label: 'Name', match: 'startsWith' },
@@ -145,12 +147,14 @@ export default function VenuesContent() {
         <div className="artists-wrapper">
             <div className="artists-header">
                 <h2 className="artists-title">Übersicht – Venues</h2>
-                <button
-                    className="btn-create-entity"
-                    onClick={() => router.push('/admin/venues/create')}
-                >
-                    + Venue erstellen
-                </button>
+                {user?.hasCreationAccess && (
+                    <button
+                        className="btn-create-entity"
+                        onClick={() => router.push('/admin/venues/create')}
+                    >
+                        + Venue erstellen
+                    </button>
+                )}
             </div>
 
             <div className="filter-container">
@@ -208,13 +212,15 @@ export default function VenuesContent() {
                                     💾
                                 </button>
                             ) : (
-                                <button
-                                    className="btn-edit"
-                                    onClick={() => handleEditToggle(venue)}
-                                    title="Bearbeiten"
-                                >
-                                    ✎
-                                </button>
+                                user?.hasEditingAccess && (
+                                    <button
+                                        className="btn-edit"
+                                        onClick={() => handleEditToggle(venue)}
+                                        title="Bearbeiten"
+                                    >
+                                        ✎
+                                    </button>
+                                )
                             )}
                         </div>
 
@@ -340,7 +346,7 @@ export default function VenuesContent() {
                             </div>
                         </div>
 
-                        {editingId !== venue.id && (
+                        {editingId !== venue.id && user?.hasDeletionPermission && (
                             <button
                                 className="btn-edit"
                                 style={{ marginLeft: 'auto', marginRight: '0.5rem' }}
@@ -351,7 +357,7 @@ export default function VenuesContent() {
                             </button>
                         )}
 
-                        {confirmDeleteId === venue.id && (
+                        {confirmDeleteId === venue.id && user?.hasDeletionPermission && (
                             <div className="modal-overlay">
                                 <div className="modal-box">
                                     <p>Möchtest du dieses Venue wirklich löschen?</p>
