@@ -1,8 +1,10 @@
 // venues.jsx (Next.js Komponente mit disability area capacities)
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
+import { useRequireAccess } from '../../../hooks/useRequireAccess';
 
 export default function VenueCreation() {
+    useRequireAccess(['hasCreationAccess']);
     const router = useRouter();
     const [formData, setFormData] = useState({
         name: '',

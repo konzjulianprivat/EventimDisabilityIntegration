@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import PropTypes from 'prop-types';
 import { API_BASE_URL } from '../config';
 
-export default function UserDetailModal({ user, orders, onClose, roles = [], canEditRole = false, onRoleUpdated }) {
+export default function UserDetailModal({ user, orders, onClose, roles = [], canEditRole = false, currentUserId, onRoleUpdated }) {
     if (!user) return null;
 
     const [expandedOrderId, setExpandedOrderId] = useState(null);
@@ -143,7 +143,7 @@ export default function UserDetailModal({ user, orders, onClose, roles = [], can
                     </table>
                 </div>
                 <div className="request-modal-actions">
-                    {canEditRole && (
+                    {canEditRole && user.user_id !== currentUserId && (
                         !editMode ? (
                             <button className="profile__btn-cancel" onClick={() => setEditMode(true)}>Rolle anpassen</button>
                         ) : (
@@ -170,5 +170,6 @@ UserDetailModal.propTypes = {
     onClose: PropTypes.func,
     roles: PropTypes.array,
     canEditRole: PropTypes.bool,
+    currentUserId: PropTypes.string,
     onRoleUpdated: PropTypes.func,
 };

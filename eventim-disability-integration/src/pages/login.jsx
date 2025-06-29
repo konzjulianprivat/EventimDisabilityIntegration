@@ -62,6 +62,11 @@ export default function LoginPage() {
                         visibleUserId: data.user.visibleUserId,
                         role: data.user.role,
                         hasRoleAppointingCapability: data.user.hasRoleAppointingCapability,
+                        hasDisabilityApprovalAccess: data.user.hasDisabilityApprovalAccess,
+                        hasAccountManagementAccess: data.user.hasAccountManagementAccess,
+                        hasCreationAccess: data.user.hasCreationAccess,
+                        hasEditingAccess: data.user.hasEditingAccess,
+                        hasDeletionPermission: data.user.hasDeletionPermission,
                     })
                 );
                 router.push(redirect || '/').then(() => window.location.reload());
