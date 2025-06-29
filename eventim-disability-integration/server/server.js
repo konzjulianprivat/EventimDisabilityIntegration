@@ -303,6 +303,16 @@ app.post('/login-user', async (req, res) => {
             [user.user_id]
         );
 
+        const { rows: roleRows } = await client.query(
+            'SELECT has_role_appointing_capability FROM user_roles WHERE id = $1',
+            [user.role]
+        );
+
+        const canAppoint =
+            roleRows.length && roleRows[0].has_role_appointing_capability;
+
+        req.session.hasRoleAppointingCapability = !!canAppoint;
+
         return res.status(200).json({
             message: 'Login erfolgreich',
             user: {
@@ -316,6 +326,7 @@ app.post('/login-user', async (req, res) => {
                 disabilityMarks: markRows.map((m) => m.mark_code && m.mark_code.trim()),
                 role: user.role,
                 visibleUserId: user.visible_user_id,
+                hasRoleAppointingCapability: !!canAppoint,
             },
         });
     } catch (err) {
@@ -376,6 +387,18 @@ app.get('/session-status', async (req, res) => {
             [req.session.userId]
         );
 
+        const { rows: roleRows } = await client.query(
+            'SELECT has_role_appointing_capability FROM user_roles WHERE id = $1',
+            [req.session.role]
+        );
+
+        const canAppoint =
+            roleRows.length && roleRows[0].has_role_appointing_capability;
+
+        if (req.session.hasRoleAppointingCapability === undefined) {
+            req.session.hasRoleAppointingCapability = !!canAppoint;
+        }
+
         return res.status(200).json({
             loggedIn: true,
             user: {
@@ -389,6 +412,7 @@ app.get('/session-status', async (req, res) => {
                 disabilityMarks: markRows.map((m) => m.mark_code && m.mark_code.trim()),
                 role: req.session.role,
                 visibleUserId: req.session.visibleUserId,
+                hasRoleAppointingCapability: !!canAppoint,
             },
         });
     } catch (err) {
@@ -749,6 +773,53 @@ app.get('/users/:id/orders', async (req, res) => {
         return res.json({ orders: rows });
     } catch (err) {
         console.error('Error fetching user orders:', err);
+        return res.status(500).json({ message: 'Server error' });
+    }
+});
+
+// Rolle eines Nutzers aktualisieren
+app.put('/users/:id/role', async (req, res) => {
+    if (!req.session.userId) {
+        return res.status(401).json({ message: 'Not logged in' });
+    }
+
+    const userId = req.params.id;
+    const { roleId } = req.body;
+
+    if (!roleId) {
+        return res.status(400).json({ message: 'roleId required' });
+    }
+
+    try {
+        const { rows: permRows } = await client.query(
+            'SELECT has_role_appointing_capability FROM user_roles WHERE id = $1',
+            [req.session.role]
+        );
+
+        if (!permRows.length || !permRows[0].has_role_appointing_capability) {
+            return res.status(403).json({ message: 'Forbidden' });
+        }
+
+        await client.query(
+            'UPDATE users SET role = $1, updated_at = NOW() WHERE user_id = $2',
+            [roleId, userId]
+        );
+
+        const { rows } = await client.query(
+            `SELECT u.user_id,
+                    u.visible_user_id,
+                    u.created_at,
+                    u.role,
+                    ur.name AS role_name
+               FROM users u
+                    JOIN user_roles ur ON ur.id = u.role
+              WHERE u.user_id = $1`,
+            [userId]
+        );
+
+        return res.json({ user: rows[0] });
+    } catch (err) {
+        console.error('Error updating user role:', err);
         return res.status(500).json({ message: 'Server error' });
     }
 });

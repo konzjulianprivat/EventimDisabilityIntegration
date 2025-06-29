@@ -60,6 +60,8 @@ export default function LoginPage() {
                         disabilityCardExpiryDate: data.user.disabilityCardExpiryDate,
                         disabilityMarks: data.user.disabilityMarks,
                         visibleUserId: data.user.visibleUserId,
+                        role: data.user.role,
+                        hasRoleAppointingCapability: data.user.hasRoleAppointingCapability,
                     })
                 );
                 router.push(redirect || '/').then(() => window.location.reload());

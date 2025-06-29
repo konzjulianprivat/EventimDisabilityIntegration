@@ -29,6 +29,7 @@ export function useAuth() {
                         disabilityCardExpiryDate: u.disabilityCardExpiryDate,
                         disabilityMarks: u.disabilityMarks || [],
                         visibleUserId: u.visibleUserId,
+                        hasRoleAppointingCapability: u.hasRoleAppointingCapability,
                     },
                 });
             } catch {
@@ -58,6 +59,7 @@ export function useAuth() {
                             disabilityCardExpiryDate: data.user.disabilityCardExpiryDate,
                             disabilityMarks: data.user.disabilityMarks || [],
                             visibleUserId: data.user.visibleUserId,
+                            hasRoleAppointingCapability: data.user.hasRoleAppointingCapability,
                         },
                     });
                     localStorage.setItem(
@@ -72,6 +74,7 @@ export function useAuth() {
                             disabilityCardExpiryDate: data.user.disabilityCardExpiryDate,
                             disabilityMarks: data.user.disabilityMarks || [],
                             visibleUserId: data.user.visibleUserId,
+                            hasRoleAppointingCapability: data.user.hasRoleAppointingCapability,
                         })
                     );
                 } else {
