@@ -92,20 +92,31 @@ export default function UserOverview() {
 
     return (
         <div className="profile-container" style={{ flexDirection: 'column' }}>
-            <div className="user-search-bar">
-                <input
-                    type="text"
-                    className="user-search-input"
-                    placeholder="User-ID suchen…"
-                    value={searchId}
-                    onChange={(e) => setSearchId(e.target.value)}
-                />
-                <input
-                    type="date"
-                    className="user-search-input"
-                    value={searchBirthDate}
-                    onChange={(e) => setSearchBirthDate(e.target.value)}
-                />
+            <div className="content-inner" style={{ paddingTop: '24px' }}>
+                <div className="white-box events-white-box">
+                    <div className="content-inner">
+                        <h1 className="events-header" style={{color: "#002b55", alignContent: "center"}}>Account-Management</h1>
+                        <div className="profile-section-divider"/>
+                        <div className="user-search-bar">
+                            <h3 style={{color: "#002b55"}}>User-ID:</h3>
+                            <input
+                                type="text"
+                                className="user-search-input"
+                                placeholder="User-ID suchen…"
+                                value={searchId}
+                                onChange={(e) => setSearchId(e.target.value)}
+                            />
+                            <h3 style={{color: "#002b55", paddingLeft: "0.5rem"}}>Geburtsdatum:</h3>
+                            <input
+                                type="date"
+                                className="user-search-input"
+                                placeholder="Geburtsdatum suchen…"
+                                value={searchBirthDate}
+                                onChange={(e) => setSearchBirthDate(e.target.value)}
+                            />
+                        </div>
+                    </div>
+                </div>
             </div>
             {roles.map(role => (
                 <div key={role.id} className="content-inner" style={{ paddingTop: '24px' }}>
