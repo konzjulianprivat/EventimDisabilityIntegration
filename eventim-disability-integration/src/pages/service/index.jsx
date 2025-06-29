@@ -1,6 +1,8 @@
 import React from 'react';
+import { useRequireAccess } from '../../hooks/useRequireAccess';
 
 export default function AdminTooling() {
+    useRequireAccess(['hasDisabilityApprovalAccess']);
     const links = [
         { label: 'Disability Functions', url: 'service/disabilityFunction' },
         { label: 'Bookings', url: 'service/bookings' },

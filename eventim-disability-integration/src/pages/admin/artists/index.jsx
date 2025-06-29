@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import FilterBar from '../../../components/filter-bar';
 import { useRouter } from 'next/router';
+import { useAuth } from '../../../hooks/useAuth';
 
 export default function ArtistsContent() {
     const [artists, setArtists] = useState([]);
@@ -18,6 +19,7 @@ export default function ArtistsContent() {
     const [expandedIds, setExpandedIds] = useState(new Set());
 
     const router = useRouter();
+    const { user } = useAuth();
 
     const filterFields = [
         { key: 'name', label: 'Name', match: 'startsWith' },
@@ -128,12 +130,14 @@ export default function ArtistsContent() {
         <div className="artists-wrapper">
             <div className="artists-header">
                 <h2 className="artists-title">Übersicht – Künstler</h2>
-                <button
-                    className="btn-create-entity"
-                    onClick={() => router.push(`/admin/artists/create`)}
-                >
-                    + Künstler erstellen
-                </button>
+                {user?.hasCreationAccess && (
+                    <button
+                        className="btn-create-entity"
+                        onClick={() => router.push(`/admin/artists/create`)}
+                    >
+                        + Künstler erstellen
+                    </button>
+                )}
             </div>
 
             <div className="filter-container">
@@ -174,13 +178,15 @@ export default function ArtistsContent() {
                                     💾
                                 </button>
                             ) : (
-                                <button
-                                    className="btn-edit"
-                                    onClick={() => handleEditToggle(artist)}
-                                    title="Bearbeiten"
-                                >
-                                    ✎
-                                </button>
+                                user?.hasEditingAccess && (
+                                    <button
+                                        className="btn-edit"
+                                        onClick={() => handleEditToggle(artist)}
+                                        title="Bearbeiten"
+                                    >
+                                        ✎
+                                    </button>
+                                )
                             )}
                         </div>
 

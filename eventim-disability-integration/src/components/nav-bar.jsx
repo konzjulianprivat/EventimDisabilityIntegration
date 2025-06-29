@@ -383,12 +383,16 @@ export default function NavBar() {
                                 <a href="/profile" className="dropdown-item">
                                     EVENTIM - Profil
                                 </a>
-                                <a href="/service" className="dropdown-item">
-                                    EVENTIM - Service Center
-                                </a>
-                                <a href="/admin" className="dropdown-item">
-                                    EVENTIM - Admin Tooling
-                                </a>
+                                {user.hasDisabilityApprovalAccess && (
+                                    <a href="/service" className="dropdown-item">
+                                        EVENTIM - Service Center
+                                    </a>
+                                )}
+                                {(user.hasCreationAccess || user.hasEditingAccess || user.hasDeletionPermission) && (
+                                    <a href="/admin" className="dropdown-item">
+                                        EVENTIM - Admin Tooling
+                                    </a>
+                                )}
 
                                 <div className="dropdown-divider" />
 

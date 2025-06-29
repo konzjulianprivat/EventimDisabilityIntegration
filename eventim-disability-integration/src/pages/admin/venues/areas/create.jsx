@@ -1,8 +1,10 @@
 "use client";
 
 import React, { useState } from 'react';
+import { useRequireAccess } from '../../../../hooks/useRequireAccess';
 
 export default function AreaCreation() {
+    useRequireAccess(['hasCreationAccess']);
     const [formData, setFormData] = useState({
         name: '',
         description: ''

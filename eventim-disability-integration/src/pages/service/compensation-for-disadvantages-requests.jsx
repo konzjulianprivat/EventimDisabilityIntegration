@@ -4,8 +4,12 @@
 import React, { useEffect, useState } from 'react';
 import { API_BASE_URL } from '../../config';
 import DisabilityRequestModal from '../../components/DisabilityRequestModal';
+import { useRequireAccess } from '../../hooks/useRequireAccess';
+import { useAuth } from '../../hooks/useAuth';
 
 export default function CompensationRequests() {
+    useRequireAccess(['hasDisabilityApprovalAccess']);
+    const { user } = useAuth();
     const [requests, setRequests] = useState([]);
     const [acceptedRequests, setAcceptedRequests] = useState([]);
     const [selectedUser, setSelectedUser] = useState(null);
@@ -201,8 +205,8 @@ export default function CompensationRequests() {
                         imgFrontUrl={imgFrontUrl}
                         imgBackUrl={imgBackUrl}
                         onClose={closeModal}
-                        onAccept={acceptRequest}
-                        onDecline={declineRequest}
+                        onAccept={user?.hasDisabilityApprovalAccess ? acceptRequest : undefined}
+                        onDecline={user?.hasDisabilityApprovalAccess ? declineRequest : undefined}
                     />
                 )}
             </div>

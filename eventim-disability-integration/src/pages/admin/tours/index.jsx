@@ -4,6 +4,7 @@ import React, { useEffect, useState } from 'react';
 import FilterBar from '../../../components/filter-bar';
 import { useRouter } from 'next/router';
 import { API_BASE_URL } from '../../../config';
+import { useAuth } from '../../../hooks/useAuth';
 
 export default function ToursContent() {
     const [tours, setTours] = useState([]);
@@ -34,6 +35,7 @@ export default function ToursContent() {
     const [filterArtists, setFilterArtists] = useState([]);
 
     const router = useRouter();
+    const { user } = useAuth();
 
     const filterFields = [
         { key: 'title', label: 'Titel', match: 'startsWith' },
@@ -262,12 +264,14 @@ export default function ToursContent() {
             {/* Header + Create */}
             <div className="artists-header">
                 <h2 className="artists-title">Übersicht – Touren</h2>
-                <button
-                    className="btn-create-entity"
-                    onClick={() => router.push(`/admin/tours/create`)}
-                >
-                    + Tour erstellen
-                </button>
+                {user?.hasCreationAccess && (
+                    <button
+                        className="btn-create-entity"
+                        onClick={() => router.push(`/admin/tours/create`)}
+                    >
+                        + Tour erstellen
+                    </button>
+                )}
             </div>
 
             {/* Filter */}
@@ -656,25 +660,29 @@ export default function ToursContent() {
                             {/* Edit + Delete icons */}
                             {editingId !== tour.id && (
                                 <div className="card-footer-icons">
-                                    <button
-                                        className="btn-edit small-edit"
-                                        onClick={() => handleEditToggle(tour)}
-                                        title="Bearbeiten"
-                                    >
-                                        ✎
-                                    </button>
-                                    <button
-                                        className="btn-edit delete-icon"
-                                        onClick={() => setConfirmDeleteId(tour.id)}
-                                        title="Löschen"
-                                    >
-                                        🗑
-                                    </button>
+                                    {user?.hasEditingAccess && (
+                                        <button
+                                            className="btn-edit small-edit"
+                                            onClick={() => handleEditToggle(tour)}
+                                            title="Bearbeiten"
+                                        >
+                                            ✎
+                                        </button>
+                                    )}
+                                    {user?.hasDeletionPermission && (
+                                        <button
+                                            className="btn-edit delete-icon"
+                                            onClick={() => setConfirmDeleteId(tour.id)}
+                                            title="Löschen"
+                                        >
+                                            🗑
+                                        </button>
+                                    )}
                                 </div>
                             )}
 
                             {/* Delete modal */}
-                            {confirmDeleteId === tour.id && (
+                            {confirmDeleteId === tour.id && user?.hasDeletionPermission && (
                                 <div className="modal-overlay">
                                     <div className="modal-box">
                                         <p>Möchtest du diese Tour wirklich löschen?</p>
