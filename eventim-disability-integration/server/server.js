@@ -247,6 +247,9 @@ app.post('/register-user', upload.fields([
         });
     } catch (error) {
         console.error('Registration error:', error);
+        if (error.code === '23505' && error.constraint === 'unique_user_email') {
+            return res.status(409).json({ message: 'E-Mail ist bereits registriert.' });
+        }
         return res.status(500).json({ message: 'Serverfehler während der Registrierung' });
     }
 });
@@ -900,6 +903,9 @@ app.post('/create-artist', upload.single('artistImage'), async (req, res) => {
         res.status(201).json({ message: 'Artist created', artist });
     } catch (error) {
         console.error('Create-artist error:', error);
+        if (error.code === '23505' && error.constraint === 'unique_artist_name') {
+            return res.status(409).json({ message: 'Künstler mit diesem Namen existiert bereits.' });
+        }
         res.status(500).json({ message: 'Server error during artist creation' });
     }
 });
@@ -1136,6 +1142,9 @@ app.post('/create-tour', upload.single('tourImage'), async (req, res) => {
     } catch (error) {
         await client.query('ROLLBACK');
         console.error('Create-tour error:', error);
+        if (error.code === '23505' && error.constraint === 'unique_tour_title_dates') {
+            return res.status(409).json({ message: 'Eine Tour mit diesen Daten existiert bereits.' });
+        }
         return res.status(500).json({ message: 'Serverfehler beim Erstellen der Tour' });
     }
 });
@@ -1158,6 +1167,9 @@ app.post('/create-city', express.json(), async (req, res) => {
         res.status(201).json({ message: 'Stadt erstellt', city: result.rows[0] });
     } catch (error) {
         console.error('Create-city error:', error);
+        if (error.code === '23505' && error.constraint === 'unique_city_name_per_country') {
+            return res.status(409).json({ message: 'Stadt existiert bereits in diesem Land.' });
+        }
         res.status(500).json({ message: 'Serverfehler beim Erstellen der Stadt' });
     }
 });
@@ -1504,6 +1516,9 @@ app.post('/create-event', express.json(), async (req, res) => {
     } catch (err) {
         await client.query('ROLLBACK');
         console.error('Create-event error:', err);
+        if (err.code === '23505' && err.constraint === 'unique_event_start_per_venue') {
+            return res.status(409).json({ message: 'In diesem Zeitraum besteht bereits ein Event an diesem Veranstaltungsort.' });
+        }
         return res.status(500).json({ message: 'Serverfehler beim Erstellen des Events' });
     }
 });
@@ -1556,6 +1571,9 @@ app.post('/create-genre', async (req, res) => {
     } catch (err) {
         await client.query('ROLLBACK');
         console.error('Create-genre error:', err);
+        if (err.code === '23505' && err.constraint === 'unique_genre_name') {
+            return res.status(409).json({ message: 'Genre existiert bereits.' });
+        }
         res.status(500).json({ message: 'Serverfehler beim Erstellen des Genres' });
     }
 });
@@ -2252,6 +2270,9 @@ app.delete('/tours/:id', async (req, res) => {
         return res.status(200).json({ message: 'Tour gelöscht' });
     } catch (err) {
         console.error('Delete‐Tour error:', err);
+        if (err.code === 'P0001') {
+            return res.status(400).json({ message: err.message });
+        }
         return res.status(500).json({ message: 'Serverfehler beim Löschen der Tour' });
     }
 });
