@@ -10,6 +10,8 @@ export default function UserOverview() {
     const [usersByRole, setUsersByRole] = useState({});
     const [selectedUser, setSelectedUser] = useState(null);
     const [selectedOrders, setSelectedOrders] = useState([]);
+    const [searchId, setSearchId] = useState('');
+    const [searchBirthDate, setSearchBirthDate] = useState('');
     const { user } = useAuth();
 
     useEffect(() => {
@@ -90,6 +92,21 @@ export default function UserOverview() {
 
     return (
         <div className="profile-container" style={{ flexDirection: 'column' }}>
+            <div className="user-search-bar">
+                <input
+                    type="text"
+                    className="user-search-input"
+                    placeholder="User-ID suchen…"
+                    value={searchId}
+                    onChange={(e) => setSearchId(e.target.value)}
+                />
+                <input
+                    type="date"
+                    className="user-search-input"
+                    value={searchBirthDate}
+                    onChange={(e) => setSearchBirthDate(e.target.value)}
+                />
+            </div>
             {roles.map(role => (
                 <div key={role.id} className="content-inner" style={{ paddingTop: '24px' }}>
                     <div className="white-box events-white-box">
@@ -111,7 +128,13 @@ export default function UserOverview() {
                                     </tr>
                                     </thead>
                                     <tbody>
-                                    {(usersByRole[role.id] || []).map(u => (
+                                    {(usersByRole[role.id] || [])
+                                        .filter(u => {
+                                            const idOk = !searchId || String(u.visible_user_id).includes(searchId);
+                                            const birthOk = !searchBirthDate || (u.birth_date && u.birth_date.startsWith(searchBirthDate));
+                                            return idOk && birthOk;
+                                        })
+                                        .map(u => (
                                         <tr key={u.user_id} className="clickable-row" onClick={() => openUser(u.user_id)}>
                                             <td>{u.visible_user_id}</td>
                                             <td>{formatDate(u.created_at)}</td>
