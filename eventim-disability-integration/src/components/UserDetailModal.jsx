@@ -2,11 +2,13 @@ import React, { useState } from 'react';
 import PropTypes from 'prop-types';
 import { API_BASE_URL } from '../config';
 
-export default function UserDetailModal({ user, orders, onClose }) {
+export default function UserDetailModal({ user, orders, onClose, roles = [], canEditRole = false, onRoleUpdated }) {
     if (!user) return null;
 
     const [expandedOrderId, setExpandedOrderId] = useState(null);
     const [tickets, setTickets] = useState([]);
+    const [editMode, setEditMode] = useState(false);
+    const [selectedRole, setSelectedRole] = useState(user.role);
 
     const formatDate = (d) => new Date(d).toLocaleDateString('de-DE', {
         weekday: 'long',
@@ -33,6 +35,24 @@ export default function UserDetailModal({ user, orders, onClose }) {
             }
         } catch (err) {
             console.error('Error fetching order detail:', err);
+        }
+    };
+
+    const handleSaveRole = async () => {
+        try {
+            const res = await fetch(`${API_BASE_URL}/users/${user.user_id}/role`, {
+                method: 'PUT',
+                credentials: 'include',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ roleId: selectedRole }),
+            });
+            if (res.ok) {
+                const data = await res.json();
+                onRoleUpdated && onRoleUpdated(data.user, user.role);
+                setEditMode(false);
+            }
+        } catch (err) {
+            console.error('Error updating role:', err);
         }
     };
 
@@ -123,6 +143,20 @@ export default function UserDetailModal({ user, orders, onClose }) {
                     </table>
                 </div>
                 <div className="request-modal-actions">
+                    {canEditRole && (
+                        !editMode ? (
+                            <button className="profile__btn-cancel" onClick={() => setEditMode(true)}>Rolle anpassen</button>
+                        ) : (
+                            <>
+                                <select className="role-select" value={selectedRole} onChange={e => setSelectedRole(e.target.value)}>
+                                    {roles.map(r => (
+                                        <option key={r.id} value={r.id}>{r.name}</option>
+                                    ))}
+                                </select>
+                                <button className="profile__btn-cancel" onClick={handleSaveRole}>Speichern</button>
+                            </>
+                        )
+                    )}
                     <button className="profile__btn-cancel" style={{backgroundColor: '#ccc'}} onClick={onClose}>Schließen</button>
                 </div>
             </div>
@@ -134,4 +168,7 @@ UserDetailModal.propTypes = {
     user: PropTypes.object,
     orders: PropTypes.array,
     onClose: PropTypes.func,
+    roles: PropTypes.array,
+    canEditRole: PropTypes.bool,
+    onRoleUpdated: PropTypes.func,
 };

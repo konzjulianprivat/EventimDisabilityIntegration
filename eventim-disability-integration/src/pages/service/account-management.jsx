@@ -1,12 +1,14 @@
 import React, { useEffect, useState } from 'react';
 import UserDetailModal from '../../components/UserDetailModal';
 import { API_BASE_URL } from '../../config';
+import { useAuth } from '../../hooks/useAuth';
 
 export default function UserOverview() {
     const [roles, setRoles] = useState([]);
     const [usersByRole, setUsersByRole] = useState({});
     const [selectedUser, setSelectedUser] = useState(null);
     const [selectedOrders, setSelectedOrders] = useState([]);
+    const { user } = useAuth();
 
     useEffect(() => {
         fetchRoles();
@@ -57,6 +59,19 @@ export default function UserOverview() {
         } catch (err) {
             console.error('Error loading user detail:', err);
         }
+    };
+
+    const handleRoleUpdated = (updatedUser, previousRole) => {
+        setUsersByRole(prev => {
+            const newState = { ...prev };
+            if (newState[previousRole]) {
+                newState[previousRole] = newState[previousRole].filter(u => u.user_id !== updatedUser.user_id);
+            }
+            if (!newState[updatedUser.role]) newState[updatedUser.role] = [];
+            newState[updatedUser.role] = [updatedUser, ...newState[updatedUser.role]];
+            return newState;
+        });
+        setSelectedUser(updatedUser);
     };
 
     const closeModal = () => {
@@ -116,7 +131,14 @@ export default function UserOverview() {
                 </div>
             ))}
             {selectedUser && (
-                <UserDetailModal user={selectedUser} orders={selectedOrders} onClose={closeModal} />
+                <UserDetailModal
+                    user={selectedUser}
+                    orders={selectedOrders}
+                    onClose={closeModal}
+                    roles={roles}
+                    canEditRole={user?.hasRoleAppointingCapability}
+                    onRoleUpdated={handleRoleUpdated}
+                />
             )}
         </div>
     );
