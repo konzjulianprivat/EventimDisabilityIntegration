@@ -167,10 +167,11 @@ export default function GenresContent() {
                             <div className="details-wrapper">
                                 {editingId === genre.id ? (
                                     <>
+                                        <label className="input-label-description">Subgenres:</label>
                                         {editedData.subgenres.map((s, i) => (
                                             <div
                                                 key={i}
-                                                style={{ display: 'flex', gap: '0.5rem', marginBottom: '0.25rem' }}
+                                                style={{ display: 'flex', gap: '0.5rem', marginBottom: '0.25rem', marginLeft: '0.5rem' }}
                                             >
                                                 <input
                                                     type="text"

@@ -131,6 +131,19 @@
     border: 1px solid #eee;
     border-radius: 4px;
 }
+
+.input-label-description {
+    display: inline-block;
+    width: 3ch;                 /* enough for “ISO” or “Code” */
+    margin-right: 0.5ch;        /* small gap before the input */
+    font-size: 0.875rem;        /* match your input’s 14px */
+    font-weight: 500;           /* semi-bold for clarity */
+    text-align: right;          /* aligns the text against the field */
+    color: #555;                /* subtle label color */
+    vertical-align: middle;     /* lines up with the input */
+    white-space: nowrap;        /* prevents wrapping */
+}
+
 .input-date {
     width: 100%;
     padding: 0.4rem;

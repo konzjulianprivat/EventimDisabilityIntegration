@@ -175,6 +175,7 @@ export default function CountriesContent() {
                             <div className="details-wrapper">
                                 {editingId === country.id ? (
                                     <>
+                                        <label className="input-label-description">ISO-Code:</label>
                                         <input
                                             type="text"
                                             name="code"
@@ -183,11 +184,11 @@ export default function CountriesContent() {
                                             placeholder="ISO-Code"
                                             className="input-website"
                                         />
-
+                                        <label className="input-label-description">Städte:</label>
                                         {editedData.cities.map((c, i) => (
                                             <div
                                                 key={i}
-                                                style={{ display: 'flex', gap: '0.5rem', marginBottom: '0.25rem' }}
+                                                style={{ display: 'flex', gap: '0.5rem', marginBottom: '0.25rem', marginLeft: '0.5rem'}}
                                             >
                                                 <input
                                                     type="text"
