@@ -323,7 +323,7 @@ export default function EventPage() {
                                     disabled={assistanceInCart}
                                     onChange={() => setBookingForMe(!bookingForMe)}
                                 />
-                                <span className="slider" />
+                                <span className="slider"/>
                             </label>
                             <span className="toggle-label">
                           {bookingForMe ? 'Buchung für mich (inkl. Begleitung)' : 'Buchung für andere Personen'}
