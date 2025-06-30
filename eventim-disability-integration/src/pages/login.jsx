@@ -1,5 +1,5 @@
 "use client";
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useValidation } from '../hooks/useValidation';
 import { useRouter } from 'next/router';
 import DisabilityExpiredModal from '../components/DisabilityExpiredModal';
@@ -20,6 +20,7 @@ export default function LoginPage() {
     const [registerEmail, setRegisterEmail] = useState('');
     const [registerPassword, setRegisterPassword] = useState('');
     const [registerError, setRegisterError] = useState('');
+    const [emailExists, setEmailExists] = useState(false);
 
     const loginValidation = useValidation({ loginEmail: '', loginPassword: '' });
     const registerValidation = useValidation({ registerEmail: '', registerPassword: '' });
@@ -37,6 +38,18 @@ export default function LoginPage() {
             return false;
         }
     };
+
+    useEffect(() => {
+        const timeout = setTimeout(async () => {
+            if (registerEmail && isValidEmail(registerEmail)) {
+                const exists = await checkEmailExists(registerEmail);
+                setEmailExists(exists);
+            } else {
+                setEmailExists(false);
+            }
+        }, 300);
+        return () => clearTimeout(timeout);
+    }, [registerEmail]);
 
     // 1) Login‐Handler: jetzt mit credentials: 'include'
     const handleLogin = async (e) => {
@@ -306,6 +319,11 @@ export default function LoginPage() {
                                     {registerValidation.errors.registerEmail}
                                 </div>
                             )}
+                            {!registerValidation.errors.registerEmail && emailExists && (
+                                <div className="validation-msg">
+                                    Diese E-Mail ist bereits registriert.
+                                </div>
+                            )}
                         </div>
                         <div className="form-group">
                             <label htmlFor="registerPassword" className="label">
@@ -355,7 +373,7 @@ export default function LoginPage() {
                         <button
                             type="submit"
                             className="button-primary"
-                            disabled={!registerValidation.isValid()}
+                            disabled={!registerValidation.isValid() || emailExists}
                         >
                             Weiter
                         </button>
