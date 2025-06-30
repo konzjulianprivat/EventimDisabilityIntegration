@@ -92,12 +92,16 @@ export default function ProfilePage() {
     const ordersRef = useRef(null);
     const personalDataRef = useRef(null);
     const faqRef    = useRef(null);
+    const mainContentRef = useRef(null);
 
     const scrollTo = ref => {
-        if (ref?.current) {
+        if (ref?.current && mainContentRef.current) {
+            const container = mainContentRef.current;
             const offset = window.innerHeight * 0.11;
-            const y = ref.current.getBoundingClientRect().top + window.pageYOffset - offset;
-            window.scrollTo({ top: y, behavior: "smooth" });
+            const rect = ref.current.getBoundingClientRect();
+            const containerRect = container.getBoundingClientRect();
+            const y = container.scrollTop + rect.top - containerRect.top - offset;
+            container.scrollTo({ top: y, behavior: "smooth" });
         }
     };
 
@@ -401,7 +405,7 @@ export default function ProfilePage() {
             </aside>
 
             {/* Main Content */}
-            <main className="main-content">
+            <main className="main-content" ref={mainContentRef}>
                 <div className="inner-container">
 
                     {/* „Meine Events“ */}
@@ -818,3 +822,4 @@ export default function ProfilePage() {
         </div>
 );
 }
+
