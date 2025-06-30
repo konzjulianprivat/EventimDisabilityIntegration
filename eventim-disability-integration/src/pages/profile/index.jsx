@@ -95,7 +95,9 @@ export default function ProfilePage() {
 
     const scrollTo = ref => {
         if (ref?.current) {
-            ref.current.scrollIntoView({ behavior: "smooth", block: "start" });
+            const offset = window.innerHeight * 0.11;
+            const y = ref.current.getBoundingClientRect().top + window.pageYOffset - offset;
+            window.scrollTo({ top: y, behavior: "smooth" });
         }
     };
 
