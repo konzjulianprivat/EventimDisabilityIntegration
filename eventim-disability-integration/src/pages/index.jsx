@@ -17,21 +17,7 @@ export default function HomePage() {
                 const res = await fetch("http://localhost:4000/tours-with-images");
                 if (!res.ok) throw new Error("Failed to load tours");
                 const body = await res.json();
-
-                const toursWithEvents = [];
-                for (const t of body.tours) {
-                    try {
-                        const dRes = await fetch(`http://localhost:4000/tour-details/${t.id}`);
-                        if (!dRes.ok) continue;
-                        const dBody = await dRes.json();
-                        if (dBody.tour && dBody.tour.eventCount > 0) {
-                            toursWithEvents.push(t);
-                        }
-                    } catch (error) {
-                        console.error(error);
-                    }
-                }
-                setTours(toursWithEvents);
+                setTours(body.tours);
             } catch (err) {
                 console.error(err);
             } finally {
@@ -47,19 +33,15 @@ export default function HomePage() {
                 const res = await fetch("http://localhost:4000/artists-with-images");
                 if (!res.ok) throw new Error("Failed to load artists");
                 const body = await res.json();
-                const artistIds = new Set(tours.map((t) => t.artist_id));
-                const filtered = body.artists.filter((a) => artistIds.has(a.id));
-                setArtists(filtered);
+                setArtists(body.artists);
             } catch (err) {
                 console.error(err);
             } finally {
                 setLoadingArtists(false);
             }
         }
-        if (!loadingTours) {
-            fetchArtists();
-        }
-    }, [loadingTours, tours]);
+        fetchArtists();
+    }, []);
 
     if (loadingTours || loadingArtists) {
         return <div>Lädt…</div>;
