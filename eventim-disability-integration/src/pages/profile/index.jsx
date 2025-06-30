@@ -600,6 +600,7 @@ export default function ProfilePage() {
                                                         alt={`QR Code for ticket ${qrTicketId}`}
                                                     />
                                                 </div>
+                                                <p className="subtitle">HINWEIS: <br/> Der QR-Code allein reicht nicht zum Besuchen dieses Events aus und das zugeschickte Ticket muss auf Anfrage der Veranstalter beim Betreten des Veranstaltungsort vorgewiesen werden.</p>
                                             </>
                                         )}
                                         <div className="modal-actions">
@@ -757,22 +758,22 @@ export default function ProfilePage() {
                                 <div className="events-header" style={{ display: 'flex', alignItems: 'center' }}>
                                     <h3>Passwort ändern</h3>
                                     <span className="arrow">›</span>
+                                    {passwordMessage && (
+                                        <div
+                                            style={{
+                                                padding: '0.75rem',
+                                                backgroundColor: passwordMessage.includes('erfolgreich') ? '#d4edda' : '#f8d7da',
+                                                color: passwordMessage.includes('erfolgreich') ? '#155724' : '#721c24',
+                                                borderRadius: '4px',
+                                                marginBottom: '1rem',
+                                            }}
+                                        >
+                                            {passwordMessage}
+                                        </div>
+                                    )}
                                 </div>
                                 <div className="content-inner">
                                     <form className="profile-data-form" onSubmit={submitPasswordChange}>
-                                        {passwordMessage && (
-                                            <div
-                                                style={{
-                                                    padding: '0.75rem',
-                                                    backgroundColor: passwordMessage.includes('erfolgreich') ? '#d4edda' : '#f8d7da',
-                                                    color: passwordMessage.includes('erfolgreich') ? '#155724' : '#721c24',
-                                                    borderRadius: '4px',
-                                                    marginBottom: '1rem',
-                                                }}
-                                            >
-                                                {passwordMessage}
-                                            </div>
-                                        )}
                                         <div className="form-field">
                                             <label htmlFor="currentPassword">Aktuelles Passwort</label>
                                             <input
