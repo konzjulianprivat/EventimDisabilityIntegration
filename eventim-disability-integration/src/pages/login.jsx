@@ -365,7 +365,7 @@ export default function LoginPage() {
                         </p>
                         <p className="info-text">
                             EVENTIM legt großen Wert auf Datenschutz. Die Datenschutzinformation kannst du{' '}
-                            <a href="#" className="link-inline">
+                            <a href="https://www.eventim.de/help/data-protection/?affiliate=GMD" className="link-inline">
                                 hier
                             </a>{' '}
                             nachlesen.

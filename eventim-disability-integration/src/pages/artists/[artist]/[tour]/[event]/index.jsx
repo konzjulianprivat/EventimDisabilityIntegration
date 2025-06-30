@@ -292,8 +292,7 @@ export default function EventPage() {
                             <span className="icon-calendar" /> {formatDate(eventData.start_time)} | {formatTime(eventData.start_time)}
                         </div>
                         <div className="meta-item">
-                            <span className="icon-location" /> {eventData.cityName} |{' '}
-                            <a href="#" className="venue-link">{eventData.venueName}</a>
+                            <span className="icon-location" /> {eventData.cityName} | {eventData.venueName}
                         </div>
                     </div>
                 </div>

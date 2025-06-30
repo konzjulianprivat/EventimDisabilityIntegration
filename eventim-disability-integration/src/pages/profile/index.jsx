@@ -97,7 +97,7 @@ export default function ProfilePage() {
     const scrollTo = ref => {
         if (ref?.current && mainContentRef.current) {
             const container = mainContentRef.current;
-            const offset = window.innerHeight * 0.11;
+            const offset = window.innerHeight * 0.10;
             const rect = ref.current.getBoundingClientRect();
             const containerRect = container.getBoundingClientRect();
             const y = container.scrollTop + rect.top - containerRect.top - offset;
@@ -694,7 +694,7 @@ export default function ProfilePage() {
                                   />
                                 <div className="profile-section-divider" />
 
-                                <div ref={eventsRef} className="events-header" style={{ display: 'flex', alignItems: 'center' }}>
+                                <div className="events-header" style={{ display: 'flex', alignItems: 'center' }}>
                                     <h3>Passwort ändern</h3>
                                     <span className="arrow">›</span>
                                 </div>
@@ -718,7 +718,7 @@ export default function ProfilePage() {
 
                                 <div className="profile-section-divider" />
 
-                                <div ref={eventsRef} className="events-header" style={{ display: 'flex', alignItems: 'center' }}>
+                                <div className="events-header" style={{ display: 'flex', alignItems: 'center' }}>
                                     <h3>Antrag auf Nachteilsausgleich für Menschen mit Behinderung</h3>
                                     <span className="arrow">›</span>
                                 </div>
