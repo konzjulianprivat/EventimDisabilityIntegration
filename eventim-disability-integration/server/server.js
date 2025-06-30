@@ -737,6 +737,76 @@ app.get('/countries', async (req, res) => {
     }
 });
 
+// PUT: update country incl. its cities
+app.put('/countries/:id', async (req, res) => {
+    const countryId = req.params.id;
+    const { name, code, cities = [] } = req.body;
+
+    if (!name || !name.trim()) {
+        return res.status(400).json({ message: 'Name ist erforderlich' });
+    }
+
+    try {
+        await client.query('BEGIN');
+
+        await client.query(
+            `UPDATE countries
+                 SET name = $1,
+                     iso_code = $2
+               WHERE id = $3`,
+            [name.trim(), code ? code.trim().toUpperCase() : null, countryId]
+        );
+
+        const { rows: existing } = await client.query(
+            'SELECT id FROM cities WHERE country_id = $1',
+            [countryId]
+        );
+        const remaining = new Set(existing.map(r => r.id));
+
+        for (const c of cities) {
+            if (c.id && remaining.has(c.id)) {
+                await client.query(
+                    'UPDATE cities SET name = $1 WHERE id = $2',
+                    [c.name.trim(), c.id]
+                );
+                remaining.delete(c.id);
+            } else if (!c.id) {
+                await client.query(
+                    'INSERT INTO cities (id, name, country_id) VALUES ($1, $2, $3)',
+                    [uuidv4(), c.name.trim(), countryId]
+                );
+            }
+        }
+
+        for (const delId of remaining) {
+            await client.query('DELETE FROM cities WHERE id = $1', [delId]);
+        }
+
+        await client.query('COMMIT');
+        res.status(200).json({ message: 'Land aktualisiert' });
+    } catch (err) {
+        await client.query('ROLLBACK');
+        console.error('Update-country error:', err);
+        res.status(500).json({ message: 'Serverfehler beim Aktualisieren des Landes' });
+    }
+});
+
+// DELETE: remove country and its cities
+app.delete('/countries/:id', async (req, res) => {
+    const countryId = req.params.id;
+    try {
+        await client.query('BEGIN');
+        await client.query('DELETE FROM cities WHERE country_id = $1', [countryId]);
+        await client.query('DELETE FROM countries WHERE id = $1', [countryId]);
+        await client.query('COMMIT');
+        res.status(200).json({ message: 'Land gelöscht' });
+    } catch (err) {
+        await client.query('ROLLBACK');
+        console.error('Delete-country error:', err);
+        res.status(500).json({ message: 'Serverfehler beim Löschen des Landes' });
+    }
+});
+
 app.get('/email-exists', async (req, res) => {
     const email = req.query.email;
     if (!email) return res.status(400).json({ message: 'Email erforderlich' });
@@ -1609,6 +1679,73 @@ app.post('/create-genre', async (req, res) => {
     }
 });
 
+// PUT: update a genre and its subgenres
+app.put('/genres/:id', async (req, res) => {
+    const genreId = req.params.id;
+    const { name, subgenres = [] } = req.body;
+
+    if (!name || !name.trim()) {
+        return res.status(400).json({ message: 'Name ist erforderlich' });
+    }
+
+    try {
+        await client.query('BEGIN');
+
+        await client.query(
+            'UPDATE genres SET name = $1 WHERE id = $2',
+            [name.trim(), genreId]
+        );
+
+        const { rows: existing } = await client.query(
+            'SELECT id FROM subgenres WHERE genre_id = $1',
+            [genreId]
+        );
+        const remaining = new Set(existing.map(r => r.id));
+
+        for (const sg of subgenres) {
+            if (sg.id && remaining.has(sg.id)) {
+                await client.query(
+                    'UPDATE subgenres SET name = $1 WHERE id = $2',
+                    [sg.name.trim(), sg.id]
+                );
+                remaining.delete(sg.id);
+            } else if (!sg.id) {
+                await client.query(
+                    'INSERT INTO subgenres (id, genre_id, name) VALUES ($1, $2, $3)',
+                    [uuidv4(), genreId, sg.name.trim()]
+                );
+            }
+        }
+
+        for (const delId of remaining) {
+            await client.query('DELETE FROM subgenres WHERE id = $1', [delId]);
+        }
+
+        await client.query('COMMIT');
+        res.status(200).json({ message: 'Genre aktualisiert' });
+    } catch (err) {
+        await client.query('ROLLBACK');
+        console.error('Update-genre error:', err);
+        res.status(500).json({ message: 'Serverfehler beim Aktualisieren des Genres' });
+    }
+});
+
+// DELETE: remove a genre completely
+app.delete('/genres/:id', async (req, res) => {
+    const genreId = req.params.id;
+    try {
+        await client.query('BEGIN');
+        await client.query('DELETE FROM subgenres WHERE genre_id = $1', [genreId]);
+        await client.query('DELETE FROM genres WHERE id = $1', [genreId]);
+        await client.query('COMMIT');
+        res.status(200).json({ message: 'Genre gelöscht' });
+    } catch (err) {
+        await client.query('ROLLBACK');
+        console.error('Delete-genre error:', err);
+        res.status(500).json({ message: 'Serverfehler beim Löschen des Genres' });
+    }
+});
+
 app.get('/genres-with-subgenres', async (req, res) => {
     try {
         // 1) Fetch each genre, plus its subgenres in a single query.
@@ -1654,6 +1791,7 @@ app.get('/countries-with-cities', async (req, res) => {
       SELECT
         co.id AS country_id,
         co.name AS country_name,
+        co.iso_code      AS iso_code,
         COALESCE(
           json_agg(
             json_build_object('id', ci.id, 'name', ci.name)
@@ -1662,13 +1800,14 @@ app.get('/countries-with-cities', async (req, res) => {
         ) AS cities
       FROM countries co
       LEFT JOIN cities ci ON ci.country_id = co.id
-      GROUP BY co.id, co.name
+      GROUP BY co.id, co.name, co.iso_code
       ORDER BY co.name
     `);
 
         const countriesWithCities = rows.map(r => ({
             id: r.country_id,
             name: r.country_name,
+            iso_code: r.iso_code,
             cities: r.cities,
         }));
 
