@@ -561,7 +561,7 @@ export default function ProfilePage() {
                                         style={{ marginLeft: 'auto', background: 'transparent', border: 'none', cursor: 'pointer' }}
                                         aria-label="Edit profile"
                                     >
-                                        {editMode ? '💾' : '✎'}
+                                        {editMode ? '' : '✎'}
                                     </button>
                                 </div>
                                 <p className="subtitle">Übersicht deiner gespeicherten Profildaten</p>
@@ -615,7 +615,7 @@ export default function ProfilePage() {
                                                 )}
                                             </div>
                                             <div style={{ flex: 2 }}>
-                                                <label htmlFor="city">Stadt</label>
+                                                <label htmlFor="city">Stadt</label>artists
                                                 {editMode ? (
                                                     <input id="city" name="city" value={profileData.city} onChange={handleProfileChange} />
                                                 ) : (
