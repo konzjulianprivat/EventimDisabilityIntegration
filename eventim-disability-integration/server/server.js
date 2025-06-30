@@ -1648,6 +1648,37 @@ app.get('/genres-with-subgenres', async (req, res) => {
     }
 });
 
+app.get('/countries-with-cities', async (req, res) => {
+    try {
+        const { rows } = await client.query(`
+      SELECT
+        co.id AS country_id,
+        co.name AS country_name,
+        COALESCE(
+          json_agg(
+            json_build_object('id', ci.id, 'name', ci.name)
+          ) FILTER (WHERE ci.id IS NOT NULL),
+          '[]'
+        ) AS cities
+      FROM countries co
+      LEFT JOIN cities ci ON ci.country_id = co.id
+      GROUP BY co.id, co.name
+      ORDER BY co.name
+    `);
+
+        const countriesWithCities = rows.map(r => ({
+            id: r.country_id,
+            name: r.country_name,
+            cities: r.cities,
+        }));
+
+        return res.status(200).json({ countries: countriesWithCities });
+    } catch (error) {
+        console.error('Error fetching countries with cities:', error);
+        return res.status(500).json({ message: 'Fehler beim Laden der Länder und Städte' });
+    }
+});
+
 app.get('/cities-with-venues', async (req, res) => {
     try {
         const { rows } = await client.query(`

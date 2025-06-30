@@ -317,3 +317,15 @@
         margin-bottom: 0.75rem;
     }
 }
+
+/* ------------------------------------------------
+   14) Sub-Lists for Countries/Genres
+------------------------------------------------ */
+.sub-list {
+    list-style: none;
+    padding-left: 1rem;
+}
+.sub-item {
+    font-size: 0.875rem;
+    color: #333;
+}
