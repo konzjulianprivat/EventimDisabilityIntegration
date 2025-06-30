@@ -593,6 +593,49 @@ app.get('/users/:id/disability', async (req, res) => {
     }
 });
 
+// Passwort eines Nutzers aktualisieren
+app.patch('/users/:id/password', async (req, res) => {
+    if (!req.session.userId) {
+        return res.status(401).json({ message: 'Not logged in' });
+    }
+
+    const userId = req.params.id;
+    if (req.session.userId !== userId) {
+        return res.status(403).json({ message: 'Forbidden' });
+    }
+
+    const { currentPassword, newPassword } = req.body || {};
+    if (!currentPassword || !newPassword) {
+        return res.status(400).json({ message: 'currentPassword and newPassword required' });
+    }
+
+    try {
+        const { rows } = await client.query(
+            'SELECT password FROM users WHERE user_id = $1',
+            [userId]
+        );
+        if (!rows.length) {
+            return res.status(404).json({ message: 'User not found' });
+        }
+
+        const match = await bcrypt.compare(currentPassword, rows[0].password);
+        if (!match) {
+            return res.status(401).json({ message: 'Aktuelles Passwort ist falsch' });
+        }
+
+        const hashed = await bcrypt.hash(newPassword, 10);
+        await client.query(
+            'UPDATE users SET password = $1, updated_at = NOW() WHERE user_id = $2',
+            [hashed, userId]
+        );
+
+        return res.json({ message: 'Passwort erfolgreich geändert' });
+    } catch (err) {
+        console.error('Error updating password:', err);
+        return res.status(500).json({ message: 'Server error' });
+    }
+});
+
 // Accept a disability request
 app.post('/disability-requests/:id/accept', async (req, res) => {
     const userId = req.params.id;

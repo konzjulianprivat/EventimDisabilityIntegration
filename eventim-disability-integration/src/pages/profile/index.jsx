@@ -5,6 +5,7 @@ import React, { useState, useEffect, useRef } from "react";
 import SquareTourCard from "../../components/squareTourCard";
 import { API_BASE_URL } from "../../config";
 import { useAuth } from "../../hooks/useAuth";
+import { useValidation } from "../../hooks/useValidation";
 import DeleteAccountModal from "../../components/DeleteAccountModal.jsx";
 import FaqCard from "../../components/FaqCard.jsx";
 
@@ -76,6 +77,13 @@ export default function ProfilePage() {
         newPassword: '',
         confirmPassword: '',
     });
+    const passwordValidation = useValidation({
+        currentPassword: '',
+        newPassword: '',
+        confirmPassword: ''
+    });
+    const [passwordMessage, setPasswordMessage] = useState('');
+    const [passwordLoading, setPasswordLoading] = useState(false);
 
     const [disabilityDegree, setDisabilityDegree] = useState('');
     const [disabilityCardImageFront, setDisabilityCardImageFront] = useState(null);
@@ -241,6 +249,27 @@ export default function ProfilePage() {
     const handlePasswordChangeField = e => {
         const { name, value } = e.target;
         setPasswordData(prev => ({ ...prev, [name]: value }));
+        if (name === 'confirmPassword') {
+            if (value !== passwordData.newPassword) {
+                passwordValidation.validate('confirmPassword', value, { required: true, message: 'Passwörter stimmen nicht überein' });
+            } else {
+                passwordValidation.validate('confirmPassword', value, { required: true });
+            }
+        } else if (name === 'newPassword') {
+            passwordValidation.validate('newPassword', value, {
+                required: true,
+                pattern: /^(?=.*[A-Za-z])(?=.*\d)(?=.*[^A-Za-z\d]).{8,}$/,
+                message: 'Passwort zu schwach'
+            });
+            if (passwordData.confirmPassword) {
+                passwordValidation.validate('confirmPassword', passwordData.confirmPassword, {
+                    required: true,
+                    message: passwordData.confirmPassword !== value ? 'Passwörter stimmen nicht überein' : undefined
+                });
+            }
+        } else if (name === 'currentPassword') {
+            passwordValidation.validate('currentPassword', value, { required: true });
+        }
     };
 
     const toggleMark = (code) => {
@@ -265,17 +294,35 @@ export default function ProfilePage() {
 
     const submitPasswordChange = async (e) => {
         e.preventDefault();
-        if (passwordData.newPassword !== passwordData.confirmPassword) return;
+        setPasswordMessage('');
+        if (!passwordValidation.isValid()) {
+            setPasswordMessage('Bitte alle Felder korrekt ausfüllen');
+            return;
+        }
+        if (passwordData.newPassword !== passwordData.confirmPassword) {
+            setPasswordMessage('Passwörter stimmen nicht überein');
+            return;
+        }
+        setPasswordLoading(true);
         try {
-            await fetch(`${API_BASE_URL}/users/${user.userId}/password`, {
+            const res = await fetch(`${API_BASE_URL}/users/${user.userId}/password`, {
                 method: 'PATCH',
                 credentials: 'include',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(passwordData)
             });
-            setPasswordData({ currentPassword: '', newPassword: '', confirmPassword: '' });
+            const data = await res.json();
+            if (res.ok) {
+                setPasswordMessage('Passwort erfolgreich geändert');
+                setPasswordData({ currentPassword: '', newPassword: '', confirmPassword: '' });
+            } else {
+                setPasswordMessage(data.message || 'Fehler beim Ändern des Passworts');
+            }
         } catch (err) {
             console.error('Error changing password:', err);
+            setPasswordMessage('Serverfehler beim Ändern des Passworts');
+        } finally {
+            setPasswordLoading(false);
         }
     };
 
@@ -700,19 +747,57 @@ export default function ProfilePage() {
                                 </div>
                                 <div className="content-inner">
                                     <form className="profile-data-form" onSubmit={submitPasswordChange}>
+                                        {passwordMessage && (
+                                            <div style={{ padding: '0.75rem', marginBottom: '1rem', borderRadius: '4px', backgroundColor: passwordMessage.includes('erfolgreich') ? '#d4edda' : '#f8d7da', color: passwordMessage.includes('erfolgreich') ? '#155724' : '#721c24' }}>
+                                                {passwordMessage}
+                                            </div>
+                                        )}
                                         <div className="form-field">
                                             <label htmlFor="currentPassword">Aktuelles Passwort</label>
-                                            <input type="password" id="currentPassword" name="currentPassword" value={passwordData.currentPassword} onChange={handlePasswordChangeField} />
+                                            <input
+                                                type="password"
+                                                id="currentPassword"
+                                                name="currentPassword"
+                                                value={passwordData.currentPassword}
+                                                onChange={handlePasswordChangeField}
+                                                className={passwordValidation.classFor('currentPassword', passwordData.currentPassword)}
+                                            />
+                                            {passwordValidation.errors.currentPassword && (
+                                                <div className="validation-msg">{passwordValidation.errors.currentPassword}</div>
+                                            )}
                                         </div>
                                         <div className="form-field">
                                             <label htmlFor="newPassword">Neues Passwort</label>
-                                            <input type="password" id="newPassword" name="newPassword" value={passwordData.newPassword} onChange={handlePasswordChangeField} />
+                                            <input
+                                                type="password"
+                                                id="newPassword"
+                                                name="newPassword"
+                                                value={passwordData.newPassword}
+                                                onChange={handlePasswordChangeField}
+                                                className={passwordValidation.classFor('newPassword', passwordData.newPassword)}
+                                            />
+                                            {passwordValidation.errors.newPassword && (
+                                                <div className="validation-msg">{passwordValidation.errors.newPassword}</div>
+                                            )}
                                         </div>
                                         <div className="form-field">
                                             <label htmlFor="confirmPassword">Neues Passwort wiederholen</label>
-                                            <input type="password" id="confirmPassword" name="confirmPassword" value={passwordData.confirmPassword} onChange={handlePasswordChangeField} />
+                                            <input
+                                                type="password"
+                                                id="confirmPassword"
+                                                name="confirmPassword"
+                                                value={passwordData.confirmPassword}
+                                                onChange={handlePasswordChangeField}
+                                                className={passwordValidation.classFor('confirmPassword', passwordData.confirmPassword)}
+                                            />
+                                            {passwordValidation.errors.confirmPassword && (
+                                                <div className="validation-msg">{passwordValidation.errors.confirmPassword}</div>
+                                            )}
                                         </div>
-                                        <button className="profile__btn-cancel" type="submit">Passwort ändern</button>
+                                        <p className="info-text">
+                                            Bitte gib mindestens acht Zeichen ein, es müssen Buchstaben (Groß- und Kleinschreibung), Zahlen und Sonderzeichen enthalten sein.
+                                        </p>
+                                        <button className="profile__btn-cancel" type="submit" disabled={passwordLoading}>Passwort ändern</button>
                                     </form>
                                 </div>
 
