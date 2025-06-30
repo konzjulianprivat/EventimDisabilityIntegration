@@ -296,6 +296,24 @@ app.post('/login-user', async (req, res) => {
             return res.status(401).json({ message: 'Ungültige Anmeldedaten.' });
         }
 
+        let cardExpired = false;
+        const now = new Date();
+        if (
+            user.is_currently_disabled &&
+            user.disability_card_expiry_date &&
+            new Date(user.disability_card_expiry_date) < now
+        ) {
+            await client.query(
+                `UPDATE users
+                    SET is_currently_disabled = false,
+                        updated_at = NOW()
+                  WHERE user_id = $1`,
+                [user.user_id]
+            );
+            user.is_currently_disabled = false;
+            cardExpired = true;
+        }
+
         req.session.userId = user.user_id;
         req.session.email = user.email;
         req.session.role = user.role;
@@ -328,6 +346,7 @@ app.post('/login-user', async (req, res) => {
 
         return res.status(200).json({
             message: 'Login erfolgreich',
+            cardExpired,
             user: {
                 userId: user.user_id,
                 email: user.email,
