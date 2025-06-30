@@ -9,7 +9,7 @@
     /* fill the viewport and hide extra overflow */
     height: 100vh;
     font-family: Arial, sans-serif;
-    overflow-y: auto;
+    overflow-y: hidden; /* scrolling handled inside main-content */
     overflow-x: hidden;
 }
 
@@ -94,7 +94,10 @@
     box-sizing: border-box;
     flex: 1 1 auto;
     width: auto;
-    scroll-padding-top: 7vh;
+    height: 100%;
+    overflow-y: auto;   /* allow internal scrolling */
+    scroll-padding-top: 11vh;
+    padding-bottom: 12vh; /* space for footer when scrolled to last section */
 }
 
 .inner-container {
@@ -447,6 +450,7 @@
 @media (max-width: 768px) {
     .profile-container {
         flex-direction: column;
+        overflow-y: auto; /* allow full page scrolling on small screens */
     }
 
     .sidebar {
@@ -458,6 +462,8 @@
     .main-content {
         width: 100%;
         padding: 1rem;
+        height: auto;
+        overflow-y: visible;
     }
 }
 
