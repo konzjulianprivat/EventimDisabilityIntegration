@@ -90,6 +90,7 @@ export default function ProfilePage() {
     // refs for each section
     const eventsRef = useRef(null);
     const ordersRef = useRef(null);
+    const personalDataRef = useRef(null);
     const faqRef    = useRef(null);
 
     const scrollTo = ref => {
@@ -106,6 +107,9 @@ export default function ProfilePage() {
                 break;
             case "Meine Bestellungen":
                 scrollTo(ordersRef);
+                break;
+            case "Meine Daten":
+                scrollTo(personalDataRef);
                 break;
             case "Help Center / FAQ":
                 scrollTo(faqRef);
@@ -371,7 +375,7 @@ export default function ProfilePage() {
         <div className="profile-container">
             {/* Sidebar */}
             <aside className="sidebar">
-                {["Meine Events", "Meine Bestellungen", "Help Center / FAQ"].map(label => (
+                {["Meine Events", "Meine Bestellungen", "Meine Daten", "Help Center / FAQ"].map(label => (
                     <div
                         key={label}
                         className={`sidebar-item ${
@@ -380,9 +384,9 @@ export default function ProfilePage() {
                         onClick={() => onSidebarClick(label)}
                     >
             <span className="icon">
-              {label === "Mein EVENTIM"
+              {label === "Meine Events"
                   ? "🏠"
-                  : label === "Meine Events"
+                  : label === "Meine Bestellungen"
                       ? "🎫"
                       : "⭐"}
             </span>
@@ -391,21 +395,6 @@ export default function ProfilePage() {
                 ))}
                 <div style={{ flex: 1 }} />
                 <div className="sidebar-footer">
-                    <div className="sidebar-footer-title">Konto &amp; Einstellungen</div>
-                    {["Meine Daten", "Abmelden"].map(label => (
-                        <div
-                            key={label}
-                            className={`sidebar-item ${
-                                activeSidebarItem === label ? "active" : ""
-                            }`}
-                            onClick={() => setActiveSidebarItem(label)}
-                        >
-              <span className="icon">
-                {label === "Meine Daten" ? "👤": "🚪"}
-              </span>
-                            <span>{label}</span>
-                        </div>
-                    ))}
                 </div>
             </aside>
 
@@ -563,7 +552,7 @@ export default function ProfilePage() {
 
                     <div className="white-box events-white-box">
                         <div className="content-inner">
-                                <div ref={eventsRef} className="events-header" style={{ display: 'flex', alignItems: 'center' }}>
+                                <div ref={personalDataRef} className="events-header" style={{ display: 'flex', alignItems: 'center' }}>
                                     <h1>Meine Daten</h1>
                                     <span className="arrow">›</span>
                                     <button
