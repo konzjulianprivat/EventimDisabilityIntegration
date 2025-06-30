@@ -744,25 +744,27 @@ export default function ProfilePage() {
                                                 </div>
                                                 <div className="form-field" style={{ gridColumn: 'span 2' }}>
                                                     <label>Gültigkeit des Ausweises</label>
-                                                    <div>
-                                                        <input
-                                                            type="checkbox"
-                                                            id="hasExpiryProfile"
-                                                            checked={hasExpiry}
-                                                            onChange={(e) => {
-                                                                setHasExpiry(e.target.checked);
-                                                                if (!e.target.checked) {
-                                                                    setDisabilityCardExpiryDate('9999-01-01');
-                                                                } else {
-                                                                    const t = new Date().toISOString().split('T')[0];
-                                                                    setDisabilityCardExpiryDate(t);
-                                                                }
-                                                            }}
-                                                            style={{ marginRight: '0.5rem' }}
-                                                        />
-                                                        <label htmlFor="hasExpiryProfile" style={{ fontWeight: 'bold' }}>
-                                                            {hasExpiry ? 'befristet' : 'unbefristet'}
+                                                    <div className="toggle-container">
+                                                        <label className="switch">
+                                                            <input
+                                                                type="checkbox"
+                                                                id="hasExpiryProfile"
+                                                                checked={hasExpiry}
+                                                                onChange={(e) => {
+                                                                    setHasExpiry(e.target.checked);
+                                                                    if (!e.target.checked) {
+                                                                        setDisabilityCardExpiryDate('9999-01-01');
+                                                                    } else {
+                                                                        const t = new Date().toISOString().split('T')[0];
+                                                                        setDisabilityCardExpiryDate(t);
+                                                                    }
+                                                                }}
+                                                            />
+                                                            <span className="slider" />
                                                         </label>
+                                                        <span className="toggle-label">
+                                                            {hasExpiry ? 'befristet' : 'unbefristet'}
+                                                        </span>
                                                     </div>
                                                     {hasExpiry && (
                                                         <input
