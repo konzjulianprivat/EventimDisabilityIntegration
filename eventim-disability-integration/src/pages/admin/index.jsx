@@ -7,7 +7,6 @@ export default function AdminHome() {
         { name: 'Cities', url: '/admin/cities' },
         { name: 'Genres', url: '/admin/genres' },
         { name: 'Tours', url: '/admin/tours' },
-        { name: 'Events', url: '/admin/tours/events' },
         { name: 'Venues', url: '/admin/venues' },
         { name: 'Areas', url: '/admin/venues/areas' }
     ];
@@ -17,7 +16,8 @@ export default function AdminHome() {
             <div className="content-inner" style={{ paddingTop: '24px' }}>
                 <div className="white-box events-white-box">
                     <div className="content-inner">
-                        <h1 className="events-header">Admin Übersicht</h1>
+                        <h1 className="events-header" style={{color: "#002b55"}}>Admin Übersicht</h1>
+                        <p className="subtitle">Übersicht aller ADMIN-Applikationen und Übersichten.</p>
                         <div className="profile-section-divider" />
                         <div className="tile-grid">
                             {entities.map(e => (

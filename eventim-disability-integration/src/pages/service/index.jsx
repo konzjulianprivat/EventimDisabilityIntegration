@@ -14,7 +14,8 @@ export default function ServiceHome() {
             <div className="content-inner" style={{ paddingTop: '24px' }}>
                 <div className="white-box events-white-box">
                     <div className="content-inner">
-                        <h1 className="events-header">Service Übersicht</h1>
+                        <h1 className="events-header" style={{color: "#002b55"}}>Service-Übersicht</h1>
+                        <p className="subtitle">Übersicht aller SERVICE-Applikationen und Übersichten.</p>
                         <div className="profile-section-divider" />
                         <div className="tile-grid">
                             {links.map(link => (
