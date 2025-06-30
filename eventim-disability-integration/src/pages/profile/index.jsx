@@ -615,7 +615,7 @@ export default function ProfilePage() {
                                                 )}
                                             </div>
                                             <div style={{ flex: 2 }}>
-                                                <label htmlFor="city">Stadt</label>artists
+                                                <label htmlFor="city">Stadt</label>
                                                 {editMode ? (
                                                     <input id="city" name="city" value={profileData.city} onChange={handleProfileChange} />
                                                 ) : (
@@ -653,12 +653,13 @@ export default function ProfilePage() {
                                                 )}
                                             </div>
                                         ))}
-                                    {editMode && (
-                                        <div style={{ textAlign: 'left' }}>
-                                            <br/><br/>
-                                            <button type="submit" className="profile__btn-cancel">Speichern</button>
-                                        </div>
-                                    )}
+                                        {editMode && (
+                                            <div className="form-actions">
+                                                <button type="submit" className="profile__btn-cancel">
+                                                    Speichern
+                                                </button>
+                                            </div>
+                                        )}
                                     </form>
 
                                     <button
