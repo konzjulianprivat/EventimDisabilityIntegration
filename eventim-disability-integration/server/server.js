@@ -1864,8 +1864,10 @@ app.get("/tours-with-images", async (req, res) => {
                     t.tour_image,
                     ta.artist_id
                 FROM tours AS t
-                     JOIN tour_artists AS ta
-                          ON ta.tour_id = t.id
+                     JOIN tour_artists AS ta ON ta.tour_id = t.id
+                WHERE EXISTS (
+                    SELECT 1 FROM events e WHERE e.tour_id = t.id
+                )
                 ORDER BY
                     t.id,
                     ta.artist_id;
@@ -1881,9 +1883,15 @@ app.get("/tours-with-images", async (req, res) => {
 app.get("/artists-with-images", async (req, res) => {
     try {
         const { rows } = await client.query(
-            `SELECT id, name, artist_image
-       FROM artists
-       ORDER BY name`
+            `
+                SELECT DISTINCT a.id, a.name, a.artist_image
+                FROM artists a
+                     JOIN tour_artists ta ON ta.artist_id = a.id
+                WHERE EXISTS (
+                    SELECT 1 FROM events e WHERE e.tour_id = ta.tour_id
+                )
+                ORDER BY a.name
+            `
         );
         res.status(200).json({ artists: rows });
     } catch (err) {
