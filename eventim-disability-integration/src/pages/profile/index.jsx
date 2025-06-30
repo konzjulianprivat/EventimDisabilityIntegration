@@ -725,7 +725,15 @@ export default function ProfilePage() {
                                 <p className="subtitle">Wenn du einen Schwerbehindertenausweis besitzt und einen Nachteilsausgleich benötigst, kannst du diesen hier beantragen.</p>
                             <div className="content-inner">
                                 {user?.requestForDisability ? (
-                                    <div className="no-orders" style={{color: "#28a745", backgroundColor: "#e6f4ea"}}>Sie sind bereits für den Nachteilsausgleich registriert.</div>
+                                    user?.isCurrentlyDisabled ? (
+                                        <div className="no-orders" style={{color: "#28a745", backgroundColor: "#e6f4ea"}}>
+                                            Dein Nachteilsausgleich wurde genehmigt, du hast die Möglichkeit, auf deine Bedürfnisse abgestimmte Events zu buchen
+                                        </div>
+                                    ) : (
+                                        <div className="no-orders" style={{color: "#856404", backgroundColor: "#fff3cd"}}>
+                                            Dein Antrag ist eingetroffen und wird von einem unserer Servicemitarbeiter bearbeitet.
+                                        </div>
+                                    )
                                 ) : (
                                     <>
                                         {showDisabilityForm ? (
