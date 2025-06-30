@@ -148,7 +148,7 @@ app.post('/register-user', upload.fields([
         const { rows: roleRows } = await client.query(
             `SELECT id
                FROM user_roles
-              WHERE COALESCE(has_viewing_access, false) = false
+              WHERE COALESCE(has_account_management_access, false) = false
                 AND COALESCE(has_editing_access, false) = false
                 AND COALESCE(has_creation_access, false) = false
                 AND COALESCE(has_role_appointing_capability, false) = false

@@ -742,6 +742,7 @@ export default function ProfilePage() {
                                                     <label htmlFor="disabilityDegree">Grad der Behinderung (0-100)</label>
                                                     <input type="number" id="disabilityDegree" value={disabilityDegree} onChange={e => setDisabilityDegree(e.target.value)} min="0" max="100" />
                                                 </div>
+                                                <br/>
                                                 <div className="form-field">
                                                     <label htmlFor="disabilityCardImageFront">Behindertenausweis hochladen (Vorderseite)</label>
                                                     <input type="file" id="disabilityCardImageFront" onChange={e => setDisabilityCardImageFront(e.target.files[0])} />
@@ -752,7 +753,7 @@ export default function ProfilePage() {
                                                 </div>
                                                 <div className="form-field" style={{ gridColumn: 'span 2' }}>
                                                     <label>Gültigkeit des Ausweises</label>
-                                                    <div className="toggle-container">
+                                                    <div className="toggle-container" style={{marginBottom: '0.5rem'}}>
                                                         <label className="switch">
                                                             <input
                                                                 type="checkbox"
@@ -784,18 +785,33 @@ export default function ProfilePage() {
                                                         />
                                                     )}
                                                 </div>
-                                                <div className="form-field">
-                                                    <label>Grad der Behinderung – Markierungen</label>
+                                                <div className="form-field" style={{ gridColumn: 'span 2' }}>
+                                                    <label className="marks__heading">Grad der Behinderung – Markierungen</label>
                                                     <div className="marks-grid">
-                                                        {marks.map(m => (
-                                                            <div key={m.mark_code} className="mark-item">
-                                                                <input type="checkbox" id={`m-${m.mark_code}`} checked={selectedMarks.includes(m.mark_code)} onChange={() => toggleMark(m.mark_code)} className="mark-checkbox" />
-                                                                <label htmlFor={`m-${m.mark_code}`} className="mark-label" style={{marginBottom: "0"}}>{m.mark_code} – {m.description}</label>
-                                                            </div>
-                                                        ))}
+                                                        {marks.map(m => {
+                                                            const isSelected = selectedMarks.includes(m.mark_code);
+                                                            return (
+                                                                <div
+                                                                    key={m.mark_code}
+                                                                    className={`mark-card ${isSelected ? 'mark-card--selected' : ''}`}
+                                                                    onClick={() => toggleMark(m.mark_code)}
+                                                                >
+                                                                    {/* keep checkbox for a11y/logic, but visually hidden */}
+                                                                    <input
+                                                                        type="checkbox"
+                                                                        id={`m-${m.mark_code}`}
+                                                                        checked={isSelected}
+                                                                        onChange={() => toggleMark(m.mark_code)}
+                                                                        className="mark-card__checkbox"
+                                                                    />
+                                                                    <label htmlFor={`m-${m.mark_code}`} className="mark-card__label">
+                                                                        <span className="mark-card__desc">{m.mark_code} – {m.description}</span>
+                                                                    </label>
+                                                                </div>
+                                                            );
+                                                        })}
                                                     </div>
                                                 </div>
-                                                <br/>
                                                 <button type="submit" className="profile__btn-cancel">Antrag abschicken</button>
                                             </form>
                                         ) : (

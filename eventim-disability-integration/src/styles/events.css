@@ -309,7 +309,7 @@ body { font-family: Arial, sans-serif; color: #333; }
     border-radius: 50%;
 }
 .switch input:checked + .slider {
-    background: #90009d; /* matches .total-button */
+    background: #007bb5; /* matches .total-button */
 }
 .switch input:checked + .slider:before {
     transform: translateX(26px);
