@@ -744,66 +744,47 @@ export default function ProfilePage() {
                                                 </div>
                                                 <div className="form-field" style={{ gridColumn: 'span 2' }}>
                                                     <label>Gültigkeit des Ausweises</label>
-                                                    <div className="profile__expiry-container">
-                                                        <input
-                                                            type="checkbox"
-                                                            id="hasExpiryProfile"
-                                                            className="profile__expiry-checkbox"
-                                                            checked={hasExpiry}
-                                                            onChange={(e) => {
-                                                                setHasExpiry(e.target.checked);
-                                                                if (!e.target.checked) {
-                                                                    setDisabilityCardExpiryDate('9999-01-01');
-                                                                } else {
-                                                                    const today = new Date().toISOString().split('T')[0];
-                                                                    setDisabilityCardExpiryDate(today);
-                                                                }
-                                                            }}
-                                                        />
-                                                        <label
-                                                            htmlFor="hasExpiryProfile"
-                                                            className="profile__expiry-label"
-                                                        >
-                                                            {hasExpiry ? 'befristet' : 'unbefristet'}
+                                                    <div className="toggle-container">
+                                                        <label className="switch">
+                                                            <input
+                                                                type="checkbox"
+                                                                id="hasExpiryProfile"
+                                                                checked={hasExpiry}
+                                                                onChange={(e) => {
+                                                                    setHasExpiry(e.target.checked);
+                                                                    if (!e.target.checked) {
+                                                                        setDisabilityCardExpiryDate('9999-01-01');
+                                                                    } else {
+                                                                        const t = new Date().toISOString().split('T')[0];
+                                                                        setDisabilityCardExpiryDate(t);
+                                                                    }
+                                                                }}
+                                                            />
+                                                            <span className="slider" />
                                                         </label>
+                                                        <span className="toggle-label">
+                                                            {hasExpiry ? 'befristet' : 'unbefristet'}
+                                                        </span>
                                                     </div>
-
                                                     {hasExpiry && (
                                                         <input
                                                             type="date"
                                                             id="disabilityCardExpiryDateProfile"
-                                                            className="profile__expiry-date"
                                                             value={disabilityCardExpiryDate}
                                                             onChange={e => setDisabilityCardExpiryDate(e.target.value)}
                                                             style={{ marginTop: '0.5rem' }}
                                                         />
                                                     )}
                                                 </div>
-                                                <div className="form-field" style={{ gridColumn: 'span 2' }}>
-                                                    <label className="marks__heading">Grad der Behinderung – Markierungen</label>
+                                                <div className="form-field">
+                                                    <label>Grad der Behinderung – Markierungen</label>
                                                     <div className="marks-grid">
-                                                        {marks.map(m => {
-                                                            const isSelected = selectedMarks.includes(m.mark_code);
-                                                            return (
-                                                                <div
-                                                                    key={m.mark_code}
-                                                                    className={`mark-card ${isSelected ? 'mark-card--selected' : ''}`}
-                                                                    onClick={() => toggleMark(m.mark_code)}
-                                                                >
-                                                                    {/* keep checkbox for a11y/logic, but visually hidden */}
-                                                                    <input
-                                                                        type="checkbox"
-                                                                        id={`m-${m.mark_code}`}
-                                                                        checked={isSelected}
-                                                                        onChange={() => toggleMark(m.mark_code)}
-                                                                        className="mark-card__checkbox"
-                                                                    />
-                                                                    <label htmlFor={`m-${m.mark_code}`} className="mark-card__label">
-                                                                        <span className="mark-card__desc">{m.mark_code} — {m.description}</span>
-                                                                    </label>
-                                                                </div>
-                                                            );
-                                                        })}
+                                                        {marks.map(m => (
+                                                            <div key={m.mark_code} className="mark-item">
+                                                                <input type="checkbox" id={`m-${m.mark_code}`} checked={selectedMarks.includes(m.mark_code)} onChange={() => toggleMark(m.mark_code)} className="mark-checkbox" />
+                                                                <label htmlFor={`m-${m.mark_code}`} className="mark-label" style={{marginBottom: "0"}}>{m.mark_code} – {m.description}</label>
+                                                            </div>
+                                                        ))}
                                                     </div>
                                                 </div>
                                                 <br/>
