@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useValidation } from '../../../hooks/useValidation';
 import { useRouter } from 'next/router';
 import { useRequireAccess } from '../../../hooks/useRequireAccess';
 
@@ -14,6 +15,7 @@ export default function ArtistCreation() {
     const [countries, setCountries] = useState([]);
     const [message, setMessage] = useState('');
     const [loading, setLoading] = useState(false);
+    const validation = useValidation({ name: '', website: '' });
 
     useEffect(() => {
         // Länder-Daten für Dropdown laden
@@ -29,6 +31,19 @@ export default function ArtistCreation() {
             setFormData(prev => ({ ...prev, artistImage: files[0] }));
         } else {
             setFormData(prev => ({ ...prev, [name]: value }));
+            if (name === 'name') {
+                validation.validate('name', value, { required: true });
+            }
+            if (name === 'website') {
+                if (value) {
+                    validation.validate('website', value, {
+                        pattern: /^https?:\/\//i,
+                        message: 'Ungültige URL',
+                    });
+                } else {
+                    validation.validate('website', value);
+                }
+            }
         }
     };
 
@@ -37,8 +52,8 @@ export default function ArtistCreation() {
         setLoading(true);
         setMessage('');
 
-        if (!formData.name.trim()) {
-            setMessage('Name des Künstlers ist erforderlich');
+        if (!validation.isValid()) {
+            setMessage('Bitte alle Pflichtfelder korrekt ausfüllen');
             setLoading(false);
             return;
         }
@@ -97,9 +112,13 @@ export default function ArtistCreation() {
                         name="name"
                         value={formData.name}
                         onChange={handleChange}
+                        className={validation.classFor('name', formData.name)}
                         required
                         style={{ width: '100%', padding: '0.5rem', borderRadius: '4px', border: '1px solid #ccc' }}
                     />
+                    {validation.errors.name && (
+                        <div className="validation-msg">{validation.errors.name}</div>
+                    )}
                 </div>
 
                 <div style={{ marginBottom: '1rem' }}>
@@ -126,9 +145,13 @@ export default function ArtistCreation() {
                         name="website"
                         value={formData.website}
                         onChange={handleChange}
+                        className={validation.classFor('website', formData.website)}
                         placeholder="https://example.com"
                         style={{ width: '100%', padding: '0.5rem', borderRadius: '4px', border: '1px solid #ccc' }}
                     />
+                    {validation.errors.website && (
+                        <div className="validation-msg">{validation.errors.website}</div>
+                    )}
                 </div>
 
                 <div style={{ marginBottom: '1rem' }}>
@@ -146,7 +169,7 @@ export default function ArtistCreation() {
 
                 <button
                     type="submit"
-                    disabled={loading}
+                    disabled={loading || !validation.isValid()}
                     style={{ width: '100%', padding: '0.75rem', backgroundColor: '#002b55', color: '#fff', border: 'none', borderRadius: '4px', cursor: 'pointer' }}
                 >
                     {loading ? 'Bitte warten...' : 'Künstler erstellen'}

@@ -51,3 +51,7 @@ body, html {
     object-fit: cover;
     border-radius: 4px;
 }
+.input-valid { border: 1px solid #28a745; }
+.input-invalid { border: 1px solid #dc3545; }
+.validation-msg { color: #dc3545; font-size: 0.875rem; margin-top: 0.25rem; }
+

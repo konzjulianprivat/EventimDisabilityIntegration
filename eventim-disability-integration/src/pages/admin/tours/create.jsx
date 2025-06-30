@@ -2,6 +2,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
+import { useValidation } from '../../../hooks/useValidation';
 import { useRequireAccess } from '../../../hooks/useRequireAccess';
 
 export default function TourCreation() {
@@ -27,6 +28,7 @@ export default function TourCreation() {
 
     const [message, setMessage] = useState("");
     const [loading, setLoading] = useState(false);
+    const validation = useValidation({ title: '', startDate: '', endDate: '' });
 
     // --------------------------------------------------
     // 2) Hook: Künstler & Genres laden
@@ -53,6 +55,9 @@ export default function TourCreation() {
             setFormData((prev) => ({ ...prev, [name]: files[0] }));
         } else {
             setFormData((prev) => ({ ...prev, [name]: value }));
+            if (name === 'title') validation.validate('title', value, { required: true });
+            if (name === 'startDate') validation.validate('startDate', value, { required: true });
+            if (name === 'endDate') validation.validate('endDate', value, { required: true });
         }
     };
 
@@ -152,9 +157,7 @@ export default function TourCreation() {
 
         // Pflichtprüfungen:
         if (
-            !formData.title.trim() ||
-            !formData.startDate ||
-            !formData.endDate ||
+            !validation.isValid() ||
             tourArtists.length === 0 ||
             tourArtists.some((aid) => !aid)
         ) {
@@ -278,6 +281,7 @@ export default function TourCreation() {
                         name="title"
                         value={formData.title}
                         onChange={handleChange}
+                        className={validation.classFor('title', formData.title)}
                         required
                         style={{
                             width: "100%",
@@ -286,6 +290,9 @@ export default function TourCreation() {
                             border: "1px solid #ccc",
                         }}
                     />
+                    {validation.errors.title && (
+                        <div className="validation-msg">{validation.errors.title}</div>
+                    )}
                 </div>
 
                 {/* === Beschreibung === */}
@@ -334,6 +341,7 @@ export default function TourCreation() {
                             name="startDate"
                             value={formData.startDate}
                             onChange={handleChange}
+                            className={validation.classFor('startDate', formData.startDate)}
                             required
                             style={{
                                 width: "100%",
@@ -342,6 +350,9 @@ export default function TourCreation() {
                                 border: "1px solid #ccc",
                             }}
                         />
+                        {validation.errors.startDate && (
+                            <div className="validation-msg">{validation.errors.startDate}</div>
+                        )}
                     </div>
                     <div style={{ flex: 1 }}>
                         <label
@@ -360,6 +371,7 @@ export default function TourCreation() {
                             name="endDate"
                             value={formData.endDate}
                             onChange={handleChange}
+                            className={validation.classFor('endDate', formData.endDate)}
                             required
                             style={{
                                 width: "100%",
@@ -368,6 +380,9 @@ export default function TourCreation() {
                                 border: "1px solid #ccc",
                             }}
                         />
+                        {validation.errors.endDate && (
+                            <div className="validation-msg">{validation.errors.endDate}</div>
+                        )}
                     </div>
                 </div>
 
@@ -620,7 +635,7 @@ export default function TourCreation() {
                 {/* === Submit-Button === */}
                 <button
                     type="submit"
-                    disabled={loading}
+                    disabled={loading || !validation.isValid()}
                     style={{
                         backgroundColor: "#002b55",
                         color: "white",

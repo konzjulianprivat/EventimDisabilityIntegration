@@ -737,6 +737,18 @@ app.get('/countries', async (req, res) => {
     }
 });
 
+app.get('/email-exists', async (req, res) => {
+    const email = req.query.email;
+    if (!email) return res.status(400).json({ message: 'Email erforderlich' });
+    try {
+        const { rows } = await client.query('SELECT 1 FROM users WHERE email = $1 LIMIT 1', [email.trim()]);
+        return res.json({ exists: rows.length > 0 });
+    } catch (err) {
+        console.error('Error checking email:', err);
+        return res.status(500).json({ message: 'Server error' });
+    }
+});
+
 // ---------- Admin: User Management ----------
 // Liefert alle Rollen
 app.get('/user-roles', async (req, res) => {
