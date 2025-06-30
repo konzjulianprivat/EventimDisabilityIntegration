@@ -1,5 +1,6 @@
 // country.jsx (in your Next.js pages or components folder)
 import React, { useState } from 'react';
+import { useValidation } from '../../../hooks/useValidation';
 import { useRouter } from 'next/router';
 import { useRequireAccess } from '../../../hooks/useRequireAccess';
 
@@ -9,10 +10,19 @@ export default function CountryCreation() {
     const [formData, setFormData] = useState({ name: '', code: '' });
     const [message, setMessage] = useState('');
     const [loading, setLoading] = useState(false);
+    const validation = useValidation({ name: '', code: '' });
 
     const handleChange = (e) => {
         const { name, value } = e.target;
         setFormData({ ...formData, [name]: value });
+        if (name === 'name') validation.validate('name', value, { required: true });
+        if (name === 'code' && value) {
+            validation.validate('code', value, {
+                pattern: /^[A-Za-z]{2}$/, message: 'Code muss 2 Buchstaben haben',
+            });
+        } else if (name === 'code') {
+            validation.validate('code', value);
+        }
     };
 
     const handleSubmit = async (e) => {
@@ -20,8 +30,8 @@ export default function CountryCreation() {
         setLoading(true);
         setMessage('');
 
-        if (!formData.name.trim()) {
-            setMessage('Name des Landes ist erforderlich');
+        if (!validation.isValid()) {
+            setMessage('Bitte alle Pflichtfelder korrekt ausfüllen');
             setLoading(false);
             return;
         }
@@ -78,9 +88,13 @@ export default function CountryCreation() {
                         name="name"
                         value={formData.name}
                         onChange={handleChange}
+                        className={validation.classFor('name', formData.name)}
                         required
                         style={{ width: '100%', padding: '0.5rem', borderRadius: '4px', border: '1px solid #ccc' }}
                     />
+                    {validation.errors.name && (
+                        <div className="validation-msg">{validation.errors.name}</div>
+                    )}
                 </div>
 
                 <div style={{ marginBottom: '1rem' }}>
@@ -93,14 +107,18 @@ export default function CountryCreation() {
                         name="code"
                         value={formData.code}
                         onChange={handleChange}
+                        className={validation.classFor('code', formData.code)}
                         placeholder="z.B. DE für Deutschland"
                         style={{ width: '100%', padding: '0.5rem', borderRadius: '4px', border: '1px solid #ccc' }}
                     />
+                    {validation.errors.code && (
+                        <div className="validation-msg">{validation.errors.code}</div>
+                    )}
                 </div>
 
                 <button
                     type="submit"
-                    disabled={loading}
+                    disabled={loading || !validation.isValid()}
                     style={{ width: '100%', padding: '0.75rem', backgroundColor: '#002b55', color: '#fff', border: 'none', borderRadius: '4px', cursor: 'pointer' }}
                 >
                     {loading ? 'Bitte warten...' : 'Land erstellen'}

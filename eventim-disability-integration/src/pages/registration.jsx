@@ -1,6 +1,7 @@
 // src/pages/registration.jsx
 
 import React, { useState, useEffect } from 'react';
+import { useValidation } from '../hooks/useValidation';
 import { useRouter } from 'next/router';
 
 export default function Registration() {
@@ -38,6 +39,13 @@ export default function Registration() {
 
     const [message, setMessage] = useState('');
     const [loading, setLoading] = useState(false);
+    const validation = useValidation({
+        firstName: '',
+        lastName: '',
+        email: '',
+        password: '',
+        confirmPassword: ''
+    });
 
     // 1) Prefill email/password from sessionStorage if present (unchanged)
     useEffect(() => {
@@ -105,6 +113,27 @@ export default function Registration() {
                 ...formData,
                 [name]: value,
             });
+            if (['firstName', 'lastName', 'email', 'password', 'confirmPassword'].includes(name)) {
+                const opts = { required: true };
+                if (name === 'email') {
+                    opts.pattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+                    opts.message =
+                        'Die E-Mail muss in einem validen E-Mail Format (bspw. Max.Mustermann@test.de) vorliegen';
+                }
+                if (name === 'password') {
+                    opts.pattern = /^(?=.*[A-Za-z])(?=.*\d)(?=.*[^A-Za-z\d]).{8,}$/;
+                    opts.message = 'Passwort zu schwach';
+                }
+                if (name === 'confirmPassword') {
+                    if (value !== formData.password) {
+                        validation.validate('confirmPassword', value, { required: true, message: 'Passwörter stimmen nicht überein' });
+                    } else {
+                        validation.validate('confirmPassword', value, { required: true });
+                    }
+                } else {
+                    validation.validate(name, value, opts);
+                }
+            }
         }
     };
 
@@ -141,6 +170,12 @@ export default function Registration() {
         e.preventDefault();
         setLoading(true);
         setMessage('');
+
+        if (!validation.isValid()) {
+            setLoading(false);
+            setMessage('Bitte alle Pflichtfelder korrekt ausfüllen');
+            return;
+        }
 
         // 1) Passwords match?
         if (formData.password !== formData.confirmPassword) {
@@ -263,6 +298,7 @@ export default function Registration() {
                         name="firstName"
                         value={formData.firstName}
                         onChange={handleChange}
+                        className={validation.classFor('firstName', formData.firstName)}
                         required
                         style={{
                             width: '100%',
@@ -271,6 +307,11 @@ export default function Registration() {
                             border: '1px solid #ccc',
                         }}
                     />
+                    {validation.errors.firstName && (
+                        <div className="validation-msg">
+                            {validation.errors.firstName}
+                        </div>
+                    )}
                 </div>
 
                 {/* ---------------- Nachname ---------------- */}
@@ -287,6 +328,7 @@ export default function Registration() {
                         name="lastName"
                         value={formData.lastName}
                         onChange={handleChange}
+                        className={validation.classFor('lastName', formData.lastName)}
                         required
                         style={{
                             width: '100%',
@@ -295,6 +337,11 @@ export default function Registration() {
                             border: '1px solid #ccc',
                         }}
                     />
+                    {validation.errors.lastName && (
+                        <div className="validation-msg">
+                            {validation.errors.lastName}
+                        </div>
+                    )}
                 </div>
 
                 {/* ---------------- Firma ---------------- */}
@@ -623,7 +670,7 @@ export default function Registration() {
                 {/* ---------------- Submit Button ---------------- */}
                 <button
                     type="submit"
-                    disabled={loading}
+                    disabled={loading || !validation.isValid()}
                     style={{
                         backgroundColor: '#002b55',
                         color: 'white',

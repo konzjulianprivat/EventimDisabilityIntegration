@@ -1,5 +1,6 @@
 // venues.jsx (Next.js Komponente mit disability area capacities)
 import React, { useState, useEffect } from 'react';
+import { useValidation } from '../../../hooks/useValidation';
 import { useRouter } from 'next/router';
 import { useRequireAccess } from '../../../hooks/useRequireAccess';
 
@@ -18,6 +19,7 @@ export default function VenueCreation() {
     const [venueAreas, setVenueAreas] = useState([]); // [{ areaId, maxCapacity }]
     const [message, setMessage] = useState('');
     const [loading, setLoading] = useState(false);
+    const validation = useValidation({ name: '', address: '', cityId: '', website: '' });
 
     useEffect(() => {
         fetch('http://localhost:4000/cities')
@@ -32,6 +34,14 @@ export default function VenueCreation() {
             setFormData(f => ({ ...f, [name]: files[0] }));
         } else {
             setFormData(f => ({ ...f, [name]: value }));
+            if (name === 'name') validation.validate('name', value, { required: true });
+            if (name === 'address') validation.validate('address', value, { required: true });
+            if (name === 'cityId') validation.validate('cityId', value, { required: true });
+            if (name === 'website' && value) {
+                validation.validate('website', value, { pattern: /^https?:\/\//i, message: 'Ungültige URL' });
+            } else if (name === 'website') {
+                validation.validate('website', value);
+            }
         }
     };
 
@@ -49,7 +59,7 @@ export default function VenueCreation() {
         e.preventDefault();
         setLoading(true);
         setMessage('');
-        if (!formData.name.trim() || !formData.address.trim() || !formData.cityId) {
+        if (!validation.isValid()) {
             setMessage('Name, Adresse und Stadt sind erforderlich');
             setLoading(false);
             return;
@@ -106,36 +116,47 @@ export default function VenueCreation() {
                 <div style={{ marginBottom:'1rem' }}>
                     <label htmlFor="name" style={{ display:'block', fontWeight:'bold', marginBottom:'.5rem' }}>Name *</label>
                     <input id="name" name="name" type="text" value={formData.name}
-                           onChange={handleChange} required
+                           onChange={handleChange}
+                           className={validation.classFor('name', formData.name)}
+                           required
                            style={{ width:'100%', padding:'.5rem', borderRadius:'4px', border:'1px solid #ccc' }}
                     />
+                    {validation.errors.name && <div className="validation-msg">{validation.errors.name}</div>}
                 </div>
                 {/* Address */}
                 <div style={{ marginBottom:'1rem' }}>
                     <label htmlFor="address" style={{ display:'block', fontWeight:'bold', marginBottom:'.5rem' }}>Adresse *</label>
                     <input id="address" name="address" type="text" value={formData.address}
-                           onChange={handleChange} required
+                           onChange={handleChange}
+                           className={validation.classFor('address', formData.address)}
+                           required
                            style={{ width:'100%', padding:'.5rem', borderRadius:'4px', border:'1px solid #ccc' }}
                     />
+                    {validation.errors.address && <div className="validation-msg">{validation.errors.address}</div>}
                 </div>
                 {/* City */}
                 <div style={{ marginBottom:'1rem' }}>
                     <label htmlFor="cityId" style={{ display:'block', fontWeight:'bold', marginBottom:'.5rem' }}>Stadt *</label>
                     <select id="cityId" name="cityId" value={formData.cityId}
-                            onChange={handleChange} required
+                            onChange={handleChange}
+                            className={validation.classFor('cityId', formData.cityId)}
+                            required
                             style={{ width:'100%', padding:'.5rem', borderRadius:'4px', border:'1px solid #ccc' }}
                     >
                         <option value="">Bitte wählen</option>
                         {cities.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
                     </select>
+                    {validation.errors.cityId && <div className="validation-msg">{validation.errors.cityId}</div>}
                 </div>
                 {/* Website */}
                 <div style={{ marginBottom:'1rem' }}>
                     <label htmlFor="website" style={{ display:'block', fontWeight:'bold', marginBottom:'.5rem' }}>Website</label>
                     <input id="website" name="website" type="url" value={formData.website}
-                           onChange={handleChange} placeholder="https://example.com"
+                           onChange={handleChange}
+                           className={validation.classFor('website', formData.website)} placeholder="https://example.com"
                            style={{ width:'100%', padding:'.5rem', borderRadius:'4px', border:'1px solid #ccc' }}
                     />
+                    {validation.errors.website && <div className="validation-msg">{validation.errors.website}</div>}
                 </div>
                 {/* Venue Image */}
                 <div style={{ marginBottom:'1rem' }}>
@@ -180,7 +201,7 @@ export default function VenueCreation() {
                     </button>
                 </div>
                 {/* Submit */}
-                <button type="submit" disabled={loading}
+                <button type="submit" disabled={loading || !validation.isValid()}
                         style={{ backgroundColor:'#002b55', color:'white', padding:'0.75rem 1.5rem',
                             border:'none', borderRadius:'4px', fontSize:'1rem', cursor:'pointer', width:'100%' }}>
                     {loading?'Bitte warten...':'Venue erstellen'}

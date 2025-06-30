@@ -1,5 +1,6 @@
 "use client";
 import React, { useState } from 'react';
+import { useValidation } from '../hooks/useValidation';
 import { useRouter } from 'next/router';
 import DisabilityExpiredModal from '../components/DisabilityExpiredModal';
 
@@ -20,7 +21,22 @@ export default function LoginPage() {
     const [registerPassword, setRegisterPassword] = useState('');
     const [registerError, setRegisterError] = useState('');
 
+    const loginValidation = useValidation({ loginEmail: '', loginPassword: '' });
+    const registerValidation = useValidation({ registerEmail: '', registerPassword: '' });
+
     const isValidEmail = (email) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+
+    const checkEmailExists = async (email) => {
+        try {
+            const res = await fetch(
+                `http://localhost:4000/email-exists?email=${encodeURIComponent(email)}`
+            );
+            const data = await res.json();
+            return data.exists;
+        } catch {
+            return false;
+        }
+    };
 
     // 1) Login‐Handler: jetzt mit credentials: 'include'
     const handleLogin = async (e) => {
@@ -30,6 +46,10 @@ export default function LoginPage() {
 
         if (!loginEmail.trim() || !loginPassword.trim()) {
             setLoginError('Bitte E-Mail und Passwort eingeben.');
+            setLoginLoading(false);
+            return;
+        }
+        if (!loginValidation.isValid()) {
             setLoginLoading(false);
             return;
         }
@@ -103,6 +123,9 @@ export default function LoginPage() {
             setRegisterError('Bitte eine gültige E-Mail-Adresse eingeben.');
             return;
         }
+        if (!registerValidation.isValid()) {
+            return;
+        }
         sessionStorage.setItem('preRegEmail', registerEmail.trim());
         sessionStorage.setItem('preRegPassword', registerPassword);
         const redirectParam = redirect
@@ -158,12 +181,33 @@ export default function LoginPage() {
                                 type="email"
                                 id="loginEmail"
                                 name="loginEmail"
-                                className="input"
+                                className={`input ${loginValidation.classFor('loginEmail', loginEmail)}`}
                                 placeholder="E-Mail-Adresse eingeben"
                                 value={loginEmail}
-                                onChange={(e) => setLoginEmail(e.target.value)}
+                                onChange={(e) => {
+                                    setLoginEmail(e.target.value);
+                                    loginValidation.validate('loginEmail', e.target.value, {
+                                        required: true,
+                                        pattern: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
+                                        message:
+                                            'Die E-Mail muss in einem validen E-Mail Format (bspw. Max.Mustermann@test.de) vorliegen',
+                                    });
+                                }}
+                                onBlur={(e) =>
+                                    loginValidation.validate('loginEmail', e.target.value, {
+                                        required: true,
+                                        pattern: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
+                                        message:
+                                            'Die E-Mail muss in einem validen E-Mail Format (bspw. Max.Mustermann@test.de) vorliegen',
+                                    })
+                                }
                                 required
                             />
+                            {loginValidation.errors.loginEmail && (
+                                <div className="validation-msg">
+                                    {loginValidation.errors.loginEmail}
+                                </div>
+                            )}
                         </div>
                         <div className="form-group">
                             <label htmlFor="loginPassword" className="label">
@@ -173,12 +217,21 @@ export default function LoginPage() {
                                 type="password"
                                 id="loginPassword"
                                 name="loginPassword"
-                                className="input"
+                                className={`input ${loginValidation.classFor('loginPassword', loginPassword)}`}
                                 placeholder="Passwort eingeben"
                                 value={loginPassword}
-                                onChange={(e) => setLoginPassword(e.target.value)}
+                                onChange={(e) => {
+                                    setLoginPassword(e.target.value);
+                                    loginValidation.validate('loginPassword', e.target.value, { required: true });
+                                }}
+                                onBlur={(e) => loginValidation.validate('loginPassword', e.target.value, { required: true })}
                                 required
                             />
+                            {loginValidation.errors.loginPassword && (
+                                <div className="validation-msg">
+                                    {loginValidation.errors.loginPassword}
+                                </div>
+                            )}
                         </div>
                         <div className="form-footer">
                             <a href="#" className="link-forgot">
@@ -188,7 +241,7 @@ export default function LoginPage() {
                         <button
                             type="submit"
                             className="button-primary"
-                            disabled={loginLoading}
+                            disabled={loginLoading || !loginValidation.isValid()}
                         >
                             {loginLoading ? 'Bitte warten...' : 'Anmelden'}
                         </button>
@@ -218,12 +271,41 @@ export default function LoginPage() {
                                 type="email"
                                 id="registerEmail"
                                 name="registerEmail"
-                                className="input"
+                                className={`input ${registerValidation.classFor('registerEmail', registerEmail)}`}
                                 placeholder="E-Mail-Adresse eingeben"
                                 value={registerEmail}
-                                onChange={(e) => setRegisterEmail(e.target.value)}
+                                onChange={(e) => {
+                                    setRegisterEmail(e.target.value);
+                                    registerValidation.validate('registerEmail', e.target.value, {
+                                        required: true,
+                                        pattern: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
+                                        message:
+                                            'Die E-Mail muss in einem validen E-Mail Format (bspw. Max.Mustermann@test.de) vorliegen',
+                                    });
+                                }}
+                                onBlur={async (e) => {
+                                    const value = e.target.value;
+                                    const valid = registerValidation.validate('registerEmail', value, {
+                                        required: true,
+                                        pattern: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
+                                        message:
+                                            'Die E-Mail muss in einem validen E-Mail Format (bspw. Max.Mustermann@test.de) vorliegen',
+                                    });
+                                    if (valid && (await checkEmailExists(value))) {
+                                        registerValidation.validate('registerEmail', value, {
+                                            required: true,
+                                            pattern: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
+                                            message: 'Diese E-Mail ist bereits registriert.',
+                                        });
+                                    }
+                                }}
                                 required
                             />
+                            {registerValidation.errors.registerEmail && (
+                                <div className="validation-msg">
+                                    {registerValidation.errors.registerEmail}
+                                </div>
+                            )}
                         </div>
                         <div className="form-group">
                             <label htmlFor="registerPassword" className="label">
@@ -233,12 +315,31 @@ export default function LoginPage() {
                                 type="password"
                                 id="registerPassword"
                                 name="registerPassword"
-                                className="input"
+                                className={`input ${registerValidation.classFor('registerPassword', registerPassword)}`}
                                 placeholder="Neues Passwort eingeben"
                                 value={registerPassword}
-                                onChange={(e) => setRegisterPassword(e.target.value)}
+                                onChange={(e) => {
+                                    setRegisterPassword(e.target.value);
+                                    registerValidation.validate('registerPassword', e.target.value, {
+                                        required: true,
+                                        pattern: /^(?=.*[A-Za-z])(?=.*\d)(?=.*[^A-Za-z\d]).{8,}$/,
+                                        message: 'Passwort zu schwach',
+                                    });
+                                }}
+                                onBlur={(e) =>
+                                    registerValidation.validate('registerPassword', e.target.value, {
+                                        required: true,
+                                        pattern: /^(?=.*[A-Za-z])(?=.*\d)(?=.*[^A-Za-z\d]).{8,}$/,
+                                        message: 'Passwort zu schwach',
+                                    })
+                                }
                                 required
                             />
+                            {registerValidation.errors.registerPassword && (
+                                <div className="validation-msg">
+                                    {registerValidation.errors.registerPassword}
+                                </div>
+                            )}
                         </div>
                         <p className="info-text">
                             Bitte gib mindestens acht Zeichen ein, es müssen Buchstaben (Groß- und
@@ -251,7 +352,11 @@ export default function LoginPage() {
                             </a>{' '}
                             nachlesen.
                         </p>
-                        <button type="submit" className="button-primary">
+                        <button
+                            type="submit"
+                            className="button-primary"
+                            disabled={!registerValidation.isValid()}
+                        >
                             Weiter
                         </button>
                     </form>

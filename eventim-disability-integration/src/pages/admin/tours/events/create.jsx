@@ -1,6 +1,7 @@
 // pages/events.jsx
 
 import React, { useState, useEffect } from 'react';
+import { useValidation } from '../../../../hooks/useValidation';
 import { useRouter } from 'next/router';
 import { useRequireAccess } from '../../../../hooks/useRequireAccess';
 
@@ -32,6 +33,7 @@ export default function EventCreation() {
 
     const [message, setMessage] = useState('');
     const [loading, setLoading] = useState(false);
+    const validation = useValidation({ tourId: '', venueId: '', doorTime: '', startTime: '', endTime: '' });
 
     // 1) Load tours, venues, artists
     useEffect(() => {
@@ -86,6 +88,9 @@ export default function EventCreation() {
     const handleChange = e => {
         const { name, value } = e.target;
         setFormData(f => ({ ...f, [name]: value }));
+        if (['tourId', 'venueId', 'doorTime', 'startTime', 'endTime'].includes(name)) {
+            validation.validate(name, value, { required: true });
+        }
     };
 
     // 3) Artist-Handler (unverändert)
@@ -180,7 +185,7 @@ export default function EventCreation() {
         setMessage('');
 
         const { tourId, venueId, doorTime, startTime, endTime } = formData;
-        if (!tourId || !venueId || !doorTime || !startTime || !endTime) {
+        if (!validation.isValid()) {
             setMessage('Tour, Venue und alle Zeiten sind erforderlich');
             setLoading(false);
             return;
@@ -353,6 +358,7 @@ export default function EventCreation() {
                         name="tourId"
                         value={formData.tourId}
                         onChange={handleChange}
+                        className={validation.classFor('tourId', formData.tourId)}
                         required
                         style={{
                             width: '100%',
@@ -381,6 +387,7 @@ export default function EventCreation() {
                         name="venueId"
                         value={formData.venueId}
                         onChange={handleChange}
+                        className={validation.classFor('venueId', formData.venueId)}
                         required
                         style={{
                             width: '100%',
@@ -410,6 +417,7 @@ export default function EventCreation() {
                         name="doorTime"
                         value={formData.doorTime}
                         onChange={handleChange}
+                        className={validation.classFor('doorTime', formData.doorTime)}
                         required
                         style={{
                             width: '100%',
@@ -432,6 +440,7 @@ export default function EventCreation() {
                         name="startTime"
                         value={formData.startTime}
                         onChange={handleChange}
+                        className={validation.classFor('startTime', formData.startTime)}
                         required
                         style={{
                             width: '100%',
@@ -440,6 +449,9 @@ export default function EventCreation() {
                             borderRadius: '4px'
                         }}
                     />
+                    {validation.errors.startTime && (
+                        <div className="validation-msg">{validation.errors.startTime}</div>
+                    )}
                 </div>
 
                 {/* ---------------- End Time ---------------- */}
@@ -454,6 +466,7 @@ export default function EventCreation() {
                         name="endTime"
                         value={formData.endTime}
                         onChange={handleChange}
+                        className={validation.classFor('endTime', formData.endTime)}
                         required
                         style={{
                             width: '100%',
@@ -462,6 +475,9 @@ export default function EventCreation() {
                             borderRadius: '4px'
                         }}
                     />
+                    {validation.errors.endTime && (
+                        <div className="validation-msg">{validation.errors.endTime}</div>
+                    )}
                 </div>
 
                 {/* ---------------- Description ---------------- */}
@@ -855,7 +871,7 @@ export default function EventCreation() {
                 {/* ---------------- Submit ---------------- */}
                 <button
                     type="submit"
-                    disabled={loading}
+                    disabled={loading || !validation.isValid()}
                     style={{
                         backgroundColor: '#002b55',
                         color: 'white',

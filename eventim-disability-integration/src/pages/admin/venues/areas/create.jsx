@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState } from 'react';
+import { useValidation } from '../../../../hooks/useValidation';
 import { useRequireAccess } from '../../../../hooks/useRequireAccess';
 
 export default function AreaCreation() {
@@ -11,10 +12,12 @@ export default function AreaCreation() {
     });
     const [message, setMessage] = useState('');
     const [loading, setLoading] = useState(false);
+    const validation = useValidation({ name: '' });
 
     const handleChange = e => {
         const { name, value } = e.target;
         setFormData(f => ({ ...f, [name]: value }));
+        if (name === 'name') validation.validate('name', value, { required: true });
     };
 
     const handleSubmit = async e => {
@@ -23,7 +26,7 @@ export default function AreaCreation() {
         setLoading(true);
 
         const { name } = formData;
-        if (!name.trim()) {
+        if (!validation.isValid()) {
             setMessage('Name ist erforderlich');
             setLoading(false);
             return;
@@ -79,9 +82,13 @@ export default function AreaCreation() {
                         name="name"
                         value={formData.name}
                         onChange={handleChange}
+                        className={validation.classFor('name', formData.name)}
                         required
                         style={{ width: '100%', padding: '.5rem', border: '1px solid #ccc', borderRadius: '4px' }}
                     />
+                    {validation.errors.name && (
+                        <div className="validation-msg">{validation.errors.name}</div>
+                    )}
                 </div>
 
                 {/* Beschreibung */}
@@ -101,7 +108,7 @@ export default function AreaCreation() {
                 {/* Submit */}
                 <button
                     type="submit"
-                    disabled={loading}
+                    disabled={loading || !validation.isValid()}
                     style={{
                         backgroundColor: '#002b55',
                         color: 'white',

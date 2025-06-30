@@ -1,5 +1,6 @@
 // genres.jsx
 import React, { useState } from 'react';
+import { useValidation } from '../../../hooks/useValidation';
 import { useRouter } from 'next/router';
 import { useRequireAccess } from '../../../hooks/useRequireAccess';
 
@@ -12,10 +13,12 @@ export default function GenreCreation() {
     const [subgenres, setSubgenres] = useState([]); // [{ name: '' }]
     const [message, setMessage] = useState('');
     const [loading, setLoading] = useState(false);
+    const validation = useValidation({ name: '' });
 
     const handleChange = (e) => {
         const { name, value } = e.target;
         setFormData((f) => ({ ...f, [name]: value }));
+        if (name === 'name') validation.validate('name', value, { required: true });
     };
 
     const addSubgenre = () => {
@@ -37,7 +40,7 @@ export default function GenreCreation() {
         setLoading(true);
         setMessage('');
 
-        if (!formData.name.trim()) {
+        if (!validation.isValid()) {
             setMessage('Bitte gib einen Genre-Namen an');
             setLoading(false);
             return;
@@ -120,6 +123,7 @@ export default function GenreCreation() {
                         name="name"
                         value={formData.name}
                         onChange={handleChange}
+                        className={validation.classFor('name', formData.name)}
                         required
                         style={{
                             width: '100%',
@@ -128,6 +132,9 @@ export default function GenreCreation() {
                             borderRadius: '4px',
                         }}
                     />
+                    {validation.errors.name && (
+                        <div className="validation-msg">{validation.errors.name}</div>
+                    )}
                 </div>
 
                 {/* Subgenres */}
@@ -196,7 +203,7 @@ export default function GenreCreation() {
                 {/* Submit */}
                 <button
                     type="submit"
-                    disabled={loading}
+                    disabled={loading || !validation.isValid()}
                     style={{
                         backgroundColor: '#002b55',
                         color: 'white',
