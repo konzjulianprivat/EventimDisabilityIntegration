@@ -4,11 +4,9 @@ export default function AdminHome() {
     const entities = [
         { name: 'Artists', url: '/admin/artists' },
         { name: 'Countries', url: '/admin/countries' },
-        { name: 'Cities', url: '/admin/cities' },
         { name: 'Genres', url: '/admin/genres' },
         { name: 'Tours', url: '/admin/tours' },
         { name: 'Venues', url: '/admin/venues' },
-        { name: 'Areas', url: '/admin/venues/areas' }
     ];
 
     return (
