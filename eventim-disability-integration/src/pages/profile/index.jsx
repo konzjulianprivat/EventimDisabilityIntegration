@@ -7,6 +7,7 @@ import { API_BASE_URL } from "../../config";
 import { useAuth } from "../../hooks/useAuth";
 import DeleteAccountModal from "../../components/DeleteAccountModal.jsx";
 import FaqCard from "../../components/FaqCard.jsx";
+import { useValidation } from "../../hooks/useValidation";
 
 export async function getServerSideProps({ req }) {
     const cookie = req.headers.cookie || "";
@@ -75,6 +76,12 @@ export default function ProfilePage() {
         currentPassword: '',
         newPassword: '',
         confirmPassword: '',
+    });
+    const [passwordMessage, setPasswordMessage] = useState('');
+    const passwordValidation = useValidation({
+        currentPassword: '',
+        newPassword: '',
+        confirmPassword: ''
     });
 
     const [disabilityDegree, setDisabilityDegree] = useState('');
@@ -240,7 +247,33 @@ export default function ProfilePage() {
 
     const handlePasswordChangeField = e => {
         const { name, value } = e.target;
-        setPasswordData(prev => ({ ...prev, [name]: value }));
+        const updated = { ...passwordData, [name]: value };
+        setPasswordData(updated);
+
+        if (name === 'currentPassword') {
+            passwordValidation.validate('currentPassword', value, { required: true });
+        }
+        if (name === 'newPassword') {
+            passwordValidation.validate('newPassword', value, {
+                required: true,
+                pattern: /^(?=.*[A-Za-z])(?=.*\d)(?=.*[^A-Za-z\d]).{8,}$/,
+                message: 'Anforderungen für ein Passwort nicht erfüllt'
+            });
+            if (updated.confirmPassword) {
+                if (updated.confirmPassword !== value) {
+                    passwordValidation.validate('confirmPassword', updated.confirmPassword, { required: true, message: 'Passwörter stimmen nicht überein' });
+                } else {
+                    passwordValidation.validate('confirmPassword', updated.confirmPassword, { required: true });
+                }
+            }
+        }
+        if (name === 'confirmPassword') {
+            if (value !== updated.newPassword) {
+                passwordValidation.validate('confirmPassword', value, { required: true, message: 'Passwörter stimmen nicht überein' });
+            } else {
+                passwordValidation.validate('confirmPassword', value, { required: true });
+            }
+        }
     };
 
     const toggleMark = (code) => {
@@ -265,17 +298,44 @@ export default function ProfilePage() {
 
     const submitPasswordChange = async (e) => {
         e.preventDefault();
-        if (passwordData.newPassword !== passwordData.confirmPassword) return;
+        setPasswordMessage('');
+
+        passwordValidation.validate('currentPassword', passwordData.currentPassword, { required: true });
+        passwordValidation.validate('newPassword', passwordData.newPassword, {
+            required: true,
+            pattern: /^(?=.*[A-Za-z])(?=.*\d)(?=.*[^A-Za-z\d]).{8,}$/,
+            message: 'Anforderungen für ein Passwort nicht erfüllt'
+        });
+        if (passwordData.confirmPassword !== passwordData.newPassword) {
+            passwordValidation.validate('confirmPassword', passwordData.confirmPassword, { required: true, message: 'Passwörter stimmen nicht überein' });
+        } else {
+            passwordValidation.validate('confirmPassword', passwordData.confirmPassword, { required: true });
+        }
+
+        if (!passwordValidation.isValid()) return;
+
+        if (passwordData.newPassword === passwordData.currentPassword) {
+            setPasswordMessage('Passwörter sind identisch');
+            return;
+        }
+
         try {
-            await fetch(`${API_BASE_URL}/users/${user.userId}/password`, {
+            const res = await fetch(`${API_BASE_URL}/users/${user.userId}/password`, {
                 method: 'PATCH',
                 credentials: 'include',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(passwordData)
             });
-            setPasswordData({ currentPassword: '', newPassword: '', confirmPassword: '' });
+            const data = await res.json();
+            if (res.ok) {
+                setPasswordMessage('Passwort erfolgreich geändert');
+                setPasswordData({ currentPassword: '', newPassword: '', confirmPassword: '' });
+            } else {
+                setPasswordMessage(data.message || 'Fehler beim Ändern des Passworts');
+            }
         } catch (err) {
             console.error('Error changing password:', err);
+            setPasswordMessage('Serverfehler beim Ändern des Passworts');
         }
     };
 
@@ -700,17 +760,63 @@ export default function ProfilePage() {
                                 </div>
                                 <div className="content-inner">
                                     <form className="profile-data-form" onSubmit={submitPasswordChange}>
+                                        {passwordMessage && (
+                                            <div
+                                                style={{
+                                                    padding: '0.75rem',
+                                                    backgroundColor: passwordMessage.includes('erfolgreich') ? '#d4edda' : '#f8d7da',
+                                                    color: passwordMessage.includes('erfolgreich') ? '#155724' : '#721c24',
+                                                    borderRadius: '4px',
+                                                    marginBottom: '1rem',
+                                                }}
+                                            >
+                                                {passwordMessage}
+                                            </div>
+                                        )}
                                         <div className="form-field">
                                             <label htmlFor="currentPassword">Aktuelles Passwort</label>
-                                            <input type="password" id="currentPassword" name="currentPassword" value={passwordData.currentPassword} onChange={handlePasswordChangeField} />
+                                            <input
+                                                type="password"
+                                                id="currentPassword"
+                                                name="currentPassword"
+                                                value={passwordData.currentPassword}
+                                                onChange={handlePasswordChangeField}
+                                                className={passwordValidation.classFor('currentPassword', passwordData.currentPassword)}
+                                                onBlur={(e) => passwordValidation.validate('currentPassword', e.target.value, { required: true })}
+                                            />
+                                            {passwordValidation.errors.currentPassword && (
+                                                <div className="validation-msg">{passwordValidation.errors.currentPassword}</div>
+                                            )}
                                         </div>
                                         <div className="form-field">
                                             <label htmlFor="newPassword">Neues Passwort</label>
-                                            <input type="password" id="newPassword" name="newPassword" value={passwordData.newPassword} onChange={handlePasswordChangeField} />
+                                            <input
+                                                type="password"
+                                                id="newPassword"
+                                                name="newPassword"
+                                                value={passwordData.newPassword}
+                                                onChange={handlePasswordChangeField}
+                                                className={passwordValidation.classFor('newPassword', passwordData.newPassword)}
+                                                onBlur={(e) => passwordValidation.validate('newPassword', e.target.value, { required: true, pattern: /^(?=.*[A-Za-z])(?=.*\d)(?=.*[^A-Za-z\d]).{8,}$/, message: 'Anforderungen für ein Passwort nicht erfüllt' })}
+                                            />
+                                            {passwordValidation.errors.newPassword && (
+                                                <div className="validation-msg">{passwordValidation.errors.newPassword}</div>
+                                            )}
                                         </div>
                                         <div className="form-field">
                                             <label htmlFor="confirmPassword">Neues Passwort wiederholen</label>
-                                            <input type="password" id="confirmPassword" name="confirmPassword" value={passwordData.confirmPassword} onChange={handlePasswordChangeField} />
+                                            <input
+                                                type="password"
+                                                id="confirmPassword"
+                                                name="confirmPassword"
+                                                value={passwordData.confirmPassword}
+                                                onChange={handlePasswordChangeField}
+                                                className={passwordValidation.classFor('confirmPassword', passwordData.confirmPassword)}
+                                                onBlur={(e) => passwordValidation.validate('confirmPassword', e.target.value, { required: true })}
+                                            />
+                                            {passwordValidation.errors.confirmPassword && (
+                                                <div className="validation-msg">{passwordValidation.errors.confirmPassword}</div>
+                                            )}
                                         </div>
                                         <button className="profile__btn-cancel" type="submit">Passwort ändern</button>
                                     </form>

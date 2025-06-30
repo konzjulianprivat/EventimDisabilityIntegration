@@ -967,6 +967,57 @@ app.put('/users/:id/role', async (req, res) => {
     }
 });
 
+// Passwort eines Nutzers ändern
+app.patch('/users/:id/password', async (req, res) => {
+    const sessionUser = req.session.userId;
+    if (!sessionUser) {
+        return res.status(401).json({ message: 'Not logged in' });
+    }
+
+    const userId = req.params.id;
+    if (sessionUser !== userId) {
+        return res.status(403).json({ message: 'Forbidden' });
+    }
+
+    const { currentPassword, newPassword } = req.body || {};
+    if (!currentPassword || !newPassword) {
+        return res.status(400).json({ message: 'currentPassword and newPassword required' });
+    }
+
+    try {
+        const { rows } = await client.query(
+            'SELECT password FROM users WHERE user_id = $1',
+            [userId]
+        );
+        if (!rows.length) {
+            return res.status(404).json({ message: 'User not found' });
+        }
+
+        const match = await bcrypt.compare(currentPassword, rows[0].password);
+        if (!match) {
+            return res.status(400).json({ message: 'Aktuelles Passwort stimmt nicht' });
+        }
+        if (currentPassword === newPassword) {
+            return res.status(400).json({ message: 'Passwörter sind identisch' });
+        }
+        const pattern = /^(?=.*[A-Za-z])(?=.*\d)(?=.*[^A-Za-z\d]).{8,}$/;
+        if (!pattern.test(newPassword)) {
+            return res.status(400).json({ message: 'Anforderungen für ein Passwort nicht erfüllt' });
+        }
+
+        const hashed = await bcrypt.hash(newPassword, 10);
+        await client.query(
+            'UPDATE users SET password = $1, updated_at = NOW() WHERE user_id = $2',
+            [hashed, userId]
+        );
+
+        return res.json({ message: 'Passwort aktualisiert' });
+    } catch (err) {
+        console.error('Error updating password:', err);
+        return res.status(500).json({ message: 'Serverfehler beim Aktualisieren des Passworts' });
+    }
+});
+
 // Liefert alle verfügbaren Versandoptionen
 app.get('/shipping-options', async (req, res) => {
     try {
