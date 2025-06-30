@@ -1,6 +1,7 @@
 "use client";
 import React, { useState } from 'react';
 import { useRouter } from 'next/router';
+import DisabilityExpiredModal from '../components/DisabilityExpiredModal';
 
 export default function LoginPage() {
     const router = useRouter();
@@ -12,6 +13,7 @@ export default function LoginPage() {
     const [loginPassword, setLoginPassword] = useState('');
     const [loginError, setLoginError] = useState('');
     const [loginLoading, setLoginLoading] = useState(false);
+    const [showExpiryModal, setShowExpiryModal] = useState(false);
 
     // Registrierungs‐States (unverändert)
     const [registerEmail, setRegisterEmail] = useState('');
@@ -69,7 +71,14 @@ export default function LoginPage() {
                         hasDeletionPermission: data.user.hasDeletionPermission,
                     })
                 );
-                router.push(redirect || '/').then(() => window.location.reload());
+
+                if (data.cardExpired) {
+                    setShowExpiryModal(true);
+                } else {
+                    router
+                        .push(redirect || '/')
+                        .then(() => window.location.reload());
+                }
             } else {
                 setLoginError(data.message || 'Ungültige Anmeldedaten.');
             }
@@ -248,6 +257,16 @@ export default function LoginPage() {
                     </form>
                 )}
             </div>
+            {showExpiryModal && (
+                <DisabilityExpiredModal
+                    onClose={() => {
+                        setShowExpiryModal(false);
+                        router
+                            .push(redirect || '/')
+                            .then(() => window.location.reload());
+                    }}
+                />
+            )}
         </div>
     );
 }
