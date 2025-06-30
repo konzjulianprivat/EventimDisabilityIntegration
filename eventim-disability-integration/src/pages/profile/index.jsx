@@ -653,14 +653,13 @@ export default function ProfilePage() {
                                                 )}
                                             </div>
                                         ))}
-                                    </form>
-
                                     {editMode && (
                                         <div style={{ textAlign: 'left' }}>
                                             <br/><br/>
                                             <button type="submit" className="profile__btn-cancel">Speichern</button>
                                         </div>
                                     )}
+                                    </form>
 
                                     <button
                                         type="button"
