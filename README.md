@@ -1,6 +1,53 @@
-# EventimDisabilityIntegration
+# Eventim Disability Integration
 
-## Database Schema
+Dieses Repository enthält eine Next.js Anwendung samt Express Backend, mit der Eventim eine barrierefreie Abwicklung von Ticketbestellungen und eine Verwaltung von Nachteilsausgleichsanträgen ermöglicht. Das Projekt gliedert sich in ein Frontend und einen Node.js Server im Unterordner `eventim-disability-integration`.
+
+## Inhaltsverzeichnis
+- [Setup](#setup)
+- [Datenbank](#datenbank)
+- [Backend-Endpunkte](#backend-endpunkte)
+- [Seitenübersicht](#seitenübersicht)
+- [Rollen](#rollen)
+- [Weiterführende Hinweise](#weiterfuehrende-hinweise)
+
+<a name="setup"></a>
+## Setup
+1. **Repository klonen** und in das Projekt wechseln:
+   ```bash
+   git clone <repo-url>
+   cd EventimDisabilityIntegration/eventim-disability-integration
+   ```
+2. **Abhängigkeiten installieren**:
+   ```bash
+   npm install
+   ```
+3. **Datenbankzugang konfigurieren**:
+   Legen Sie im Verzeichnis `server` eine Datei `credentials.json` an. Beispiel:
+   ```json
+   {
+     "user": "dbuser",
+     "host": "localhost",
+     "database": "eventim",
+     "password": "geheim",
+     "port": 5432,
+     "sessionSecret": "eine-beliebige-session-id"
+   }
+   ```
+4. **Datenbank anlegen**:
+   - PostgreSQL muss installiert sein.
+   - Das Schema finden Sie in `server/backup_script.sql` und kann z.B. mit `psql` eingespielt werden:
+     ```bash
+     psql -U dbuser -d eventim -f server/backup_script.sql
+     ```
+5. **Entwicklungsumgebung starten**:
+   ```bash
+   npm run dev
+   ```
+   Damit starten sowohl das Next.js Frontend auf [http://localhost:3000](http://localhost:3000) als auch das Backend unter [http://localhost:4000](http://localhost:4000).
+
+<a name="datenbank"></a>
+## Datenbank
+Die Datenbank basiert auf PostgreSQL und wird komplett über `server/backup_script.sql` erstellt. Enthalten sind Tabellen für Benutzer, Rollen, Künstler, Touren, Events, Veranstaltungsorte sowie Tabellen zur Abwicklung von Bestellungen und zur Speicherung von Disability-Merkmalen. Das Schema ist in der folgenden Mermaid-Grafik visualisiert.
 
 ```mermaid
 classDiagram
@@ -181,7 +228,7 @@ classDiagram
     boolean is_currently_disabled
     date disability_card_expiry_date
     uuid user_id
-}
+ }
  class venue_areas {
     uuid venue_id
     integer max_capacity
@@ -198,42 +245,108 @@ classDiagram
     uuid id
  }
 
- artist_genres  -->  artists : artist_id:id
- artist_genres  -->  genres : genre_id:id
- cart_items  -->  carts : cart_id:id
- cart_items  -->  event_categories : event_category_id:id
- cart_items  -->  events : event_id:id
- carts  -->  users : user_id
- categories  -->  events : event_id:id
- checkout_items  -->  checkouts : checkout_id:id
- checkout_items  -->  event_categories : event_category_id:id
- checkout_items  -->  events : event_id:id
- checkouts  -->  users : user_id
- cities  -->  countries : country_id:id
- disability_marks  -->  areas : area_id:id
- event_categories  -->  events : event_id:id
- event_supporting_acts  -->  artists : artist_id:id
- event_supporting_acts  -->  events : event_id:id
- event_venue_areas  -->  categories : category_id:id
- event_venue_areas  -->  event_categories : category_id:id
- event_venue_areas  -->  events : event_id:id
- event_venue_areas  -->  venue_areas : venue_area_id:id
- events  -->  tours : tour_id:id
- events  -->  venues : venue_id:id
- orders  -->  checkouts : checkout_id:id
- orders  -->  users : user_id
- subgenres  -->  genres : genre_id:id
- tickets  -->  event_categories : event_category_id:id
- tickets  -->  orders : order_id:id
- tour_artists  -->  artists : artist_id:id
- tour_artists  -->  tours : tour_id:id
- tour_genres  -->  genres : genre_id:id
- tour_genres  -->  tours : tour_id:id
- tour_subgenres  -->  subgenres : subgenre_id:id
- tour_subgenres  -->  tours : tour_id:id
- user_disability_marks  -->  disability_marks : mark_code
- user_disability_marks  -->  users : user_id
- venue_areas  -->  areas : area_id:id
- venue_areas  -->  venues : venue_id:id
- venues  -->  cities : city_id:id
+ artist_genres --> artists : artist_id:id
+ artist_genres --> genres : genre_id:id
+ cart_items --> carts : cart_id:id
+ cart_items --> event_categories : event_category_id:id
+ cart_items --> events : event_id:id
+ carts --> users : user_id
+ categories --> events : event_id:id
+ checkout_items --> checkouts : checkout_id:id
+ checkout_items --> event_categories : event_category_id:id
+ checkout_items --> events : event_id:id
+ checkouts --> users : user_id
+ cities --> countries : country_id:id
+ disability_marks --> areas : area_id:id
+ event_categories --> events : event_id:id
+ event_supporting_acts --> artists : artist_id:id
+ event_supporting_acts --> events : event_id:id
+ event_venue_areas --> categories : category_id:id
+ event_venue_areas --> event_categories : category_id:id
+ event_venue_areas --> events : event_id:id
+ event_venue_areas --> venue_areas : venue_area_id:id
+ events --> tours : tour_id:id
+ events --> venues : venue_id:id
+ orders --> checkouts : checkout_id:id
+ orders --> users : user_id
+ subgenres --> genres : genre_id:id
+ tickets --> event_categories : event_category_id:id
+ tickets --> orders : order_id:id
+ tour_artists --> artists : artist_id:id
+ tour_artists --> tours : tour_id:id
+ tour_genres --> genres : genre_id:id
+ tour_genres --> tours : tour_id:id
+ tour_subgenres --> subgenres : subgenre_id:id
+ tour_subgenres --> tours : tour_id:id
+ user_disability_marks --> disability_marks : mark_code
+ user_disability_marks --> users : user_id
+ venue_areas --> areas : area_id:id
+ venue_areas --> venues : venue_id:id
+ venues --> cities : city_id:id
 ```
+
+<a name="backend-endpunkte"></a>
+## Backend-Endpunkte
+Die wichtigsten Routen des Express-Servers (siehe `server/server.js`) sind:
+
+| Methode | Pfad | Beschreibung |
+|---------|------|--------------|
+| `POST`  | `/register-user` | Registrierung eines neuen Nutzers inkl. optionaler Behindertenausweis-Daten |
+| `POST`  | `/login-user` | Benutzeranmeldung, legt Session-Cookie an |
+| `GET`   | `/session-status` | Prüft, ob ein Nutzer eingeloggt ist und liefert Profilinformationen |
+| `POST`  | `/logout` | Beendet die aktuelle Session |
+| `GET`   | `/user-address` | Liefert die hinterlegte Anschrift des eingeloggten Nutzers |
+| `GET`   | `/disability-marks` | Auflistung möglicher Markierungen des Behindertenausweises |
+| `GET`   | `/pending-disability-requests` | Offene Anträge auf Nachteilsausgleich für den Service-Bereich |
+| `POST`  | `/disability-requests/:id/accept` | Antrag eines Nutzers akzeptieren |
+| `POST`  | `/disability-requests/:id/decline` | Antrag eines Nutzers ablehnen |
+| `GET`   | `/artists` | Auflistung aller Künstler |
+| `POST`  | `/create-artist` | Neuen Künstler anlegen |
+| `GET`   | `/tours-detailed` | Touren inkl. Events und Zugänglichkeitsdaten |
+| `POST`  | `/create-tour` | Neue Tour anlegen |
+| `GET`   | `/venues-detailed` | Liste aller Veranstaltungsorte mit Areas |
+| `POST`  | `/create-venue` | Neuen Veranstaltungsort anlegen |
+| `POST`  | `/cart-items` | Ticket zur Warenkorb-Session hinzufügen |
+| `GET`   | `/checkout` | Aktuellen Checkout laden |
+| `POST`  | `/orders` | Bestellung aus abgeschlossenem Checkout erzeugen |
+
+Dies ist nur ein Auszug. Weitere Endpunkte finden sich direkt im Quellcode von `server/server.js`.
+
+<a name="seitenübersicht"></a>
+## Seitenübersicht
+Die Next.js Anwendung befindet sich unter `src/pages` und nutzt dynamische Routen. Wichtige Seiten sind:
+
+| Pfad | Zweck / Inhalte |
+|------|----------------|
+| `/` | Startseite mit Highlights sowie Künstler- und Tourübersicht |
+| `/artists/[artist]` | Detailseite eines Künstlers und Übersicht zugehöriger Touren |
+| `/artists/[artist]/[tour]` | Informationen und Events einer Tour |
+| `/artists/[artist]/[tour]/[event]` | Detailseite eines Events mit Buchungsoption |
+| `/registration` | Formular zur Kontoerstellung und Erfassung optionaler Behindertenausweis-Daten |
+| `/login` | Anmelden bzw. Schnellanmeldung inkl. Passwort-Reset |
+| `/profile` | Persönliche Daten, Bestellungen und eigene Events verwalten |
+| `/checkout` | Mehrstufiger Bestellprozess (Versanddaten, Zahlung, Abschluss) |
+| `/admin` | Einstieg in alle Admin-Unterseiten zur Pflege von Künstlern, Ländern, Genres, Touren und Veranstaltungsorten |
+| `/service` | Zugriffspunkt für Service-Mitarbeiter (u.a. Nachteilsausgleichsanträge und Account-Management) |
+
+Alle Seiten unter `/admin/*` und `/service/*` setzen entsprechende Berechtigungen voraus.
+
+<a name="rollen"></a>
+## Rollen
+Es existieren drei grundlegende Benutzerrollen:
+
+| Rolle   | Berechtigungen |
+|---------|----------------|
+| **User** | Kann Tickets kaufen, eigenes Profil bearbeiten und Nachteilsausgleich beantragen. |
+| **Service** | Darf Service-Seiten nutzen, z.B. Anträge prüfen oder Accounts verwalten. |
+| **Admin** | Umfasst sämtliche Rechte: Erstellung/Bearbeitung von Daten, Rollenvergabe und Zugriff auf alle Admin-Seiten. |
+
+Die Zuordnung der Rechte erfolgt über die Tabelle `user_roles`. Beim Registrieren erhält jeder Nutzer standardmäßig die Rolle **User**.
+
+<a name="weiterfuehrende-hinweise"></a>
+## Weiterführende Hinweise
+- Das Frontend erwartet als API-Basis `NEXT_PUBLIC_API_URL` (Standard: `http://localhost:4000`).
+- Für Datei-Uploads wird `multer` verwendet. Bilder werden in der Tabelle `images` gespeichert und über `/image/:id` ausgeliefert.
+- Ein Cronjob im Server entfernt veraltete Warenkörbe und Checkouts alle 60 Sekunden.
+- Tests sind zurzeit nicht eingerichtet. `npm test` startet zwar Jest, benötigt jedoch `react-scripts`.
+
