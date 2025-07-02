@@ -20,7 +20,6 @@ export default function Registration() {
         disabilityDegree: '',
         disabilityCardImageFront: null,
         disabilityCardImageBack: null,
-        disabilityCardExpiryDate: '9999-01-01',
         isCurrentlyDisabled: false,
         streetAddress: '',
         city: '',
@@ -36,6 +35,7 @@ export default function Registration() {
     const [disabilityMarks, setDisabilityMarks] = useState([]);
     // Holds the mark_codes that the user has checked:
     const [selectedMarks, setSelectedMarks] = useState([]);
+    const [disabilityCardExpiryDate, setDisabilityCardExpiryDate] = useState('9999-01-01');
 
     const [message, setMessage] = useState('');
     const [loading, setLoading] = useState(false);
@@ -189,7 +189,7 @@ export default function Registration() {
             const payload = new FormData();
             // Append all existing simple fields except files; handle marks separately
             Object.keys(formData).forEach((key) => {
-                if (key === 'disabilityCardImageFront' || key === 'disabilityCardImageBack') return;
+                if (key === 'disabilityCardImageFront' || key === 'disabilityCardImageBack' || key === 'disabilityCardExpiryDate') return;
                 payload.append(key, formData[key]);
             });
 
@@ -203,7 +203,7 @@ export default function Registration() {
             if (formData.disabilityCardImageBack) {
                 payload.append('disabilityCardImageBack', formData.disabilityCardImageBack);
             }
-
+            payload.append('disabilityCardExpiryDate', disabilityCardExpiryDate)
             // Append the selected marks as a JSON string
             // (Server will parse JSON.parse(req.body.disabilityMarks))
             payload.append('disabilityMarks', JSON.stringify(selectedMarks));
@@ -232,6 +232,12 @@ export default function Registration() {
         } finally {
             setLoading(false);
         }
+    };
+
+    const toggleMark = (code) => {
+        setSelectedMarks(prev => prev.includes(code)
+            ? prev.filter(m => m !== code)
+            : [...prev, code]);
     };
 
     return (
@@ -511,6 +517,8 @@ export default function Registration() {
                     />
                 </div>
 
+                <label className="new-label">NEW</label>
+
                 {/* ---------------- Behindertenausweis Checkbox ---------------- */}
                 <div style={{ marginBottom: '1rem' }}>
                     <div style={{ display: 'flex', alignItems: 'center' }}>
@@ -523,7 +531,7 @@ export default function Registration() {
                             style={{ marginRight: '0.5rem' }}
                         />
                         <label htmlFor="requestForDisability" style={{ fontWeight: 'bold' }}>
-                            Ich habe einen Behindertenausweis
+                            Ich besitze einen Schwerbehindertenausweis
                         </label>
                     </div>
                 </div>
@@ -605,32 +613,39 @@ export default function Registration() {
                             <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 'bold' }}>
                                 Gültigkeit des Ausweises
                             </label>
-                            <div>
-                                <input
-                                    type="checkbox"
-                                    id="hasExpiry"
-                                    checked={hasExpiry}
-                                    onChange={(e) => handleExpiryToggle(e.target.checked)}
-                                    style={{ marginRight: '0.5rem' }}
-                                />
-                                <label htmlFor="hasExpiry" style={{ fontWeight: 'bold' }}>
-                                    {hasExpiry ? 'befristet' : 'unbefristet'}
+                            <div className="toggle-container" style={{marginBottom: '0.5rem'}}>
+                                <label className="switch">
+                                    <input
+                                        type="checkbox"
+                                        id="hasExpiryProfile"
+                                        checked={hasExpiry}
+                                        onChange={(e) => {
+                                            setHasExpiry(e.target.checked);
+                                            if (!e.target.checked) {
+                                                setDisabilityCardExpiryDate('9999-01-01');
+                                            } else {
+                                                const t = new Date().toISOString().split('T')[0];
+                                                setDisabilityCardExpiryDate(t);
+                                            }
+                                        }}
+                                    />
+                                    <span className="slider" />
                                 </label>
+                                <span className="toggle-label">
+                                                            {hasExpiry ? 'befristet' : 'unbefristet'}
+                                                        </span>
                             </div>
                             {hasExpiry && (
                                 <input
                                     type="date"
-                                    id="disabilityCardExpiryDate"
-                                    name="disabilityCardExpiryDate"
-                                    value={formData.disabilityCardExpiryDate}
-                                    onChange={handleChange}
-                                    style={{
+                                    id="disabilityCardExpiryDateProfile"
+                                    value={disabilityCardExpiryDate}
+                                    onChange={e => setDisabilityCardExpiryDate(e.target.value)}
+                                    style={{ marginTop: '0.5rem',
                                         width: '100%',
                                         padding: '0.5rem',
                                         borderRadius: '4px',
-                                        border: '1px solid #ccc',
-                                        marginTop: '0.5rem',
-                                    }}
+                                        border: '1px solid #ccc',}}
                                 />
                             )}
                         </div>
@@ -645,23 +660,30 @@ export default function Registration() {
 
                             {/* Grid-Container für alle Marks */}
                             <div className="marks-grid">
-                                {disabilityMarks.map((mark) => (
-                                    <div key={mark.mark_code} className="mark-item">
-                                        <input
-                                            type="checkbox"
-                                            id={`mark-${mark.mark_code}`}
-                                            checked={selectedMarks.includes(mark.mark_code)}
-                                            onChange={() => handleMarkToggle(mark.mark_code)}
-                                            className="mark-checkbox"
-                                        />
-                                        <label
-                                            htmlFor={`mark-${mark.mark_code}`}
-                                            className="mark-label"
+                                {disabilityMarks.map(mark => {
+                                    const isSelected = selectedMarks.includes(mark.mark_code);
+                                    return (
+                                        <div
+                                            key={mark.mark_code}
+                                            className={`mark-card ${isSelected ? 'mark-card--selected' : ''}`}
+                                            onClick={() => toggleMark(mark.mark_code)}
                                         >
-                                            {mark.mark_code} – {mark.description}
-                                        </label>
-                                    </div>
-                                ))}
+                                            <input
+                                                type="checkbox"
+                                                id={`mark-${mark.mark_code}`}
+                                                checked={isSelected}
+                                                onChange={() => handleMarkToggle(mark.mark_code)}
+                                                className="mark-card__checkbox"
+                                            />
+                                            <label
+                                                htmlFor={`mark-${mark.mark_code}`}
+                                                className="mark-card__label"
+                                            >
+                                                {mark.mark_code} – {mark.description}
+                                            </label>
+                                        </div>
+                                    );
+                                })}
                             </div>
                         </div>
                     </>

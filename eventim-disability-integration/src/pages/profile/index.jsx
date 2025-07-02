@@ -454,7 +454,9 @@ export default function ProfilePage() {
                   ? "🏠"
                   : label === "Meine Bestellungen"
                       ? "🎫"
-                      : "⭐"}
+                      : label === "Meine Daten"
+                          ? "👤"
+                          : "⭐"}
             </span>
                         <span>{label}</span>
                     </div>
@@ -824,6 +826,8 @@ export default function ProfilePage() {
                                 </div>
 
                                 <div className="profile-section-divider" />
+
+                            <label className="new-label">NEW</label>
 
                                 <div className="events-header" style={{ display: 'flex', alignItems: 'center' }}>
                                     <h3>Antrag auf Nachteilsausgleich für Menschen mit Behinderung</h3>
