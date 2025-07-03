@@ -30,6 +30,15 @@ export default function EventPage() {
     const [addDisabled, setAddDisabled] = useState(false);
     const [assistanceInCart, setAssistanceInCart] = useState(false);
 
+    // Redirect to 404 page if event data could not be loaded within 3 seconds
+    useEffect(() => {
+        if (!artist || !tour || !event) return;
+        const timer = setTimeout(() => {
+            if (!eventData) router.replace('/404');
+        }, 3000);
+        return () => clearTimeout(timer);
+    }, [artist, tour, event, eventData]);
+
     // Build lookup table for items currently in cart
     useEffect(() => {
         if (!loggedIn) {
