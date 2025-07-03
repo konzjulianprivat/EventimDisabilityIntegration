@@ -19,6 +19,15 @@ export default function ArtistPage() {
     const [filterCity, setFilterCity] = useState('');
     const [filterArtists, setFilterArtistsInternal] = useState([]);
 
+    // Redirect to 404 page if artist data could not be loaded within 3 seconds
+    useEffect(() => {
+        if (!artist) return;
+        const timer = setTimeout(() => {
+            if (!artistData) router.replace('/404');
+        }, 3000);
+        return () => clearTimeout(timer);
+    }, [artist, artistData]);
+
     const filterFields = [
         { key: 'title', label: 'Titel', match: 'startsWith' },
         { key: 'subtitle', label: 'Subtitle', match: 'contains' },

@@ -14,6 +14,15 @@ export default function TourEventsPage() {
     const [events, setEvents] = useState([]);
     const [availability, setAvailability] = useState({});
 
+    // Redirect to 404 page if tour data could not be loaded within 3 seconds
+    useEffect(() => {
+        if (!artist || !tour) return;
+        const timer = setTimeout(() => {
+            if (!tourData) router.replace('/404');
+        }, 3000);
+        return () => clearTimeout(timer);
+    }, [artist, tour, tourData]);
+
     useEffect(() => {
         if (!tour) return;
         const load = async () => {
