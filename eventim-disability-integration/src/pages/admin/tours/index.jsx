@@ -631,7 +631,6 @@ export default function ToursContent() {
                                             {/* FIRST TWO EVENTS */}
                                             <div className="sub-events">
                                                 {(tour.events || [])
-                                                    .slice(0, 2)
                                                     .map((ev) => {
                                                         const dt = new Date(ev.start_time);
                                                         const ds = dt.toLocaleDateString('de-DE', {
@@ -675,15 +674,15 @@ export default function ToursContent() {
                                                                         </div>
                                                                     )}
                                                                 </div>
-                                                                <button
-                                                                    className="btn-tickets"
-                                                                    onClick={(e) => {
-                                                                        e.stopPropagation();
-                                                                        router.push(evUrl);
-                                                                    }}
-                                                                >
-                                                                    Tickets
-                                                                </button>
+                                                                {/*<button*/}
+                                                                {/*    className="btn-tickets"*/}
+                                                                {/*    onClick={(e) => {*/}
+                                                                {/*        e.stopPropagation();*/}
+                                                                {/*        router.push(evUrl);*/}
+                                                                {/*    }}*/}
+                                                                {/*>*/}
+                                                                {/*    Tickets*/}
+                                                                {/*</button>*/}
                                                                 {user?.hasDeletionPermission &&
                                                                     eventTickets[ev.id] === false && (
                                                                         <button

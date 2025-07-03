@@ -8,7 +8,6 @@ import '../styles/squareTourCard.css';
 import '../styles/filter-bar.css';
 import '../styles/artists.css';
 import '../styles/tours.css';
-import '../styles/AS-Login.css';
 import '../styles/footer.css';
 import '../styles/scroller.css';
 import '../styles/smallTourCard.css';

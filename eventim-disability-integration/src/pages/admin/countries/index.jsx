@@ -125,16 +125,6 @@ export default function CountriesContent() {
                 )}
             </div>
 
-            <div className="filter-container">
-                <FilterBar
-                    items={countries}
-                    onFiltered={setFilteredCountries}
-                    entityName="Land"
-                    entityRoute="countries"
-                    filterFields={filterFields}
-                />
-            </div>
-
             <div className="artists-grid">
                 {filteredCountries.length === 0 && (
                     <div className="no-artists">Keine Länder vorhanden.</div>
