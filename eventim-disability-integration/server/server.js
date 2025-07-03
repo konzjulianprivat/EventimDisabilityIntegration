@@ -1488,10 +1488,19 @@ app.get('/venues-detailed', async (req, res) => {
     }
 });
 
-// PUT: Update a venue and its areas
-app.put('/venues/:id', async (req, res) => {
+// PUT: Update a venue, its areas and optionally the image
+app.put('/venues/:id', upload.single('venue_image'), async (req, res) => {
     const venueId = req.params.id;
-    const { name, address, cityId, website, venueAreas = [] } = req.body;
+    const { name, address, cityId, website } = req.body;
+    let venueAreas = [];
+    try {
+        venueAreas = req.body.venueAreas
+            ? JSON.parse(req.body.venueAreas)
+            : [];
+        if (!Array.isArray(venueAreas)) venueAreas = [];
+    } catch {
+        venueAreas = [];
+    }
 
     if (!name?.trim() || !address?.trim() || !cityId) {
         return res
@@ -1501,6 +1510,17 @@ app.put('/venues/:id', async (req, res) => {
 
     try {
         await client.query('BEGIN');
+
+        // Aktuelles Bild ermitteln
+        const { rows: existingVenue } = await client.query(
+            'SELECT venue_image FROM venues WHERE id = $1',
+            [venueId]
+        );
+        if (existingVenue.length === 0) {
+            await client.query('ROLLBACK');
+            return res.status(404).json({ message: 'Venue nicht gefunden' });
+        }
+        const oldImageId = existingVenue[0].venue_image;
 
         await client.query(
             `UPDATE venues
@@ -1512,6 +1532,18 @@ app.put('/venues/:id', async (req, res) => {
                WHERE id = $5`,
             [name.trim(), address.trim(), cityId, website || null, venueId]
         );
+
+        if (req.file) {
+            const newImageId = uuidv4();
+            await client.query(
+                'INSERT INTO images (id, image_data, image_type, entity_type, entity_id) VALUES ($1,$2,$3,$4,$5)',
+                [newImageId, req.file.buffer, req.file.mimetype, 'venue', venueId]
+            );
+            await client.query('UPDATE venues SET venue_image = $1 WHERE id = $2', [newImageId, venueId]);
+            if (oldImageId) {
+                await client.query('DELETE FROM images WHERE id = $1', [oldImageId]);
+            }
+        }
 
         // Bestehende Areas laden
         const { rows: existing } = await client.query(
