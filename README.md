@@ -278,43 +278,43 @@ class venues {
    uuid id
 }
 
-cart_items  -->  carts : cart_id:id
-cart_items  -->  event_categories : event_category_id:id
-cart_items  -->  events : event_id:id
-carts  -->  users : user_id
-checkout_items  -->  checkouts : checkout_id:id
-checkout_items  -->  event_categories : event_category_id:id
-checkout_items  -->  events : event_id:id
-checkouts  -->  users : user_id
-cities  -->  countries : country_id:id
-disability_marks  -->  areas : area_id:id
-event_categories  -->  events : event_id:id
-event_supporting_acts  -->  artists : artist_id:id
-event_supporting_acts  -->  events : event_id:id
-event_venue_areas  -->  event_categories : category_id:id
-event_venue_areas  -->  events : event_id:id
-event_venue_areas  -->  venue_areas : venue_area_id:id
-events  -->  tours : tour_id:id
-events  -->  venues : venue_id:id
-order_tickets  -->  orders : order_id:id
-order_tickets  -->  tickets : ticket_id:id
-orders  -->  payment_options : payment_option_id:id
-orders  -->  users : user_id
-subgenres  -->  genres : genre_id:id
-tickets  -->  event_categories : event_category_id:id
-tickets  -->  orders : order_id:id
-tour_artists  -->  artists : artist_id:id
-tour_artists  -->  tours : tour_id:id
-tour_genres  -->  genres : genre_id:id
-tour_genres  -->  tours : tour_id:id
-tour_subgenres  -->  subgenres : subgenre_id:id
-tour_subgenres  -->  tours : tour_id:id
-user_disability_marks  -->  disability_marks : mark_code
-user_disability_marks  -->  users : user_id
-users  -->  user_roles : role:id
-venue_areas  -->  areas : area_id:id
-venue_areas  -->  venues : venue_id:id
-venues  -->  cities : city_id:id
+cart_items           --> carts            : cart_id:id
+cart_items           --> event_categories : event_category_id:id
+cart_items           --> events           : event_id:id
+carts                --> users            : user_id
+checkout_items       --> checkouts        : checkout_id:id
+checkout_items       --> event_categories : event_category_id:id
+checkout_items       --> events           : event_id:id
+checkouts            --> users            : user_id
+cities               --> countries        : country_id:id
+disability_marks     --> areas            : area_id:id
+event_categories     --> events           : event_id:id
+event_supporting_acts--> artists          : artist_id:id
+event_supporting_acts--> events           : event_id:id
+event_venue_areas    --> event_categories : category_id:id
+event_venue_areas    --> events           : event_id:id
+event_venue_areas    --> venue_areas      : venue_area_id:id
+events               --> tours            : tour_id:id
+events               --> venues           : venue_id:id
+order_tickets        --> orders           : order_id:id
+order_tickets        --> tickets          : ticket_id:id
+orders               --> payment_options  : payment_option_id:id
+orders               --> users            : user_id
+subgenres            --> genres           : genre_id:id
+tickets               --> event_categories : event_category_id:id
+tickets               --> orders           : order_id:id
+tour_artists         --> artists          : artist_id:id
+tour_artists         --> tours            : tour_id:id
+tour_genres          --> genres           : genre_id:id
+tour_genres          --> tours            : tour_id:id
+tour_subgenres       --> subgenres        : subgenre_id:id
+tour_subgenres       --> tours            : tour_id:id
+user_disability_marks--> disability_marks : mark_code
+user_disability_marks--> users            : user_id
+users                --> user_roles       : role:id
+venue_areas          --> areas            : area_id:id
+venue_areas          --> venues           : venue_id:id
+venues               --> cities           : city_id:id
 ```
 
 <a name="backend-endpunkte"></a>
