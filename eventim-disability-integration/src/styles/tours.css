@@ -293,6 +293,18 @@
     color: #003f7f;
 }
 
+.btn-delete-event {
+    background: none;
+    border: none;
+    color: #c00;
+    font-size: 1rem;
+    margin-left: 0.5rem;
+    cursor: pointer;
+}
+.btn-delete-event:hover {
+    color: #900;
+}
+
 /* “Alle X Events anzeigen” */
 .btn-view-events {
     background-color: #005ea5;
