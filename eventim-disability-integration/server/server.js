@@ -2509,26 +2509,83 @@ app.put('/tours/:id', upload.single('tour_image'), async (req, res) => {
 app.delete('/tours/:id', async (req, res) => {
     const tourId = req.params.id;
     try {
-        // 3a) hole tour_image Id
+        await client.query('BEGIN');
+
         const { rows } = await client.query(
             'SELECT tour_image FROM tours WHERE id = $1',
             [tourId]
         );
         if (rows.length === 0) {
+            await client.query('ROLLBACK');
             return res.status(404).json({ message: 'Tour nicht gefunden' });
         }
         const imageId = rows[0].tour_image;
 
-        // 3b) lösche Tour
-        await client.query('DELETE FROM tours WHERE id = $1', [tourId]);
+        const { rows: eventRows } = await client.query(
+            'SELECT id FROM events WHERE tour_id = $1',
+            [tourId]
+        );
 
-        // 3c) lösche zugehöriges Bild, falls vorhanden
+        for (const ev of eventRows) {
+            const { rows: t } = await client.query(
+                `SELECT 1
+                   FROM tickets t
+                        JOIN event_categories ec ON ec.id = t.event_category_id
+                  WHERE ec.event_id = $1
+                  LIMIT 1`,
+                [ev.id]
+            );
+            if (t.length > 0) {
+                await client.query('ROLLBACK');
+                return res
+                    .status(400)
+                    .json({ message: 'Tour kann nicht gelöscht werden, da Tickets für Events existieren.' });
+            }
+        }
+
+        for (const ev of eventRows) {
+            await client.query('DELETE FROM cart_items WHERE event_id = $1', [ev.id]);
+            await client.query('DELETE FROM checkout_items WHERE event_id = $1', [ev.id]);
+            await client.query(
+                `DELETE FROM order_tickets ot
+                 USING tickets t, event_categories ec
+                 WHERE ot.ticket_id = t.id
+                   AND t.event_category_id = ec.id
+                   AND ec.event_id = $1`,
+                [ev.id]
+            );
+            await client.query(
+                `DELETE FROM tickets t
+                 USING event_categories ec
+                 WHERE t.event_category_id = ec.id
+                   AND ec.event_id = $1`,
+                [ev.id]
+            );
+            await client.query(
+                `DELETE FROM event_venue_areas eva
+                 USING event_categories ec
+                 WHERE eva.category_id = ec.id
+                   AND ec.event_id = $1`,
+                [ev.id]
+            );
+            await client.query('DELETE FROM event_supporting_acts WHERE event_id = $1', [ev.id]);
+            await client.query('DELETE FROM event_categories WHERE event_id = $1', [ev.id]);
+            await client.query('DELETE FROM events WHERE id = $1', [ev.id]);
+        }
+
+        await client.query('DELETE FROM tour_artists WHERE tour_id = $1', [tourId]);
+        await client.query('DELETE FROM tour_subgenres WHERE tour_id = $1', [tourId]);
+        await client.query('DELETE FROM tour_genres WHERE tour_id = $1', [tourId]);
+
+        await client.query('DELETE FROM tours WHERE id = $1', [tourId]);
         if (imageId) {
             await client.query('DELETE FROM images WHERE id = $1', [imageId]);
         }
 
+        await client.query('COMMIT');
         return res.status(200).json({ message: 'Tour gelöscht' });
     } catch (err) {
+        await client.query('ROLLBACK');
         console.error('Delete‐Tour error:', err);
         if (err.code === 'P0001') {
             return res.status(400).json({ message: err.message });
@@ -2980,6 +3037,62 @@ app.get('/event-capacities/:id', async (req, res) => {
     } catch (err) {
         console.error('Error in /event-capacities:', err);
         return res.status(500).json({ message: 'Fehler beim Laden der Kapazität' });
+    }
+});
+
+// DELETE /events/:id – entfernt ein Event, sofern keine Tickets existieren
+app.delete('/events/:id', async (req, res) => {
+    const eventId = req.params.id;
+    try {
+        const { rows: ticketCheck } = await client.query(
+            `SELECT 1
+             FROM tickets t
+                      JOIN event_categories ec ON ec.id = t.event_category_id
+             WHERE ec.event_id = $1
+             LIMIT 1`,
+            [eventId]
+        );
+        if (ticketCheck.length > 0) {
+            return res
+                .status(400)
+                .json({ message: 'Event kann nicht gelöscht werden, da Tickets existieren.' });
+        }
+
+        await client.query('BEGIN');
+        await client.query('DELETE FROM cart_items WHERE event_id = $1', [eventId]);
+        await client.query('DELETE FROM checkout_items WHERE event_id = $1', [eventId]);
+        await client.query(
+            `DELETE FROM order_tickets ot
+             USING tickets t, event_categories ec
+             WHERE ot.ticket_id = t.id
+               AND t.event_category_id = ec.id
+               AND ec.event_id = $1`,
+            [eventId]
+        );
+        await client.query(
+            `DELETE FROM tickets t
+             USING event_categories ec
+             WHERE t.event_category_id = ec.id
+               AND ec.event_id = $1`,
+            [eventId]
+        );
+        await client.query(
+            `DELETE FROM event_venue_areas eva
+             USING event_categories ec
+             WHERE eva.category_id = ec.id
+               AND ec.event_id = $1`,
+            [eventId]
+        );
+        await client.query('DELETE FROM event_supporting_acts WHERE event_id = $1', [eventId]);
+        await client.query('DELETE FROM event_categories WHERE event_id = $1', [eventId]);
+        await client.query('DELETE FROM events WHERE id = $1', [eventId]);
+        await client.query('COMMIT');
+
+        return res.status(200).json({ message: 'Event gelöscht' });
+    } catch (err) {
+        await client.query('ROLLBACK');
+        console.error('Delete-event error:', err);
+        return res.status(500).json({ message: 'Serverfehler beim Löschen des Events' });
     }
 });
 
@@ -3798,6 +3911,58 @@ async function startServer() {
                 DELETE FROM cart_items ci
                 WHERE NOT EXISTS (SELECT 1 FROM events e WHERE e.id = ci.event_id)
                    OR NOT EXISTS (SELECT 1 FROM event_categories ec WHERE ec.id = ci.event_category_id)
+            `);
+
+            // remove past events and all dependent data
+            await db.query(`
+                DELETE FROM order_tickets ot
+                USING tickets t, event_categories ec, events e
+                WHERE ot.ticket_id = t.id
+                  AND t.event_category_id = ec.id
+                  AND ec.event_id = e.id
+                  AND e.end_time < NOW()
+            `);
+            await db.query(`
+                DELETE FROM tickets t
+                USING event_categories ec, events e
+                WHERE t.event_category_id = ec.id
+                  AND ec.event_id = e.id
+                  AND e.end_time < NOW()
+            `);
+            await db.query(`
+                DELETE FROM cart_items ci
+                USING events e
+                WHERE ci.event_id = e.id
+                  AND e.end_time < NOW()
+            `);
+            await db.query(`
+                DELETE FROM checkout_items ci
+                USING events e
+                WHERE ci.event_id = e.id
+                  AND e.end_time < NOW()
+            `);
+            await db.query(`
+                DELETE FROM event_venue_areas eva
+                USING event_categories ec, events e
+                WHERE eva.category_id = ec.id
+                  AND ec.event_id = e.id
+                  AND e.end_time < NOW()
+            `);
+            await db.query(`
+                DELETE FROM event_supporting_acts esa
+                USING events e
+                WHERE esa.event_id = e.id
+                  AND e.end_time < NOW()
+            `);
+            await db.query(`
+                DELETE FROM event_categories ec
+                USING events e
+                WHERE ec.event_id = e.id
+                  AND e.end_time < NOW()
+            `);
+            await db.query(`
+                DELETE FROM events
+                WHERE end_time < NOW()
             `);
 
             // delete checkout items older than 15 minutes
