@@ -1,17 +1,22 @@
+
 .homepage-scroller-container {
     width: 100%;
-    overflow: visible;
+    overflow: hidden;
     position: relative;
 }
 
 .homepage-scroller {
     display: flex;
-    animation: scroll 40s linear infinite;
+    gap: 16px;
+    width: max-content;
+    animation: scroll var(--scroll-duration, 40s) linear infinite;
 }
 
-.homepage-scroller-img {
-    width: auto;
+.homepage-scroller-img,
+.homepage-scroller-img-placeholder {
+    width: 250px;
     height: 250px;
+    flex-shrink: 0;
     transition: transform 0.3s ease-in-out;
     overflow: hidden;
     display: flex;
@@ -22,15 +27,19 @@
     object-position: center;
 }
 
+.homepage-scroller-img-placeholder {
+    background-color: #f5f5f5;
+}
+
 .homepage-scroller-img:hover {
     transform: scale(1.1);
 }
 
 @keyframes scroll {
-    0% {
+    from {
         transform: translateX(0);
     }
-    100% {
+    to {
         transform: translateX(-50%);
     }
 }
