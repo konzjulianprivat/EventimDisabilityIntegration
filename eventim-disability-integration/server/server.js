@@ -1809,14 +1809,22 @@ app.get('/genres-with-subgenres', async (req, res) => {
           json_agg(
             json_build_object(
               'id', s.id,
-              'name', s.name
+              'name', s.name,
+              'event_count', COALESCE(ec.event_count, 0)
             )
+            ORDER BY s.name
           ) FILTER (WHERE s.id IS NOT NULL),
           '[]'
         ) AS subgenres
       FROM genres g
       LEFT JOIN subgenres s
         ON s.genre_id = g.id
+      LEFT JOIN (
+        SELECT ts.subgenre_id, COUNT(e.id) AS event_count
+        FROM tour_subgenres ts
+        JOIN events e ON e.tour_id = ts.tour_id
+        GROUP BY ts.subgenre_id
+      ) ec ON ec.subgenre_id = s.id
       GROUP BY g.id, g.name
       ORDER BY g.name
     `);
@@ -1880,14 +1888,21 @@ app.get('/cities-with-venues', async (req, res) => {
             json_build_object(
               'id', v.id,
               'name', v.name,
-              'venue_image', v.venue_image
+              'venue_image', v.venue_image,
+              'event_count', COALESCE(ev.event_count, 0)
             )
+            ORDER BY v.name
           ) FILTER (WHERE v.id IS NOT NULL),
           '[]'
         ) AS venues
       FROM cities ci
       LEFT JOIN venues v
         ON v.city_id = ci.id
+      LEFT JOIN (
+        SELECT venue_id, COUNT(id) AS event_count
+        FROM events
+        GROUP BY venue_id
+      ) ev ON ev.venue_id = v.id
       GROUP BY ci.id, ci.name
       ORDER BY ci.name
     `);
