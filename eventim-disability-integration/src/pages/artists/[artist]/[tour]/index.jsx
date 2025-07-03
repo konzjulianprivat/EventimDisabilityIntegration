@@ -3,6 +3,7 @@ import { useRouter } from 'next/router';
 import { API_BASE_URL } from '../../../../config';
 import FilterBar from "../../../../components/filter-bar";
 import { useAuth } from '../../../../hooks/useAuth';
+import Custom404 from '../../../../404';
 
 export default function TourEventsPage() {
     const router = useRouter();
@@ -13,6 +14,7 @@ export default function TourEventsPage() {
     const [tourData, setTourData] = useState(null);
     const [events, setEvents] = useState([]);
     const [availability, setAvailability] = useState({});
+    const [show404, setShow404] = useState(false);
 
     useEffect(() => {
         if (!tour) return;
@@ -34,6 +36,15 @@ export default function TourEventsPage() {
     }, [tour]);
 
     useEffect(() => {
+        if (!tour) return;
+        setShow404(false);
+        const timer = setTimeout(() => {
+            if (!tourData) setShow404(true);
+        }, 3000);
+        return () => clearTimeout(timer);
+    }, [tour, tourData]);
+
+    useEffect(() => {
         if (events.length === 0) return;
         const fetchCaps = async () => {
             const map = {};
@@ -50,6 +61,7 @@ export default function TourEventsPage() {
         fetchCaps();
     }, [events]);
 
+    if (show404) return <Custom404 />;
     if (!tourData) return <div>Loading …</div>;
 
     const formatDate = (d) =>
