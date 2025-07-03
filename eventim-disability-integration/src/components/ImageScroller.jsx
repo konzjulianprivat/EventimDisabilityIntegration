@@ -5,11 +5,12 @@ import React, { useState, useEffect } from "react";
 
 const ImageScroller = ({ tour }) => {
     // `tour` ist ein Array von { imageId, title, link }
-    // Verdoppeln für Endlosschleife
-    const loopedTours = [...tour, ...tour, ...tour, ...tour, ...tour, ...tour, ...tour];
+    // Nur zweimal fuer Endlosschleife noetig
+    const loopedTours = [...tour, ...tour];
 
     // Hier speichern wir die gemappten Object-URLs
     const [urls, setUrls] = useState({}); // { [imageId]: objectURL }
+    const [ready, setReady] = useState(false);
 
     useEffect(() => {
         let isMounted = true;
@@ -31,7 +32,9 @@ const ImageScroller = ({ tour }) => {
             }
         }
 
-        fetchAll();
+        fetchAll().then(() => {
+            if (isMounted) setReady(true);
+        });
         return () => {
             isMounted = false;
             // Cleanup: revoke all object URLs
@@ -41,7 +44,13 @@ const ImageScroller = ({ tour }) => {
 
     return (
         <div className="homepage-scroller-container">
-            <div className="homepage-scroller">
+            <div
+                className="homepage-scroller"
+                style={{
+                    "--scroll-duration": `${tour.length * 5}s`,
+                    animationPlayState: ready ? "running" : "paused",
+                }}
+            >
                 {loopedTours.map((t, idx) => {
                     const imgUrl = urls[t.imageId] || null;
                     return (
