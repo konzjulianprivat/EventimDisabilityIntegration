@@ -13,6 +13,8 @@ export default function VenuesContent() {
         address: '',
         cityId: '',
         website: '',
+        venue_image: null,
+        existingImageId: null,
     });
     const [cities, setCities] = useState([]);
     const [areas, setAreas] = useState([]);
@@ -77,6 +79,8 @@ export default function VenuesContent() {
             address: venue.address || '',
             cityId: venue.cityId || '',
             website: venue.website || '',
+            venue_image: null,
+            existingImageId: venue.venue_image || null,
         });
         try {
             const res = await fetch(`http://localhost:4000/venue-areas?venueId=${venue.id}`);
@@ -90,8 +94,12 @@ export default function VenuesContent() {
     };
 
     const handleInputChange = (e) => {
-        const { name, value } = e.target;
-        setEditedData((prev) => ({ ...prev, [name]: value }));
+        const { name, value, files } = e.target;
+        if (files) {
+            setEditedData((prev) => ({ ...prev, [name]: files[0] }));
+        } else {
+            setEditedData((prev) => ({ ...prev, [name]: value }));
+        }
     };
 
     const addArea = () => {
@@ -110,17 +118,19 @@ export default function VenuesContent() {
 
     const handleSave = async () => {
         try {
-            const payload = {
-                name: editedData.name,
-                address: editedData.address,
-                cityId: editedData.cityId,
-                website: editedData.website,
-                venueAreas,
-            };
+            const fd = new FormData();
+            fd.append('name', editedData.name);
+            fd.append('address', editedData.address);
+            fd.append('cityId', editedData.cityId);
+            fd.append('website', editedData.website);
+            fd.append('venueAreas', JSON.stringify(venueAreas));
+            if (editedData.venue_image instanceof File) {
+                fd.append('venue_image', editedData.venue_image);
+            }
+
             const response = await fetch(`http://localhost:4000/venues/${editedData.id}`, {
                 method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(payload),
+                body: fd,
             });
             if (!response.ok) throw new Error('Server-Fehler beim Speichern');
             setEditingId(null);
@@ -225,6 +235,20 @@ export default function VenuesContent() {
                         </div>
 
                         <div className="card-body">
+                            <div className="image-wrapper">
+                                <img
+                                    className="artist-image"
+                                    src={
+                                        editingId === venue.id &&
+                                        editedData.venue_image instanceof File
+                                            ? URL.createObjectURL(editedData.venue_image)
+                                            : venue.venue_image
+                                                ? `http://localhost:4000/image/${venue.venue_image}`
+                                                : '/pictures/placeholder.png'
+                                    }
+                                    alt={venue.name || 'Unbekanntes Venue'}
+                                />
+                            </div>
                             <div className="details-wrapper">
                                 {editingId === venue.id ? (
                                     <>
@@ -256,6 +280,13 @@ export default function VenuesContent() {
                                             onChange={handleInputChange}
                                             placeholder="Website"
                                             className="input-website"
+                                        />
+                                        <input
+                                            type="file"
+                                            name="venue_image"
+                                            onChange={handleInputChange}
+                                            accept="image/*"
+                                            className="input-file"
                                         />
 
                                         <div style={{ marginBottom: '0.5rem' }}>
