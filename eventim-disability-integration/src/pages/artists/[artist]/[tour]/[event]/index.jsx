@@ -3,6 +3,7 @@ import { useRouter } from 'next/router';
 import { API_BASE_URL } from '../../../../../config';
 import { useAuth } from '../../../../../hooks/useAuth';
 import { useCart } from "../../../../../hooks/useCart";
+import Custom404 from '../../../../../404';
 
 export default function EventPage() {
     const router = useRouter();
@@ -19,6 +20,7 @@ export default function EventPage() {
     const [qty, setQty] = useState(1);
     const [qty_disabled, setQty_disabled] = useState(1);
     const [selectedCat, setSelectedCat] = useState(null);
+    const [show404, setShow404] = useState(false);
 
     // Track category IDs already in cart
     const [inCartItems, setInCartItems] = useState({});
@@ -81,6 +83,15 @@ export default function EventPage() {
         };
         load();
     }, [artist, tour, event]);
+
+    useEffect(() => {
+        if (!artist || !tour || !event) return;
+        setShow404(false);
+        const timer = setTimeout(() => {
+            if (!eventData) setShow404(true);
+        }, 3000);
+        return () => clearTimeout(timer);
+    }, [artist, tour, event, eventData]);
 
     const userMarks = (user && user.disabilityMarks) || [];
     const notExpired = user?.disabilityCardExpiryDate && new Date(user.disabilityCardExpiryDate) >= new Date();
@@ -267,6 +278,7 @@ export default function EventPage() {
     };
 
 
+    if (show404) return <Custom404 />;
     if (loading) return <div>Loading …</div>;
     if (error) return <div>{error}</div>;
     if (!eventData) return <div>Event nicht gefunden</div>;

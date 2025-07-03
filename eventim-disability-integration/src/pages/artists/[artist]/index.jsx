@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/router';
 import FilterBar from '../../../components/filter-bar';
 import { API_BASE_URL } from '../../../config';
+import Custom404 from '../../../404';
 
 export default function ArtistPage() {
     const router = useRouter();
@@ -11,6 +12,7 @@ export default function ArtistPage() {
     const [tours, setTours] = useState([]);
     const [basicFilteredTours, setBasicFilteredTours] = useState([]);
     const [filteredTours, setFilteredTours] = useState([]);
+    const [show404, setShow404] = useState(false);
 
     const [filterStartDate, setFilterStartDate] = useState('');
     const [filterEndDate, setFilterEndDate] = useState('');
@@ -41,6 +43,15 @@ export default function ArtistPage() {
         };
         loadArtist();
     }, [artist]);
+
+    useEffect(() => {
+        if (!artist) return;
+        setShow404(false);
+        const timer = setTimeout(() => {
+            if (!artistData) setShow404(true);
+        }, 3000);
+        return () => clearTimeout(timer);
+    }, [artist, artistData]);
 
     useEffect(() => {
         const fetchTours = async () => {
@@ -137,6 +148,7 @@ export default function ArtistPage() {
         setFilterArtistsInternal(copy);
     };
 
+    if (show404) return <Custom404 />;
     if (!artistData) return <div>Loading …</div>;
 
     const artistImage = artistData.artist_image
