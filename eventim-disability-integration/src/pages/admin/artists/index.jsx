@@ -112,7 +112,9 @@ export default function ArtistsContent() {
                 method: 'DELETE',
             });
             if (!response.ok) {
-                throw new Error('Server-Fehler beim Löschen');
+                const d = await response.json().catch(() => ({}));
+                alert(d.message || 'Server-Fehler beim Löschen');
+                return;
             }
             setConfirmDeleteId(null);
             fetchArtists();

@@ -79,9 +79,14 @@ export default function VenueCreation() {
             setLoading(false);
             return;
         }
+        if (venueAreas.length === 0) {
+            setMessage('Mindestens ein Bereich mit Kapazität > 0 ist erforderlich');
+            setLoading(false);
+            return;
+        }
         for (const va of venueAreas) {
-            if (!va.areaId || !va.maxCapacity) {
-                setMessage('Alle Bereiche benötigen eine Kapazität und Auswahl');
+            if (!va.areaId || !va.maxCapacity || parseInt(va.maxCapacity, 10) <= 0) {
+                setMessage('Alle Bereiche benötigen eine Kapazität > 0 und Auswahl');
                 setLoading(false);
                 return;
             }
