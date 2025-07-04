@@ -110,6 +110,36 @@ export default function CompensationRequests() {
         await Promise.all([fetchPending(), fetchAccepted()]);
     };
 
+    const saveUserData = async (data) => {
+        if (!selectedUser) return;
+        try {
+            const res = await fetch(`${API_BASE_URL}/users/${selectedUser.user_id}/management`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                credentials: 'include',
+                body: JSON.stringify(data),
+            });
+            if (res.ok) {
+                const js = await res.json();
+                setSelectedUser(prev => ({
+                    ...prev,
+                    salutation: js.user.salutation,
+                    firstName: js.user.firstName,
+                    lastName: js.user.lastName,
+                    birth_date: js.user.birthDate,
+                }));
+                setDetail(prev => ({
+                    ...prev,
+                    disability_degree: js.user.disabilityDegree,
+                    disability_card_expiry_date: js.user.disabilityCardExpiryDate,
+                    marks: js.user.marks,
+                }));
+            }
+        } catch (err) {
+            console.error('Error saving user data:', err);
+        }
+    };
+
     const formatDate = (d) =>
         new Date(d).toLocaleDateString('de-DE', {
             weekday: 'long',
@@ -209,6 +239,8 @@ export default function CompensationRequests() {
                         onClose={closeModal}
                         onAccept={user?.hasDisabilityApprovalAccess ? acceptRequest : undefined}
                         onDecline={user?.hasDisabilityApprovalAccess ? declineRequest : undefined}
+                        onSave={user?.hasAccountManagementAccess ? saveUserData : undefined}
+                        canEdit={user?.hasAccountManagementAccess}
                     />
                 )}
             </div>

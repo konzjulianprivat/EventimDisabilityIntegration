@@ -1116,6 +1116,93 @@ app.patch('/users/:id/password', async (req, res) => {
     }
 });
 
+// PATCH: update user profile by admin/support
+app.patch('/users/:id/management', async (req, res) => {
+    if (!req.session.userId) {
+        return res.status(401).json({ message: 'Not logged in' });
+    }
+
+    try {
+        const { rows: permRows } = await client.query(
+            'SELECT has_account_management_access FROM user_roles WHERE id = $1',
+            [req.session.role]
+        );
+        if (!permRows.length || !permRows[0].has_account_management_access) {
+            return res.status(403).json({ message: 'Forbidden' });
+        }
+
+        const userId = req.params.id;
+        const {
+            salutation,
+            firstName,
+            lastName,
+            birthDate,
+            disabilityDegree,
+            disabilityCardExpiryDate,
+            marks = [],
+        } = req.body;
+
+        await client.query('BEGIN');
+
+        const { rows } = await client.query(
+            `UPDATE users
+                SET salutation = $1,
+                    first_name = $2,
+                    last_name = $3,
+                    birth_date = $4,
+                    disability_degree = $5,
+                    disability_card_expiry_date = $6,
+                    updated_at = NOW()
+             WHERE user_id = $7
+             RETURNING user_id,
+                       salutation AS "salutation",
+                       first_name AS "firstName",
+                       last_name AS "lastName",
+                       birth_date AS "birthDate",
+                       disability_degree AS "disabilityDegree",
+                       disability_card_expiry_date AS "disabilityCardExpiryDate"`,
+            [
+                salutation || null,
+                firstName?.trim() || '',
+                lastName?.trim() || '',
+                birthDate || null,
+                disabilityDegree || null,
+                disabilityCardExpiryDate || null,
+                userId,
+            ]
+        );
+
+        await client.query('DELETE FROM user_disability_marks WHERE user_id = $1', [userId]);
+        if (Array.isArray(marks)) {
+            for (const m of marks) {
+                await client.query(
+                    'INSERT INTO user_disability_marks (user_id, mark_code) VALUES ($1, $2)',
+                    [userId, m]
+                );
+            }
+        }
+
+        const { rows: markRows } = await client.query(
+            'SELECT mark_code FROM user_disability_marks WHERE user_id = $1',
+            [userId]
+        );
+
+        await client.query('COMMIT');
+
+        const updated = rows[0];
+        return res.json({
+            user: {
+                ...updated,
+                marks: markRows.map((m) => m.mark_code && m.mark_code.trim()),
+            },
+        });
+    } catch (err) {
+        await client.query('ROLLBACK');
+        console.error('Error updating user via management:', err);
+        return res.status(500).json({ message: 'Server error' });
+    }
+});
+
 // Liefert alle verfügbaren Versandoptionen
 app.get('/shipping-options', async (req, res) => {
     try {
