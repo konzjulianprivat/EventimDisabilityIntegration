@@ -140,7 +140,7 @@ export default function TourEventsPage() {
                                     <div className="details-wrapper">
                                         <div
                                             className="tour-header hoverable"
-                                            onClick={() => router.push(evUrl)}
+                                            onClick={() => !soldOut && router.push(evUrl)}
                                         >
                                             <div>
                                                 <h3 className="tour-title">
@@ -184,7 +184,9 @@ export default function TourEventsPage() {
                                                     className="btn-view-events"
                                                     onClick={(e) => {
                                                         e.stopPropagation();
-                                                        router.push(evUrl);
+                                                        if (!soldOut) {
+                                                            router.push(evUrl);
+                                                        }
                                                     }}
                                                     style={soldOut ? { backgroundColor: 'lightgrey' } : undefined}
                                                     disabled={soldOut}
