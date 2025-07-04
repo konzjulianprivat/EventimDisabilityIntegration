@@ -519,13 +519,12 @@ export default function EventPage() {
                     {/* Note */}
                     <div className="note">
                         Angezeigte Preise inkl. der gesetzl. MwSt., Vorverkaufsgebühr,
-                        <a href="#"> Buchungsgebühr von max. € 0,00</a>
+                        <a href="src/pages/404.jsx"> Buchungsgebühr von max. € 0,00</a>
                         <br />
-                        zzgl. <a href="#">Versandkosten</a>.
+                        zzgl. <a href="src/pages/404.jsx">Versandkosten</a>.
                     </div>
                 </div>
 
-                {/* ————— ACCORDIONS ————— */}
                 <div className="accordion">
                     <details>
                         <summary>Versandmöglichkeiten</summary>

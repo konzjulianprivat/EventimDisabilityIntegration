@@ -3,13 +3,6 @@
 
 import React, { useState, useEffect } from "react";
 
-/**
- * Props:
- * - imageId:    UUID der Tour-Bilddatei in der Datenbank
- * - title:      String, z.B. "Rod Stewart"
- * - bottomText: String unter dem Titel (Datum/Venue)
- * - link:       URL, auf die beim Klick auf den Text navigiert wird
- */
 const SquareTourCard = ({ imageId, title, bottomText, link }) => {
     const [imageUrl, setImageUrl] = useState(null);
 
