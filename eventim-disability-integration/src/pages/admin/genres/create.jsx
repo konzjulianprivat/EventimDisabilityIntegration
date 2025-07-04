@@ -1,4 +1,6 @@
-// genres.jsx
+// src/pages/admin/tours/genre-create.jsx
+"use client";
+
 import React, { useState } from 'react';
 import { useValidation } from '../../../hooks/useValidation';
 import { useRouter } from 'next/router';
@@ -8,33 +10,28 @@ import { ADMIN_PERMISSIONS } from '../../../adminPermissions';
 export default function GenreCreation() {
     useRequireAccess(ADMIN_PERMISSIONS);
     const router = useRouter();
-    const [formData, setFormData] = useState({
-        name: '',
-    });
-    const [subgenres, setSubgenres] = useState([]); // [{ name: '' }]
+    const [formData, setFormData] = useState({ name: '' });
+    const [subgenres, setSubgenres] = useState([]);
     const [message, setMessage] = useState('');
     const [loading, setLoading] = useState(false);
     const validation = useValidation({ name: '' });
 
     const handleChange = (e) => {
         const { name, value } = e.target;
-        setFormData((f) => ({ ...f, [name]: value }));
+        setFormData((prev) => ({ ...prev, [name]: value }));
         if (name === 'name') validation.validate('name', value, { required: true });
     };
 
-    const addSubgenre = () => {
+    const addSubgenre = () =>
         setSubgenres((sg) => [...sg, { name: '' }]);
-    };
 
-    const updateSubgenre = (index, value) => {
+    const updateSubgenre = (idx, val) =>
         setSubgenres((sg) =>
-            sg.map((it, idx) => (idx === index ? { name: value } : it))
+            sg.map((it, i) => (i === idx ? { name: val } : it))
         );
-    };
 
-    const removeSubgenre = (index) => {
-        setSubgenres((sg) => sg.filter((_, idx) => idx !== index));
-    };
+    const removeSubgenre = (idx) =>
+        setSubgenres((sg) => sg.filter((_, i) => i !== idx));
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -46,8 +43,6 @@ export default function GenreCreation() {
             setLoading(false);
             return;
         }
-
-        // Ensure each subgenre has a non-empty name
         for (let i = 0; i < subgenres.length; i++) {
             if (!subgenres[i].name.trim()) {
                 setMessage(`Subgenre ${i + 1} benötigt einen Namen`);
@@ -73,151 +68,103 @@ export default function GenreCreation() {
                 setMessage(data.message || 'Fehler beim Erstellen des Genres');
             }
         } catch (err) {
-            console.error(err);
-            setMessage('Serverfehler');
+            console.error('Create genre error:', err);
+            setMessage('Serverfehler beim Erstellen des Genres');
         } finally {
             setLoading(false);
         }
     };
 
     return (
-        <div
-            className="registration-container"
-            style={{ maxWidth: '600px', margin: '0 auto', padding: '2rem' }}
-        >
-            <h1 style={{ color: '#002b55', marginBottom: '1.5rem' }}>
-                Neues Genre erstellen
-            </h1>
+        <div className="artist-container">
+            <h1>Neues Genre erstellen</h1>
 
             {message && (
                 <div
-                    style={{
-                        padding: '0.75rem',
-                        backgroundColor: message.includes('erstellt')
-                            ? '#d4edda'
-                            : '#f8d7da',
-                        color: message.includes('erstellt') ? '#155724' : '#721c24',
-                        borderRadius: '4px',
-                        marginBottom: '1rem',
-                    }}
+                    className={`message ${
+                        message.includes('erstellt')
+                            ? 'message-success'
+                            : 'message-error'
+                    }`}
                 >
                     {message}
                 </div>
             )}
 
             <form onSubmit={handleSubmit}>
-                {/* Genre Name */}
-                <div style={{ marginBottom: '1rem' }}>
-                    <label
-                        htmlFor="name"
-                        style={{
-                            display: 'block',
-                            fontWeight: 'bold',
-                            marginBottom: '.5rem',
-                        }}
-                    >
+                {/* Genre-Name */}
+                <div className="form-group">
+                    <label htmlFor="name" className="form-label">
                         Genre Name *
                     </label>
                     <input
-                        type="text"
                         id="name"
                         name="name"
+                        type="text"
                         value={formData.name}
                         onChange={handleChange}
-                        className={validation.classFor('name', formData.name)}
+                        className={`form-input ${validation.classFor(
+                            'name',
+                            formData.name
+                        )}`}
                         required
-                        style={{
-                            width: '100%',
-                            padding: '.5rem',
-                            border: '1px solid #ccc',
-                            borderRadius: '4px',
-                        }}
                     />
                     {validation.errors.name && (
-                        <div className="validation-msg">{validation.errors.name}</div>
+                        <div className="validation-msg">
+                            {validation.errors.name}
+                        </div>
                     )}
                 </div>
 
                 {/* Subgenres */}
-                <div style={{ marginBottom: '1rem' }}>
-                    <label
-                        style={{
-                            display: 'block',
-                            fontWeight: 'bold',
-                            marginBottom: '.5rem',
-                        }}
-                    >
-                        Subgenres hinzufügen
-                    </label>
-
+                <div className="form-group">
+                    <label className="form-label">Subgenres hinzufügen</label>
                     {subgenres.map((sg, i) => (
-                        <div
-                            key={i}
-                            style={{
-                                display: 'flex',
-                                gap: '1rem',
-                                marginBottom: '.5rem',
-                            }}
-                        >
+                        <div key={i} className="form-row">
                             <input
                                 type="text"
                                 placeholder="Subgenre Name"
                                 value={sg.name}
                                 onChange={(e) => updateSubgenre(i, e.target.value)}
                                 required
-                                style={{
-                                    flex: 1,
-                                    padding: '.5rem',
-                                    border: '1px solid #ccc',
-                                    borderRadius: '4px',
-                                }}
+                                className="form-input"
                             />
                             <button
                                 type="button"
                                 onClick={() => removeSubgenre(i)}
-                                style={{
-                                    background: 'transparent',
-                                    border: 'none',
-                                    color: '#c00',
-                                    fontSize: '1.25rem',
-                                }}
+                                className="btn-remove"
+                                aria-label="Subgenre entfernen"
                             >
                                 ✕
                             </button>
                         </div>
                     ))}
-
                     <button
                         type="button"
                         onClick={addSubgenre}
-                        style={{
-                            background: '#eee',
-                            border: '1px solid #ccc',
-                            padding: '.5rem',
-                            borderRadius: '4px',
-                        }}
+                        className="btn-inline"
                     >
                         + Subgenre hinzufügen
                     </button>
                 </div>
 
-                {/* Submit */}
-                <button
-                    type="submit"
-                    disabled={loading || !validation.isValid()}
-                    style={{
-                        backgroundColor: '#002b55',
-                        color: 'white',
-                        padding: '0.75rem 1.5rem',
-                        border: 'none',
-                        borderRadius: '4px',
-                        fontSize: '1rem',
-                        cursor: 'pointer',
-                        width: '100%',
-                    }}
-                >
-                    {loading ? 'Bitte warten...' : 'Genre erstellen'}
-                </button>
+                {/* Actions */}
+                <div className="form-actions">
+                    <button
+                        type="button"
+                        onClick={() => router.back()}
+                        className="button button-back"
+                    >
+                        Zurück
+                    </button>
+                    <button
+                        type="submit"
+                        disabled={loading || !validation.isValid()}
+                        className="button button-submit"
+                    >
+                        {loading ? 'Bitte warten...' : 'Genre erstellen'}
+                    </button>
+                </div>
             </form>
         </div>
     );
