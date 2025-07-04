@@ -4,6 +4,7 @@ import { API_BASE_URL } from '../../../config';
 import { useAuth } from '../../../hooks/useAuth';
 import { useRequireAccess } from '../../../hooks/useRequireAccess';
 import { ADMIN_PERMISSIONS } from '../../../adminPermissions';
+import BackLink from '../../components/back-link';
 
 export default function CountriesContent() {
     useRequireAccess(ADMIN_PERMISSIONS);
@@ -115,6 +116,7 @@ export default function CountriesContent() {
 
     return (
         <div className="artists-wrapper">
+            <BackLink />
             <div className="artists-header">
                 <h2 className="artists-title">Übersicht – Länder</h2>
                 {user?.hasCreationAccess && (

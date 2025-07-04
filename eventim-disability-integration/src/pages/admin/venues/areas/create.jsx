@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import { useValidation } from '../../../../hooks/useValidation';
 import { useRequireAccess } from '../../../../hooks/useRequireAccess';
 import { ADMIN_PERMISSIONS } from '../../../../adminPermissions';
+import BackLink from '../../../components/back-link';
 
 export default function AreaCreation() {
     useRequireAccess(ADMIN_PERMISSIONS);
@@ -56,6 +57,7 @@ export default function AreaCreation() {
 
     return (
         <div className="creation-container" style={{ maxWidth: '600px', margin: '0 auto', padding: '2rem' }}>
+            <BackLink />
             <h1 style={{ color: '#002b55', marginBottom: '1.5rem' }}>Neuen Bereich anlegen</h1>
 
             {message && (
