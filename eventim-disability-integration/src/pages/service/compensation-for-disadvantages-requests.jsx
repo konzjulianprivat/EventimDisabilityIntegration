@@ -110,27 +110,6 @@ export default function CompensationRequests() {
         await Promise.all([fetchPending(), fetchAccepted()]);
     };
 
-    const saveUserProfile = async (updated) => {
-        if (!selectedUser) return;
-        try {
-            await fetch(`${API_BASE_URL}/service/users/${selectedUser.user_id}`, {
-                method: 'PATCH',
-                credentials: 'include',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(updated)
-            });
-            setSelectedUser(prev => ({
-                ...prev,
-                salutation: updated.salutation,
-                firstName: updated.firstName,
-                lastName: updated.lastName,
-                birth_date: updated.birthDate,
-            }));
-        } catch (err) {
-            console.error('Error saving profile:', err);
-        }
-    };
-
     const formatDate = (d) =>
         new Date(d).toLocaleDateString('de-DE', {
             weekday: 'long',
@@ -230,8 +209,6 @@ export default function CompensationRequests() {
                         onClose={closeModal}
                         onAccept={user?.hasDisabilityApprovalAccess ? acceptRequest : undefined}
                         onDecline={user?.hasDisabilityApprovalAccess ? declineRequest : undefined}
-                        canEdit={user?.hasAccountManagementAccess}
-                        onSave={saveUserProfile}
                     />
                 )}
             </div>
