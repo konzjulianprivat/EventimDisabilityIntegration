@@ -967,6 +967,130 @@ app.put('/users/:id/role', async (req, res) => {
     }
 });
 
+// server.js
+app.patch('/users/:id/compensation-request', async (req, res) => {
+    const sessionUserId = req.session.userId;
+    const paramUserId   = req.params.id;
+
+    // 1) Nur eigener Datensatz darf geändert werden
+    if (sessionUserId !== paramUserId) {
+        return res.status(403).json({ message: 'Unbefugter Zugriff' });
+    }
+
+    // 2) Nur die tatsächlich bearbeitbaren Felder aus dem Body entnehmen
+    const {
+        salutation,
+        firstName,
+        lastName,
+        birthDate,
+        disabilityDegree,
+        disabilityCardExpiryDate,
+        disabilityMarks    // Array von char(3)
+    } = req.body;
+
+    // 3) Mindestens ein Feld zum Aktualisieren erforderlich
+    if (
+        salutation               == null &&
+        firstName                == null &&
+        lastName                 == null &&
+        birthDate                == null &&
+        disabilityDegree         == null &&
+        disabilityCardExpiryDate == null &&
+        !Array.isArray(disabilityMarks)
+    ) {
+        return res.status(400).json({
+            message: 'Bitte übergeben Sie mindestens ein Profil- oder Disability-Feld'
+        });
+    }
+
+    try {
+        // 4) Transaktion starten
+        await client.query('BEGIN');
+
+        // 5) users-Tabelle updaten (COALESCE: nur neue Werte setzen)
+        await client.query(
+            `
+      UPDATE users
+         SET salutation                  = COALESCE($1, salutation),
+             first_name                  = COALESCE($2, first_name),
+             last_name                   = COALESCE($3, last_name),
+             birth_date                  = COALESCE($4, birth_date),
+             disability_degree           = COALESCE($5, disability_degree),
+             disability_card_expiry_date = COALESCE($6, disability_card_expiry_date),
+             updated_at                  = NOW()
+       WHERE user_id = $7
+      `,
+            [
+                salutation               ?? null,
+                firstName?.trim()        ?? null,
+                lastName?.trim()         ?? null,
+                birthDate                ?? null,
+                disabilityDegree         ?? null,
+                disabilityCardExpiryDate ?? null,
+                sessionUserId
+            ]
+        );
+
+        // 6) Wenn disabilityMarks übergeben wurden: Join-Tabelle neu schreiben
+        if (Array.isArray(disabilityMarks)) {
+            // a) alte Einträge löschen
+            await client.query(
+                `DELETE FROM user_disability_marks WHERE user_id = $1`,
+                [sessionUserId]
+            );
+            // b) neue Einträge bulk-insert (wenn nicht leer)
+            if (disabilityMarks.length > 0) {
+                const vals = disabilityMarks
+                    .map((_, i) => `($1, $${i + 2})`)
+                    .join(',');
+                await client.query(
+                    `INSERT INTO user_disability_marks(user_id, mark_code) VALUES ${vals}`,
+                    [sessionUserId, ...disabilityMarks]
+                );
+            }
+        }
+
+        // 7) Transaktion committen
+        await client.query('COMMIT');
+
+        // 8) Aktualisierte Daten auslesen (inkl. aktueller Marks)
+        const { rows: [ user ] } = await client.query(
+            `
+      SELECT
+        salutation                  AS "salutation",
+        first_name                  AS "firstName",
+        last_name                   AS "lastName",
+        birth_date                  AS "birthDate",
+        disability_degree           AS "disabilityDegree",
+        disability_card_expiry_date AS "disabilityCardExpiryDate"
+      FROM users
+      WHERE user_id = $1
+      `,
+            [sessionUserId]
+        );
+        const { rows: marksRows } = await client.query(
+            `SELECT mark_code FROM user_disability_marks WHERE user_id = $1`,
+            [sessionUserId]
+        );
+
+        // 9) Response
+        return res.status(200).json({
+            message: 'Profil und Disability-Details erfolgreich aktualisiert',
+            user: {
+                ...user,
+                marks: marksRows.map(r => r.mark_code)
+            }
+        });
+    } catch (err) {
+        await client.query('ROLLBACK');
+        console.error('Update-Fehler:', err);
+        return res.status(500).json({
+            message: 'Serverfehler beim Aktualisieren des Profils'
+        });
+    }
+});
+
+
 // PATCH: update user profile (allgemeine Profildaten)
 app.patch('/users/:id', async (req, res) => {
     const sessionUserId = req.session.userId;
