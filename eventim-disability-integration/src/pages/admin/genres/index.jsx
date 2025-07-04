@@ -3,8 +3,11 @@ import FilterBar from '../../../components/filter-bar';
 import { useRouter } from 'next/router';
 import { API_BASE_URL } from '../../../config';
 import { useAuth } from '../../../hooks/useAuth';
+import { useRequireAccess } from '../../../hooks/useRequireAccess';
+import { ADMIN_PERMISSIONS } from '../../../adminPermissions';
 
 export default function GenresContent() {
+    useRequireAccess(ADMIN_PERMISSIONS);
     const [genres, setGenres] = useState([]);
     const [filteredGenres, setFilteredGenres] = useState([]);
     const [editingId, setEditingId] = useState(null);

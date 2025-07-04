@@ -4,9 +4,10 @@
 import React, { useState, useEffect } from "react";
 import { useValidation } from '../../../hooks/useValidation';
 import { useRequireAccess } from '../../../hooks/useRequireAccess';
+import { ADMIN_PERMISSIONS } from '../../../adminPermissions';
 
 export default function TourCreation() {
-    useRequireAccess(['hasCreationAccess']);
+    useRequireAccess(ADMIN_PERMISSIONS);
     // --------------------------------------------------
     // 1) State
     // --------------------------------------------------

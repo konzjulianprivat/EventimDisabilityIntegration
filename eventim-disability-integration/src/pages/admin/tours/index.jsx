@@ -5,8 +5,11 @@ import FilterBar from '../../../components/filter-bar';
 import { useRouter } from 'next/router';
 import { API_BASE_URL } from '../../../config';
 import { useAuth } from '../../../hooks/useAuth';
+import { useRequireAccess } from '../../../hooks/useRequireAccess';
+import { ADMIN_PERMISSIONS } from '../../../adminPermissions';
 
 export default function ToursContent() {
+    useRequireAccess(ADMIN_PERMISSIONS);
     const [tours, setTours] = useState([]);
     const [basicFilteredTours, setBasicFilteredTours] = useState([]);
     const [filteredTours, setFilteredTours] = useState([]);
