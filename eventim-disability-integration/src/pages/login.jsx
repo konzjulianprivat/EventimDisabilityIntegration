@@ -247,7 +247,7 @@ export default function LoginPage() {
                             )}
                         </div>
                         <div className="form-footer">
-                            <a href="#" className="link-forgot">
+                            <a href="404.jsx" className="link-forgot">
                                 Passwort vergessen?
                             </a>
                         </div>
