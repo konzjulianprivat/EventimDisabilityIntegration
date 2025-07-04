@@ -293,9 +293,6 @@ export default function NavBar() {
                                     <div className="cart-empty-panel">
                                         <h4>Ihr Warenkorb ist noch leer!</h4>
                                         <p>Entdecke jetzt spannende Events und sichere dir dein Ticket.</p>
-                                        <a href="/events" className="btn-discover">
-                                            Events entdecken
-                                        </a>
                                     </div>
                                 ) : (
                                     <>

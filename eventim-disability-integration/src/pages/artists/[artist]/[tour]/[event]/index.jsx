@@ -525,20 +525,20 @@ export default function EventPage() {
                     </div>
                 </div>
 
-                <div className="accordion">
-                    <details>
-                        <summary>Versandmöglichkeiten</summary>
-                        <div>Hier stehen Ihre Versandoptionen …</div>
-                    </details>
-                    <details>
-                        <summary>Informationen zur Buchung</summary>
-                        <div>Buchungsinformationen …</div>
-                    </details>
-                    <details>
-                        <summary>Informationen zum Veranstalter</summary>
-                        <div>Veranstalter-Infos …</div>
-                    </details>
-                </div>
+                {/*<div className="accordion">*/}
+                {/*    <details>*/}
+                {/*        <summary>Versandmöglichkeiten</summary>*/}
+                {/*        <div>Hier stehen Ihre Versandoptionen …</div>*/}
+                {/*    </details>*/}
+                {/*    <details>*/}
+                {/*        <summary>Informationen zur Buchung</summary>*/}
+                {/*        <div>Buchungsinformationen …</div>*/}
+                {/*    </details>*/}
+                {/*    <details>*/}
+                {/*        <summary>Informationen zum Veranstalter</summary>*/}
+                {/*        <div>Veranstalter-Infos …</div>*/}
+                {/*    </details>*/}
+                {/*</div>*/}
             </section>
         </div>
     );

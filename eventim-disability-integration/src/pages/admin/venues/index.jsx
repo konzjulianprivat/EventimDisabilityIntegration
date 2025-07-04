@@ -172,31 +172,31 @@ export default function VenuesContent() {
                 )}
             </div>
 
-            <div className="filter-container">
-                <FilterBar
-                    items={venues}
-                    onFiltered={(arr) => setFilteredVenues(arr)}
-                    entityName="Venue"
-                    entityRoute="venues"
-                    filterFields={filterFields}
-                    filterCategories={[]}
-                    setFilterCategories={() => {}}
-                    categoryOptions={[]}
-                    filterStartDate={''}
-                    setFilterStartDate={() => {}}
-                    filterEndDate={''}
-                    setFilterEndDate={() => {}}
-                    filterVenue={''}
-                    setFilterVenue={() => {}}
-                    venueOptions={[]}
-                    filterCity={''}
-                    setFilterCity={() => {}}
-                    cityOptions={cities.map((c) => c.name)}
-                    filterArtists={[]}
-                    setFilterArtists={() => {}}
-                    artistOptions={[]}
-                />
-            </div>
+            {/*<div className="filter-container">*/}
+            {/*    <FilterBar*/}
+            {/*        items={venues}*/}
+            {/*        onFiltered={(arr) => setFilteredVenues(arr)}*/}
+            {/*        entityName="Venue"*/}
+            {/*        entityRoute="venues"*/}
+            {/*        filterFields={filterFields}*/}
+            {/*        filterCategories={[]}*/}
+            {/*        setFilterCategories={() => {}}*/}
+            {/*        categoryOptions={[]}*/}
+            {/*        filterStartDate={''}*/}
+            {/*        setFilterStartDate={() => {}}*/}
+            {/*        filterEndDate={''}*/}
+            {/*        setFilterEndDate={() => {}}*/}
+            {/*        filterVenue={''}*/}
+            {/*        setFilterVenue={() => {}}*/}
+            {/*        venueOptions={[]}*/}
+            {/*        filterCity={''}*/}
+            {/*        setFilterCity={() => {}}*/}
+            {/*        cityOptions={cities.map((c) => c.name)}*/}
+            {/*        filterArtists={[]}*/}
+            {/*        setFilterArtists={() => {}}*/}
+            {/*        artistOptions={[]}*/}
+            {/*    />*/}
+            {/*</div>*/}
 
             <div className="artists-grid">
                 {filteredVenues.length === 0 && (
