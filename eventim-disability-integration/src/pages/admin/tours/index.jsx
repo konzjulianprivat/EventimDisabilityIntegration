@@ -27,6 +27,8 @@ export default function ToursContent() {
     const [allGenres, setAllGenres] = useState([]);
     const [tourArtists, setTourArtists] = useState([]);
     const [tourGenres, setTourGenres] = useState([]);
+    const [allVenues, setAllVenues] = useState([]);
+    const [eventEdits, setEventEdits] = useState({});
     const [confirmDeleteId, setConfirmDeleteId] = useState(null);
     const [eventTickets, setEventTickets] = useState({});
 
@@ -78,6 +80,7 @@ export default function ToursContent() {
         fetchTours();
         fetchAllArtists();
         fetchAllGenresWithSub();
+        fetchAllVenues();
     }, []);
     const fetchTours = async () => {
         try {
@@ -115,6 +118,17 @@ export default function ToursContent() {
             setAllGenres(j.genres || []);
         } catch {
             setAllGenres([]);
+        }
+    };
+
+    const fetchAllVenues = async () => {
+        try {
+            const res = await fetch(`${API_BASE_URL}/venues`);
+            if (!res.ok) throw new Error();
+            const j = await res.json();
+            setAllVenues(j.venues || []);
+        } catch {
+            setAllVenues([]);
         }
     };
 
@@ -208,11 +222,43 @@ export default function ToursContent() {
         } catch {
             setTourArtists([]); setTourGenres([]);
         }
+
+        // Event-Details laden
+        try {
+            const promises = (tour.events || []).map((ev) =>
+                fetch(`${API_BASE_URL}/event-details/${ev.id}`).then((r) =>
+                    r.ok ? r.json() : null
+                )
+            );
+            const arr = await Promise.all(promises);
+            const map = {};
+            arr.forEach((d) => {
+                if (d && d.event) {
+                    map[d.event.id] = {
+                        venueId: d.event.venue_id || '',
+                        doorTime: d.event.door_time ? d.event.door_time.slice(0, 16) : '',
+                        startTime: d.event.start_time ? d.event.start_time.slice(0, 16) : '',
+                        endTime: d.event.end_time ? d.event.end_time.slice(0, 16) : '',
+                        description: d.event.description || ''
+                    };
+                }
+            });
+            setEventEdits(map);
+        } catch {
+            setEventEdits({});
+        }
     };
     const handleInputChange = (e) => {
         const { name, value, files } = e.target;
         if (files) setEditedData((p) => ({ ...p, [name]: files[0] }));
         else setEditedData((p) => ({ ...p, [name]: value }));
+    };
+
+    const handleEventFieldChange = (eventId, field, value) => {
+        setEventEdits((prev) => ({
+            ...prev,
+            [eventId]: { ...prev[eventId], [field]: value }
+        }));
     };
     const addArtistField = () => setTourArtists((p) => [...p, { id: '', name: '' }]);
     const updateArtistField = (i, id) => {
@@ -268,6 +314,15 @@ export default function ToursContent() {
                 body: fd,
             });
             if (!r.ok) throw new Error();
+
+            const eventPromises = Object.entries(eventEdits).map(([eid, data]) =>
+                fetch(`${API_BASE_URL}/events/${eid}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                })
+            );
+            await Promise.all(eventPromises);
             setEditingId(null);
             fetchTours();
         } catch {
@@ -576,6 +631,63 @@ export default function ToursContent() {
                                                     + Event hinzufügen
                                                 </button>
                                             </div>
+
+                                            {(tour.events || []).map((ev, idx) => {
+                                                const d = eventEdits[ev.id] || {};
+                                                return (
+                                                    <div key={ev.id} className="section-block event-edit-block">
+                                                        <span className="section-label">Event {idx + 1}</span>
+                                                        <label className="event-edit-label">
+                                                            Venue:
+                                                            <select
+                                                                value={d.venueId || ''}
+                                                                onChange={(e) => handleEventFieldChange(ev.id, 'venueId', e.target.value)}
+                                                                className="input-website"
+                                                            >
+                                                                <option value="">— Venue wählen —</option>
+                                                                {allVenues.map((v) => (
+                                                                    <option key={v.id} value={v.id}>
+                                                                        {v.name}
+                                                                    </option>
+                                                                ))}
+                                                            </select>
+                                                        </label>
+                                                        <label className="event-edit-label">
+                                                            Einlass:
+                                                            <input
+                                                                type="datetime-local"
+                                                                value={d.doorTime || ''}
+                                                                onChange={(e) => handleEventFieldChange(ev.id, 'doorTime', e.target.value)}
+                                                                className="input-date"
+                                                            />
+                                                        </label>
+                                                        <label className="event-edit-label">
+                                                            Start:
+                                                            <input
+                                                                type="datetime-local"
+                                                                value={d.startTime || ''}
+                                                                onChange={(e) => handleEventFieldChange(ev.id, 'startTime', e.target.value)}
+                                                                className="input-date"
+                                                            />
+                                                        </label>
+                                                        <label className="event-edit-label">
+                                                            Ende:
+                                                            <input
+                                                                type="datetime-local"
+                                                                value={d.endTime || ''}
+                                                                onChange={(e) => handleEventFieldChange(ev.id, 'endTime', e.target.value)}
+                                                                className="input-date"
+                                                            />
+                                                        </label>
+                                                        <textarea
+                                                            value={d.description || ''}
+                                                            onChange={(e) => handleEventFieldChange(ev.id, 'description', e.target.value)}
+                                                            className="input-website"
+                                                            placeholder="Beschreibung"
+                                                        />
+                                                    </div>
+                                                );
+                                            })}
                                         </>
                                     ) : (
                                         /* ——— DISPLAY MODE ——— */

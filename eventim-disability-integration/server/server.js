@@ -3087,6 +3087,31 @@ app.get('/event-capacities/:id', async (req, res) => {
     }
 });
 
+// PUT /events/:id – aktualisiert die Basisdaten eines Events
+app.put('/events/:id', async (req, res) => {
+    const eventId = req.params.id;
+    const { venueId, doorTime, startTime, endTime, description } = req.body;
+
+    try {
+        await client.query(
+            `UPDATE events
+                 SET venue_id   = $1,
+                     door_time  = $2,
+                     start_time = $3,
+                     end_time   = $4,
+                     description = $5,
+                     updated_at = NOW()
+               WHERE id = $6`,
+            [venueId || null, doorTime || null, startTime || null, endTime || null, description || null, eventId]
+        );
+
+        return res.status(200).json({ message: 'Event aktualisiert' });
+    } catch (err) {
+        console.error('Update-event error:', err);
+        return res.status(500).json({ message: 'Serverfehler beim Aktualisieren des Events' });
+    }
+});
+
 // DELETE /events/:id – entfernt ein Event, sofern keine Tickets existieren
 app.delete('/events/:id', async (req, res) => {
     const eventId = req.params.id;
