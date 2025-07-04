@@ -1488,10 +1488,19 @@ app.get('/venues-detailed', async (req, res) => {
     }
 });
 
-// PUT: Update a venue and its areas
-app.put('/venues/:id', async (req, res) => {
+// PUT: Update a venue, its areas and optionally the image
+app.put('/venues/:id', upload.single('venue_image'), async (req, res) => {
     const venueId = req.params.id;
-    const { name, address, cityId, website, venueAreas = [] } = req.body;
+    const { name, address, cityId, website } = req.body;
+    let venueAreas = [];
+    try {
+        venueAreas = req.body.venueAreas
+            ? JSON.parse(req.body.venueAreas)
+            : [];
+        if (!Array.isArray(venueAreas)) venueAreas = [];
+    } catch {
+        venueAreas = [];
+    }
 
     if (!name?.trim() || !address?.trim() || !cityId) {
         return res
@@ -1501,6 +1510,17 @@ app.put('/venues/:id', async (req, res) => {
 
     try {
         await client.query('BEGIN');
+
+        // Aktuelles Bild ermitteln
+        const { rows: existingVenue } = await client.query(
+            'SELECT venue_image FROM venues WHERE id = $1',
+            [venueId]
+        );
+        if (existingVenue.length === 0) {
+            await client.query('ROLLBACK');
+            return res.status(404).json({ message: 'Venue nicht gefunden' });
+        }
+        const oldImageId = existingVenue[0].venue_image;
 
         await client.query(
             `UPDATE venues
@@ -1512,6 +1532,18 @@ app.put('/venues/:id', async (req, res) => {
                WHERE id = $5`,
             [name.trim(), address.trim(), cityId, website || null, venueId]
         );
+
+        if (req.file) {
+            const newImageId = uuidv4();
+            await client.query(
+                'INSERT INTO images (id, image_data, image_type, entity_type, entity_id) VALUES ($1,$2,$3,$4,$5)',
+                [newImageId, req.file.buffer, req.file.mimetype, 'venue', venueId]
+            );
+            await client.query('UPDATE venues SET venue_image = $1 WHERE id = $2', [newImageId, venueId]);
+            if (oldImageId) {
+                await client.query('DELETE FROM images WHERE id = $1', [oldImageId]);
+            }
+        }
 
         // Bestehende Areas laden
         const { rows: existing } = await client.query(
@@ -1809,14 +1841,22 @@ app.get('/genres-with-subgenres', async (req, res) => {
           json_agg(
             json_build_object(
               'id', s.id,
-              'name', s.name
+              'name', s.name,
+              'event_count', COALESCE(ec.event_count, 0)
             )
+            ORDER BY s.name
           ) FILTER (WHERE s.id IS NOT NULL),
           '[]'
         ) AS subgenres
       FROM genres g
       LEFT JOIN subgenres s
         ON s.genre_id = g.id
+      LEFT JOIN (
+        SELECT ts.subgenre_id, COUNT(e.id) AS event_count
+        FROM tour_subgenres ts
+        JOIN events e ON e.tour_id = ts.tour_id
+        GROUP BY ts.subgenre_id
+      ) ec ON ec.subgenre_id = s.id
       GROUP BY g.id, g.name
       ORDER BY g.name
     `);
@@ -1880,14 +1920,21 @@ app.get('/cities-with-venues', async (req, res) => {
             json_build_object(
               'id', v.id,
               'name', v.name,
-              'venue_image', v.venue_image
+              'venue_image', v.venue_image,
+              'event_count', COALESCE(ev.event_count, 0)
             )
+            ORDER BY v.name
           ) FILTER (WHERE v.id IS NOT NULL),
           '[]'
         ) AS venues
       FROM cities ci
       LEFT JOIN venues v
         ON v.city_id = ci.id
+      LEFT JOIN (
+        SELECT venue_id, COUNT(id) AS event_count
+        FROM events
+        GROUP BY venue_id
+      ) ev ON ev.venue_id = v.id
       GROUP BY ci.id, ci.name
       ORDER BY ci.name
     `);
@@ -2509,26 +2556,83 @@ app.put('/tours/:id', upload.single('tour_image'), async (req, res) => {
 app.delete('/tours/:id', async (req, res) => {
     const tourId = req.params.id;
     try {
-        // 3a) hole tour_image Id
+        await client.query('BEGIN');
+
         const { rows } = await client.query(
             'SELECT tour_image FROM tours WHERE id = $1',
             [tourId]
         );
         if (rows.length === 0) {
+            await client.query('ROLLBACK');
             return res.status(404).json({ message: 'Tour nicht gefunden' });
         }
         const imageId = rows[0].tour_image;
 
-        // 3b) lösche Tour
-        await client.query('DELETE FROM tours WHERE id = $1', [tourId]);
+        const { rows: eventRows } = await client.query(
+            'SELECT id FROM events WHERE tour_id = $1',
+            [tourId]
+        );
 
-        // 3c) lösche zugehöriges Bild, falls vorhanden
+        for (const ev of eventRows) {
+            const { rows: t } = await client.query(
+                `SELECT 1
+                   FROM tickets t
+                        JOIN event_categories ec ON ec.id = t.event_category_id
+                  WHERE ec.event_id = $1
+                  LIMIT 1`,
+                [ev.id]
+            );
+            if (t.length > 0) {
+                await client.query('ROLLBACK');
+                return res
+                    .status(400)
+                    .json({ message: 'Tour kann nicht gelöscht werden, da Tickets für Events existieren.' });
+            }
+        }
+
+        for (const ev of eventRows) {
+            await client.query('DELETE FROM cart_items WHERE event_id = $1', [ev.id]);
+            await client.query('DELETE FROM checkout_items WHERE event_id = $1', [ev.id]);
+            await client.query(
+                `DELETE FROM order_tickets ot
+                 USING tickets t, event_categories ec
+                 WHERE ot.ticket_id = t.id
+                   AND t.event_category_id = ec.id
+                   AND ec.event_id = $1`,
+                [ev.id]
+            );
+            await client.query(
+                `DELETE FROM tickets t
+                 USING event_categories ec
+                 WHERE t.event_category_id = ec.id
+                   AND ec.event_id = $1`,
+                [ev.id]
+            );
+            await client.query(
+                `DELETE FROM event_venue_areas eva
+                 USING event_categories ec
+                 WHERE eva.category_id = ec.id
+                   AND ec.event_id = $1`,
+                [ev.id]
+            );
+            await client.query('DELETE FROM event_supporting_acts WHERE event_id = $1', [ev.id]);
+            await client.query('DELETE FROM event_categories WHERE event_id = $1', [ev.id]);
+            await client.query('DELETE FROM events WHERE id = $1', [ev.id]);
+        }
+
+        await client.query('DELETE FROM tour_artists WHERE tour_id = $1', [tourId]);
+        await client.query('DELETE FROM tour_subgenres WHERE tour_id = $1', [tourId]);
+        await client.query('DELETE FROM tour_genres WHERE tour_id = $1', [tourId]);
+
+        await client.query('DELETE FROM tours WHERE id = $1', [tourId]);
         if (imageId) {
             await client.query('DELETE FROM images WHERE id = $1', [imageId]);
         }
 
+        await client.query('COMMIT');
         return res.status(200).json({ message: 'Tour gelöscht' });
     } catch (err) {
+        await client.query('ROLLBACK');
         console.error('Delete‐Tour error:', err);
         if (err.code === 'P0001') {
             return res.status(400).json({ message: err.message });
@@ -2980,6 +3084,62 @@ app.get('/event-capacities/:id', async (req, res) => {
     } catch (err) {
         console.error('Error in /event-capacities:', err);
         return res.status(500).json({ message: 'Fehler beim Laden der Kapazität' });
+    }
+});
+
+// DELETE /events/:id – entfernt ein Event, sofern keine Tickets existieren
+app.delete('/events/:id', async (req, res) => {
+    const eventId = req.params.id;
+    try {
+        const { rows: ticketCheck } = await client.query(
+            `SELECT 1
+             FROM tickets t
+                      JOIN event_categories ec ON ec.id = t.event_category_id
+             WHERE ec.event_id = $1
+             LIMIT 1`,
+            [eventId]
+        );
+        if (ticketCheck.length > 0) {
+            return res
+                .status(400)
+                .json({ message: 'Event kann nicht gelöscht werden, da Tickets existieren.' });
+        }
+
+        await client.query('BEGIN');
+        await client.query('DELETE FROM cart_items WHERE event_id = $1', [eventId]);
+        await client.query('DELETE FROM checkout_items WHERE event_id = $1', [eventId]);
+        await client.query(
+            `DELETE FROM order_tickets ot
+             USING tickets t, event_categories ec
+             WHERE ot.ticket_id = t.id
+               AND t.event_category_id = ec.id
+               AND ec.event_id = $1`,
+            [eventId]
+        );
+        await client.query(
+            `DELETE FROM tickets t
+             USING event_categories ec
+             WHERE t.event_category_id = ec.id
+               AND ec.event_id = $1`,
+            [eventId]
+        );
+        await client.query(
+            `DELETE FROM event_venue_areas eva
+             USING event_categories ec
+             WHERE eva.category_id = ec.id
+               AND ec.event_id = $1`,
+            [eventId]
+        );
+        await client.query('DELETE FROM event_supporting_acts WHERE event_id = $1', [eventId]);
+        await client.query('DELETE FROM event_categories WHERE event_id = $1', [eventId]);
+        await client.query('DELETE FROM events WHERE id = $1', [eventId]);
+        await client.query('COMMIT');
+
+        return res.status(200).json({ message: 'Event gelöscht' });
+    } catch (err) {
+        await client.query('ROLLBACK');
+        console.error('Delete-event error:', err);
+        return res.status(500).json({ message: 'Serverfehler beim Löschen des Events' });
     }
 });
 
@@ -3798,6 +3958,58 @@ async function startServer() {
                 DELETE FROM cart_items ci
                 WHERE NOT EXISTS (SELECT 1 FROM events e WHERE e.id = ci.event_id)
                    OR NOT EXISTS (SELECT 1 FROM event_categories ec WHERE ec.id = ci.event_category_id)
+            `);
+
+            // remove past events and all dependent data
+            await db.query(`
+                DELETE FROM order_tickets ot
+                USING tickets t, event_categories ec, events e
+                WHERE ot.ticket_id = t.id
+                  AND t.event_category_id = ec.id
+                  AND ec.event_id = e.id
+                  AND e.end_time < NOW()
+            `);
+            await db.query(`
+                DELETE FROM tickets t
+                USING event_categories ec, events e
+                WHERE t.event_category_id = ec.id
+                  AND ec.event_id = e.id
+                  AND e.end_time < NOW()
+            `);
+            await db.query(`
+                DELETE FROM cart_items ci
+                USING events e
+                WHERE ci.event_id = e.id
+                  AND e.end_time < NOW()
+            `);
+            await db.query(`
+                DELETE FROM checkout_items ci
+                USING events e
+                WHERE ci.event_id = e.id
+                  AND e.end_time < NOW()
+            `);
+            await db.query(`
+                DELETE FROM event_venue_areas eva
+                USING event_categories ec, events e
+                WHERE eva.category_id = ec.id
+                  AND ec.event_id = e.id
+                  AND e.end_time < NOW()
+            `);
+            await db.query(`
+                DELETE FROM event_supporting_acts esa
+                USING events e
+                WHERE esa.event_id = e.id
+                  AND e.end_time < NOW()
+            `);
+            await db.query(`
+                DELETE FROM event_categories ec
+                USING events e
+                WHERE ec.event_id = e.id
+                  AND e.end_time < NOW()
+            `);
+            await db.query(`
+                DELETE FROM events
+                WHERE end_time < NOW()
             `);
 
             // delete checkout items older than 15 minutes

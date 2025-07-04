@@ -5,8 +5,11 @@ import FilterBar from '../../../components/filter-bar';
 import { useRouter } from 'next/router';
 import { API_BASE_URL } from '../../../config';
 import { useAuth } from '../../../hooks/useAuth';
+import { useRequireAccess } from '../../../hooks/useRequireAccess';
+import { ADMIN_PERMISSIONS } from '../../../adminPermissions';
 
 export default function ToursContent() {
+    useRequireAccess(ADMIN_PERMISSIONS);
     const [tours, setTours] = useState([]);
     const [basicFilteredTours, setBasicFilteredTours] = useState([]);
     const [filteredTours, setFilteredTours] = useState([]);
@@ -25,6 +28,7 @@ export default function ToursContent() {
     const [tourArtists, setTourArtists] = useState([]);
     const [tourGenres, setTourGenres] = useState([]);
     const [confirmDeleteId, setConfirmDeleteId] = useState(null);
+    const [eventTickets, setEventTickets] = useState({});
 
     // Erweiterte Filter‐States
     const [filterStartDate, setFilterStartDate] = useState('');
@@ -113,6 +117,29 @@ export default function ToursContent() {
             setAllGenres([]);
         }
     };
+
+    // Lade Ticket-Informationen für Events
+    useEffect(() => {
+        const ids = [];
+        tours.forEach((t) =>
+            (t.events || []).forEach((ev) => ids.push(ev.id))
+        );
+        ids.forEach((id) => {
+            if (eventTickets[id] !== undefined) return;
+            fetch(`${API_BASE_URL}/event-capacities/${id}`)
+                .then((r) => (r.ok ? r.json() : null))
+                .then((d) => {
+                    const sold = (d?.categories || []).reduce(
+                        (s, c) => s + (c.capacity - c.remaining),
+                        0
+                    );
+                    setEventTickets((p) => ({ ...p, [id]: sold > 0 }));
+                })
+                .catch(() =>
+                    setEventTickets((p) => ({ ...p, [id]: false }))
+                );
+        });
+    }, [tours]);
 
     // ── Erweiterte Filter anwenden
     useEffect(() => {
@@ -256,6 +283,18 @@ export default function ToursContent() {
             fetchTours();
         } catch {
             console.error('Löschen fehlgeschlagen');
+        }
+    };
+
+    const handleEventDelete = async (eventId, e) => {
+        e.stopPropagation();
+        if (!confirm('Event wirklich löschen?')) return;
+        try {
+            const r = await fetch(`${API_BASE_URL}/events/${eventId}`, { method: 'DELETE' });
+            if (!r.ok) throw new Error();
+            fetchTours();
+        } catch {
+            console.error('Event löschen fehlgeschlagen');
         }
     };
 
@@ -595,7 +634,6 @@ export default function ToursContent() {
                                             {/* FIRST TWO EVENTS */}
                                             <div className="sub-events">
                                                 {(tour.events || [])
-                                                    .slice(0, 2)
                                                     .map((ev) => {
                                                         const dt = new Date(ev.start_time);
                                                         const ds = dt.toLocaleDateString('de-DE', {
@@ -639,15 +677,25 @@ export default function ToursContent() {
                                                                         </div>
                                                                     )}
                                                                 </div>
-                                                                <button
-                                                                    className="btn-tickets"
-                                                                    onClick={(e) => {
-                                                                        e.stopPropagation();
-                                                                        router.push(evUrl);
-                                                                    }}
-                                                                >
-                                                                    Tickets
-                                                                </button>
+                                                                {/*<button*/}
+                                                                {/*    className="btn-tickets"*/}
+                                                                {/*    onClick={(e) => {*/}
+                                                                {/*        e.stopPropagation();*/}
+                                                                {/*        router.push(evUrl);*/}
+                                                                {/*    }}*/}
+                                                                {/*>*/}
+                                                                {/*    Tickets*/}
+                                                                {/*</button>*/}
+                                                                {user?.hasDeletionPermission &&
+                                                                    eventTickets[ev.id] === false && (
+                                                                        <button
+                                                                            className="btn-delete-event"
+                                                                            onClick={(e) => handleEventDelete(ev.id, e)}
+                                                                            title="Event löschen"
+                                                                        >
+                                                                            ❌
+                                                                        </button>
+                                                                    )}
                                                             </div>
                                                         );
                                                     })}

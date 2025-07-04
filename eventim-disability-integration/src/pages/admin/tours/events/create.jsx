@@ -4,9 +4,10 @@ import React, { useState, useEffect } from 'react';
 import { useValidation } from '../../../../hooks/useValidation';
 import { useRouter } from 'next/router';
 import { useRequireAccess } from '../../../../hooks/useRequireAccess';
+import { ADMIN_PERMISSIONS } from '../../../../adminPermissions';
 
 export default function EventCreation() {
-    useRequireAccess(['hasCreationAccess']);
+    useRequireAccess(ADMIN_PERMISSIONS);
     const router = useRouter();
     const [formData, setFormData] = useState({
         tourId: '',

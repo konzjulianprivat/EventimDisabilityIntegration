@@ -3,8 +3,11 @@ import FilterBar from '../../../components/filter-bar';
 import { useRouter } from 'next/router';
 import { API_BASE_URL } from '../../../config';
 import { useAuth } from '../../../hooks/useAuth';
+import { useRequireAccess } from '../../../hooks/useRequireAccess';
+import { ADMIN_PERMISSIONS } from '../../../adminPermissions';
 
 export default function CountriesContent() {
+    useRequireAccess(ADMIN_PERMISSIONS);
     const [countries, setCountries] = useState([]);
     const [filteredCountries, setFilteredCountries] = useState([]);
     const [editingId, setEditingId] = useState(null);
@@ -123,16 +126,6 @@ export default function CountriesContent() {
                         + Land erstellen
                     </button>
                 )}
-            </div>
-
-            <div className="filter-container">
-                <FilterBar
-                    items={countries}
-                    onFiltered={setFilteredCountries}
-                    entityName="Land"
-                    entityRoute="countries"
-                    filterFields={filterFields}
-                />
             </div>
 
             <div className="artists-grid">

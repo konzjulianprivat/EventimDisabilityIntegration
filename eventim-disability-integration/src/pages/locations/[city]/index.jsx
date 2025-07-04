@@ -20,10 +20,7 @@ export default function CityPage() {
     const [filterArtists, setFilterArtistsInternal] = useState([]);
 
     const filterFields = [
-        { key: 'title', label: 'Titel', match: 'startsWith' },
-        { key: 'subtitle', label: 'Subtitle', match: 'contains' },
-        { key: 'start_date', label: 'Startdatum', match: 'equals' },
-        { key: 'end_date', label: 'Enddatum', match: 'equals' },
+        { key: 'title', label: 'Titel', match: 'startsWith' }
     ];
 
     useEffect(() => {
@@ -195,32 +192,6 @@ export default function CityPage() {
             </header>
 
             <div className="artists-wrapper">
-                <div className="filter-container">
-                    <FilterBar
-                        items={basicFilteredVenues}
-                        onFiltered={setBasicFilteredVenues}
-                        entityName="Tour"
-                        entityRoute="tours"
-                        filterFields={filterFields}
-                        filterStartDate={filterStartDate}
-                        setFilterStartDate={setFilterStartDate}
-                        filterEndDate={filterEndDate}
-                        setFilterEndDate={setFilterEndDate}
-                        filterCategories={filterCategories}
-                        setFilterCategories={setFilterCategories}
-                        categoryOptions={categoryOptions}
-                        filterVenue={filterVenue}
-                        setFilterVenue={setFilterVenue}
-                        venueOptions={venueOptions}
-                        filterCity={filterCity}
-                        setFilterCity={setFilterCity}
-                        cityOptions={cityOptions}
-                        filterArtists={filterArtists}
-                        setFilterArtists={setFilterArtists}
-                        artistOptions={lockedName ? [lockedName] : []}
-                    />
-                </div>
-
                 <div className="tours-grid">
                     {filteredVenues.length === 0 && (
                         <div className="no-artists">Keine Touren vorhanden.</div>

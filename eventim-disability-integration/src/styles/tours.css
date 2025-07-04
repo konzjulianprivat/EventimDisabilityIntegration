@@ -274,8 +274,9 @@
 /* Sub-event row */
 .sub-event-row {
     display: flex;
+    flex-direction: row;    /* ← add this */
     justify-content: space-between;
-    align-items: center;
+    align-items: flex-start;
     padding: 0.75rem 1rem;
     border-top: 1px solid #eee;
 }
@@ -291,6 +292,18 @@
 }
 .btn-tickets:hover {
     color: #003f7f;
+}
+
+.btn-delete-event {
+    background: none;
+    border: none;
+    color: #c00;
+    font-size: 1rem;
+    margin-left: 0.5rem;
+    cursor: pointer;
+}
+.btn-delete-event:hover {
+    color: #900;
 }
 
 /* “Alle X Events anzeigen” */
@@ -319,14 +332,14 @@
     display: flex;
     flex-direction: column;
 }
-.sub-event-row {
-    display: flex;
-    justify-content: flex-start;
-    gap: 1rem;
-    align-items: center;
-    padding: 0.75rem 1rem;
-    border-top: 1px solid #eee;
-}
+/*.sub-event-row {*/
+/*    display: flex;*/
+/*    justify-content: flex-start;*/
+/*    gap: 1rem;*/
+/*    align-items: center;*/
+/*    padding: 0.75rem 1rem;*/
+/*    border-top: 1px solid #eee;*/
+/*}*/
 .sub-event-info {
     display: flex;
     flex-direction: column;

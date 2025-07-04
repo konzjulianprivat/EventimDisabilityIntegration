@@ -155,6 +155,7 @@ export default function NavBar() {
                                                 style={{color: 'black'}}
                                             >
                                                 {s.name}
+                                                {typeof s.event_count === 'number' && ` (${s.event_count})`}
                                             </a>
                                         ))}
                                     </div>
@@ -192,6 +193,7 @@ export default function NavBar() {
                                                 style={{color: 'black'}}
                                             >
                                                 {v.name}
+                                                {typeof v.event_count === 'number' && ` (${v.event_count})`}
                                             </a>
                                         ))}
                                     </div>
