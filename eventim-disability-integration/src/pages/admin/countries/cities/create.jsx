@@ -3,7 +3,6 @@ import { useValidation } from '../../../../hooks/useValidation';
 import { useRouter } from 'next/router';
 import { useRequireAccess } from '../../../../hooks/useRequireAccess';
 import { ADMIN_PERMISSIONS } from '../../../../adminPermissions';
-import BackLink from '../../../components/back-link';
 
 export default function CityCreation() {
     useRequireAccess(ADMIN_PERMISSIONS);
@@ -67,7 +66,6 @@ export default function CityCreation() {
 
     return (
         <div className="registration-container" style={{ maxWidth: '600px', margin: '0 auto', padding: '2rem' }}>
-            <BackLink />
             <h1 style={{ color: '#002b55', marginBottom: '1.5rem' }}>Neue Stadt anlegen</h1>
 
             {message && (

@@ -4,7 +4,6 @@ import React, { useState } from 'react';
 import { useValidation } from '../../../../hooks/useValidation';
 import { useRequireAccess } from '../../../../hooks/useRequireAccess';
 import { ADMIN_PERMISSIONS } from '../../../../adminPermissions';
-import BackLink from '../../../components/back-link';
 
 export default function AreaCreation() {
     useRequireAccess(ADMIN_PERMISSIONS);

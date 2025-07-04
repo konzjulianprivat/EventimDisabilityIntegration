@@ -4,7 +4,7 @@ import { useRouter } from 'next/router';
 import { useAuth } from '../../../hooks/useAuth';
 import { useRequireAccess } from '../../../hooks/useRequireAccess';
 import { ADMIN_PERMISSIONS } from '../../../adminPermissions';
-import BackLink from '../../components/back-link';
+import BackLink from '../../../components/back-link';
 
 export default function VenuesContent() {
     useRequireAccess(ADMIN_PERMISSIONS);

@@ -3,6 +3,7 @@ import UserDetailModal from '../../components/UserDetailModal';
 import { API_BASE_URL } from '../../config';
 import { useAuth } from '../../hooks/useAuth';
 import { useRequireAccess } from '../../hooks/useRequireAccess';
+import BackLink from "../../components/back-link";
 
 export default function UserOverview() {
     useRequireAccess(['hasDisabilityApprovalAccess', 'hasAccountManagementAccess']);
@@ -93,6 +94,7 @@ export default function UserOverview() {
     return (
         <div className="user_management__profile-container" style={{ flexDirection: 'column' }}>
             <div className="content-inner" style={{ paddingTop: '24px' }}>
+                <BackLink />
                 <div className="white-box events-white-box">
                     <div className="content-inner">
                         <h1 className="events-header" style={{color: "#002b55", alignContent: "center"}}>Account-Management</h1>

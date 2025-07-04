@@ -6,6 +6,7 @@ import { API_BASE_URL } from '../../config';
 import DisabilityRequestModal from '../../components/DisabilityRequestModal';
 import { useRequireAccess } from '../../hooks/useRequireAccess';
 import { useAuth } from '../../hooks/useAuth';
+import BackLink from "../../components/back-link";
 
 export default function CompensationRequests() {
     useRequireAccess(['hasDisabilityApprovalAccess']);
@@ -120,6 +121,7 @@ export default function CompensationRequests() {
     return (
         <div className="profile-container" style={{flexDirection: "column"}}>
             <div className="content-inner" style={{paddingTop: '24px'}}>
+                <BackLink />
                 <div className="white-box events-white-box">
                     <div className="content-inner">
                     <div className="events-header">

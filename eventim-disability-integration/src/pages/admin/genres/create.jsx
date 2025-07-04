@@ -6,7 +6,6 @@ import { useValidation } from '../../../hooks/useValidation';
 import { useRouter } from 'next/router';
 import { useRequireAccess } from '../../../hooks/useRequireAccess';
 import { ADMIN_PERMISSIONS } from '../../../adminPermissions';
-import BackLink from '../../components/back-link';
 
 export default function GenreCreation() {
     useRequireAccess(ADMIN_PERMISSIONS);
@@ -78,7 +77,6 @@ export default function GenreCreation() {
 
     return (
         <div className="artist-container">
-            <BackLink />
             <h1>Neues Genre erstellen</h1>
 
             {message && (

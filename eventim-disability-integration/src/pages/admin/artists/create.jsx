@@ -5,7 +5,6 @@ import { useValidation } from '../../../hooks/useValidation';
 import { useRouter } from 'next/router';
 import { useRequireAccess } from '../../../hooks/useRequireAccess';
 import { ADMIN_PERMISSIONS } from '../../../adminPermissions';
-import BackLink from '../../components/back-link';
 
 export default function ArtistCreation() {
     useRequireAccess(ADMIN_PERMISSIONS);
@@ -90,7 +89,6 @@ export default function ArtistCreation() {
 
     return (
         <div className="artist-container">
-            <BackLink />
             <h1>Neuen Künstler erstellen</h1>
 
             {message && (

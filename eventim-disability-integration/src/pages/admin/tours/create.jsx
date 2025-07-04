@@ -6,7 +6,6 @@ import { useValidation } from '../../../hooks/useValidation';
 import { useRequireAccess } from '../../../hooks/useRequireAccess';
 import { useRouter } from 'next/navigation';
 import { ADMIN_PERMISSIONS } from '../../../adminPermissions';
-import BackLink from '../../components/back-link';
 
 export default function TourCreation() {
     useRequireAccess(ADMIN_PERMISSIONS);
@@ -175,7 +174,6 @@ export default function TourCreation() {
 
     return (
         <div className="artist-container">
-            <BackLink />
             <h1>Neue Tour erstellen</h1>
 
             {message && (
