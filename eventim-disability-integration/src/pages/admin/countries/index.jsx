@@ -1,5 +1,4 @@
 import React, { useEffect, useState } from 'react';
-import FilterBar from '../../../components/filter-bar';
 import { useRouter } from 'next/router';
 import { API_BASE_URL } from '../../../config';
 import { useAuth } from '../../../hooks/useAuth';
