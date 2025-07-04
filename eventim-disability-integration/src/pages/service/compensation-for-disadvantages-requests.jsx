@@ -110,6 +110,21 @@ export default function CompensationRequests() {
         await Promise.all([fetchPending(), fetchAccepted()]);
     };
 
+    const saveUserData = async (data) => {
+        if (!selectedUser) return;
+        try {
+            await fetch(`${API_BASE_URL}/users/${selectedUser.user_id}/support`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            });
+            await loadDetail(selectedUser);
+            await Promise.all([fetchPending(), fetchAccepted()]);
+        } catch (err) {
+            console.error('Error saving user data:', err);
+        }
+    };
+
     const formatDate = (d) =>
         new Date(d).toLocaleDateString('de-DE', {
             weekday: 'long',
@@ -209,6 +224,8 @@ export default function CompensationRequests() {
                         onClose={closeModal}
                         onAccept={user?.hasDisabilityApprovalAccess ? acceptRequest : undefined}
                         onDecline={user?.hasDisabilityApprovalAccess ? declineRequest : undefined}
+                        canEdit={user?.hasAccountManagementAccess}
+                        onSave={saveUserData}
                     />
                 )}
             </div>
