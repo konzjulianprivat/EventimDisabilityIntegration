@@ -9,7 +9,7 @@
     display: flex;
     gap: 16px;
     width: max-content;
-    animation: scroll var(--scroll-duration, 40s) linear infinite;
+    animation: scroll 40s linear infinite;
 }
 
 .homepage-scroller-img,

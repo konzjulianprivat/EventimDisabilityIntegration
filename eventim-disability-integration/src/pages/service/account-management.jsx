@@ -91,7 +91,7 @@ export default function UserOverview() {
     });
 
     return (
-        <div className="profile-container" style={{ flexDirection: 'column' }}>
+        <div className="user_management__profile-container" style={{ flexDirection: 'column' }}>
             <div className="content-inner" style={{ paddingTop: '24px' }}>
                 <div className="white-box events-white-box">
                     <div className="content-inner">

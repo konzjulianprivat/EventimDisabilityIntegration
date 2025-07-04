@@ -13,6 +13,16 @@
     overflow-x: hidden;
 }
 
+.user_management__profile-container {
+    display: flex;
+    background-color: #f5f5f5;
+    /* fill the viewport and hide extra overflow */
+    min-height: 100vh;
+    font-family: Arial, sans-serif;
+    overflow-y: hidden; /* scrolling handled inside main-content */
+    overflow-x: hidden;
+}
+
 /* -----------------------------------
    2) Sidebar links
    ----------------------------------- */

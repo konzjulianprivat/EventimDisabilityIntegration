@@ -636,7 +636,7 @@ export default function ProfilePage() {
                                 <p className="subtitle">Übersicht deiner gespeicherten Profildaten</p>
 
                                 <div className="content-inner">
-                                    <form className="profile-data-form" onSubmit={e => { e.preventDefault(); saveProfile(); }}>
+                                    <form className="profile-data-form" onSubmit={e => { e.preventDefault(); saveProfile(profileData); }}>
                                         <div className="form-field">
                                             <label htmlFor="salutation">Anrede</label>
                                             {editMode ? (
@@ -949,7 +949,7 @@ export default function ProfilePage() {
                                         <FaqCard question="Wo finde ich die Tickets zu meinen Events?" answer="Gehen Sie unter Bestellungen auf die einzelne Bestellung klicken Sie auf Ticket anzeigen, der QR-Code zum Einlass wird ihnen angezeigt." />
                                         <FaqCard question="Kann ich meine Tickets auch telefonisch buchen?" answer="Telefonisch kannst du Tickets über unsere Ticket-Hotline erwerben. Diese ist von Montag bis Samstag von 09:00 bis 18:00 Uhr erreichbar (0,20 €/Anruf inkl. MwSt.)." />
                                         <FaqCard question="Ich bin schwerbehindert - muss ich meine Tickets Telefonisch über die Hotline buchen?" answer="Musst du nicht! Durch unsere neuste Integration kannst du deine Tickets bequem über unsere Webseite buchen - fülle dafür den Antrag auf Nachteilsausgleich aus!" />
-                                        <FaqCard question="Ich will mich bei den Entwicklern der Seite bedanken, wie kann ich dem Team eine Freude bereiten?" answer="Gehen Sie dafür einfach auf Dualis und reichen Sie der Gruppe C die maximale Anzahl an Punkten ein ;)." />
+                                        <FaqCard question="Ich will mich bei den Entwicklern der Seite bedanken, wie kann ich dem Team eine Freude bereiten?" answer="Gehen Sie dafür einfach auf Dualis und tragen Sie unserer Gruppe die maximale Anzahl an Punkten ein ;)." />
                                     </div>
                                 </div>
                             </div>

@@ -423,9 +423,9 @@ export default function EventPage() {
                         {/* Note */}
                         <div className="note">
                             Angezeigte Preise inkl. der gesetzl. MwSt., Vorverkaufsgebühr,
-                            <a href="#"> Buchungsgebühr von max. € 0,00</a>
+                            Buchungsgebühr von max. € 0,00
                             <br />
-                            zzgl. <a href="#">Versandkosten</a>.
+                            zzgl. Versandkosten.
                         </div>
                     </div>
                     )}
@@ -526,20 +526,19 @@ export default function EventPage() {
                 </div>
 
                 {/* ————— ACCORDIONS ————— */}
-                <div className="accordion">
-                    <details>
-                        <summary>Versandmöglichkeiten</summary>
-                        <div>Hier stehen Ihre Versandoptionen …</div>
-                    </details>
-                    <details>
-                        <summary>Informationen zur Buchung</summary>
-                        <div>Buchungsinformationen …</div>
-                    </details>
-                    <details>
-                        <summary>Informationen zum Veranstalter</summary>
-                        <div>Veranstalter-Infos …</div>
-                    </details>
-                </div>
+                {/*<div className="accordion">*/}
+                {/*    <details>*/}
+                {/*        <summary>Informationen zur Buchung</summary>*/}
+                {/*        <div>Buchungsinformationen …</div>*/}
+                {/*    </details>*/}
+                {/*    <details>*/}
+                {/*        <summary>Informationen zum Veranstalter</summary>*/}
+                {/*        <div>*/}
+                {/*            <h3>Hinweis:</h3>*/}
+                {/*            Die CTS EVENTIM AG & Co. KGaA ist nicht selbst Veranstalter der angebotenen Veranstaltung. Die Veranstaltung wird durch den Veranstalter durchgeführt, der auch Aussteller der Tickets ist. Die CTS EVENTIM AG & Co. KGaA hat es lediglich übernommen, die Tickets im Auftrag des Veranstalters zu vermitteln. Bitte beachte gegebenenfalls die gesonderten Hinweise für Eventreisen. Dieser Veranstalter hat zugesichert, dass er geltende Gesetze einhalten wird und nur Produkte und Dienstleistungen anbietet, die den geltenden Vorschriften des EU-Rechts entsprechen.*/}
+                {/*        </div>*/}
+                {/*    </details>*/}
+                {/*</div>*/}
             </section>
         </div>
     );

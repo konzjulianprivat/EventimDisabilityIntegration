@@ -1,5 +1,4 @@
 import React, { useEffect, useState } from 'react';
-import FilterBar from '../../../components/filter-bar';
 import { useRouter } from 'next/router';
 import { API_BASE_URL } from '../../../config';
 import { useAuth } from '../../../hooks/useAuth';
@@ -118,16 +117,6 @@ export default function GenresContent() {
                         + Genre erstellen
                     </button>
                 )}
-            </div>
-
-            <div className="filter-container">
-                <FilterBar
-                    items={genres}
-                    onFiltered={setFilteredGenres}
-                    entityName="Genre"
-                    entityRoute="genres"
-                    filterFields={filterFields}
-                />
             </div>
 
             <div className="artists-grid">
