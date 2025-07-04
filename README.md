@@ -332,7 +332,6 @@ Die wichtigsten Routen des Express-Servers (siehe `server/server.js`) sind:
 | `GET`   | `/pending-disability-requests` | Offene Anträge auf Nachteilsausgleich für den Service-Bereich |
 | `POST`  | `/disability-requests/:id/accept` | Antrag eines Nutzers akzeptieren |
 | `POST`  | `/disability-requests/:id/decline` | Antrag eines Nutzers ablehnen |
-| `PATCH` | `/users/:id/support` | Profildaten eines Nutzers durch Service bearbeiten |
 | `GET`   | `/artists` | Auflistung aller Künstler |
 | `POST`  | `/create-artist` | Neuen Künstler anlegen |
 | `GET`   | `/tours-detailed` | Touren inkl. Events und Zugänglichkeitsdaten |
