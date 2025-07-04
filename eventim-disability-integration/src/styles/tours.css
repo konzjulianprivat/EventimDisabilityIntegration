@@ -402,3 +402,17 @@
 }
 
 /* Modal and other styles remain as before… */
+
+/* Event edit block */
+.event-edit-block {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    margin-top: 0.5rem;
+}
+.event-edit-label {
+    display: flex;
+    flex-direction: column;
+    font-size: 0.9rem;
+    color: #333;
+}
