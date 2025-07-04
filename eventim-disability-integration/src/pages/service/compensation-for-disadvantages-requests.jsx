@@ -209,6 +209,7 @@ export default function CompensationRequests() {
                         onClose={closeModal}
                         onAccept={user?.hasDisabilityApprovalAccess ? acceptRequest : undefined}
                         onDecline={user?.hasDisabilityApprovalAccess ? declineRequest : undefined}
+                        canEdit={user?.hasAccountManagementAccess}
                     />
                 )}
             </div>
