@@ -4,6 +4,7 @@ import { useRouter } from 'next/router';
 import { useAuth } from '../../../hooks/useAuth';
 import { useRequireAccess } from '../../../hooks/useRequireAccess';
 import { ADMIN_PERMISSIONS } from '../../../adminPermissions';
+import BackLink from '../../components/back-link';
 
 export default function VenuesContent() {
     useRequireAccess(ADMIN_PERMISSIONS);
@@ -158,6 +159,7 @@ export default function VenuesContent() {
 
     return (
         <div className="artists-wrapper">
+            <BackLink />
             <div className="artists-header">
                 <h2 className="artists-title">Übersicht – Venues</h2>
                 {user?.hasCreationAccess && (

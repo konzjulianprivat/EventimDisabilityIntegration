@@ -6,6 +6,7 @@ import { useValidation } from '../../../hooks/useValidation';
 import { useRouter } from 'next/router';
 import { useRequireAccess } from '../../../hooks/useRequireAccess';
 import { ADMIN_PERMISSIONS } from '../../../adminPermissions';
+import BackLink from '../../components/back-link';
 
 export default function VenueCreation() {
     useRequireAccess(ADMIN_PERMISSIONS);
@@ -125,6 +126,7 @@ export default function VenueCreation() {
 
     return (
         <div className="artist-container">
+            <BackLink />
             <h1>Neuen Veranstaltungsort anlegen</h1>
 
             {message && (

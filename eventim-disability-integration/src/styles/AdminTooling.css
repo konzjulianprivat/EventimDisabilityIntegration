@@ -380,3 +380,9 @@
 .modal-actions button:last-child {
     background-color: #ccc;
 }
+
+/* Back Link */
+.back-link-container { margin: 0 10%; }
+.back-link { color: #007bff; cursor: pointer; text-decoration: none; display: inline-block; margin-bottom: 1rem; }
+.back-link:hover { text-decoration: underline; }
+
