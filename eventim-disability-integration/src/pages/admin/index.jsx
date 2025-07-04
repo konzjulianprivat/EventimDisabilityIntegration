@@ -1,6 +1,9 @@
 import React from 'react';
+import { useRequireAccess } from '../../hooks/useRequireAccess';
+import { ADMIN_PERMISSIONS } from '../../adminPermissions';
 
 export default function AdminHome() {
+    useRequireAccess(ADMIN_PERMISSIONS);
     const entities = [
         { name: 'Artists', url: '/admin/artists' },
         { name: 'Countries', url: '/admin/countries' },

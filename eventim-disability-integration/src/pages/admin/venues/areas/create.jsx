@@ -3,9 +3,10 @@
 import React, { useState } from 'react';
 import { useValidation } from '../../../../hooks/useValidation';
 import { useRequireAccess } from '../../../../hooks/useRequireAccess';
+import { ADMIN_PERMISSIONS } from '../../../../adminPermissions';
 
 export default function AreaCreation() {
-    useRequireAccess(['hasCreationAccess']);
+    useRequireAccess(ADMIN_PERMISSIONS);
     const [formData, setFormData] = useState({
         name: '',
         description: ''

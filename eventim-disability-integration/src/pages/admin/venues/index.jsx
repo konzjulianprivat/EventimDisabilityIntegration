@@ -2,8 +2,11 @@ import React, { useEffect, useState } from 'react';
 import FilterBar from '../../../components/filter-bar';
 import { useRouter } from 'next/router';
 import { useAuth } from '../../../hooks/useAuth';
+import { useRequireAccess } from '../../../hooks/useRequireAccess';
+import { ADMIN_PERMISSIONS } from '../../../adminPermissions';
 
 export default function VenuesContent() {
+    useRequireAccess(ADMIN_PERMISSIONS);
     const [venues, setVenues] = useState([]);
     const [filteredVenues, setFilteredVenues] = useState([]);
     const [editingId, setEditingId] = useState(null);

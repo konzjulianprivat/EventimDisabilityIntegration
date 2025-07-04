@@ -1,3 +1,6 @@
+import { useRequireAccess } from '../../../../hooks/useRequireAccess';
+import { ADMIN_PERMISSIONS } from '../../../../adminPermissions';
+
 export async function getServerSideProps(context) {
     return {
         redirect: {
@@ -8,5 +11,6 @@ export async function getServerSideProps(context) {
 }
 
 export default function Index() {
+    useRequireAccess(ADMIN_PERMISSIONS);
     return null;
 }
