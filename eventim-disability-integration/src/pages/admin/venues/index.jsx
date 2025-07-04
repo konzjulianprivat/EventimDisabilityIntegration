@@ -122,6 +122,17 @@ export default function VenuesContent() {
 
     const handleSave = async () => {
         try {
+            if (venueAreas.length === 0 ||
+                !venueAreas.some(v => v.areaId && parseInt(v.maxCapacity, 10) > 0)) {
+                alert('Mindestens ein Bereich mit Kapazität > 0 ist erforderlich');
+                return;
+            }
+            for (const v of venueAreas) {
+                if (!v.areaId || !v.maxCapacity || parseInt(v.maxCapacity, 10) <= 0) {
+                    alert('Alle Bereiche benötigen eine Kapazität > 0 und Auswahl');
+                    return;
+                }
+            }
             const fd = new FormData();
             fd.append('name', editedData.name);
             fd.append('address', editedData.address);
@@ -136,7 +147,10 @@ export default function VenuesContent() {
                 method: 'PUT',
                 body: fd,
             });
-            if (!response.ok) throw new Error('Server-Fehler beim Speichern');
+            if (!response.ok) {
+                const d = await response.json().catch(() => ({}));
+                throw new Error(d.message || 'Server-Fehler beim Speichern');
+            }
             setEditingId(null);
             fetchVenues();
         } catch (err) {
@@ -149,7 +163,11 @@ export default function VenuesContent() {
             const response = await fetch(`http://localhost:4000/venues/${id}`, {
                 method: 'DELETE',
             });
-            if (!response.ok) throw new Error('Server-Fehler beim Löschen');
+            if (!response.ok) {
+                const d = await response.json().catch(() => ({}));
+                alert(d.message || 'Server-Fehler beim Löschen');
+                return;
+            }
             setConfirmDeleteId(null);
             fetchVenues();
         } catch (err) {

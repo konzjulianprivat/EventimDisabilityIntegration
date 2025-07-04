@@ -1607,6 +1607,21 @@ app.post('/create-venue', upload.single('venueImage'), async (req, res) => {
         areas = [];
     }
 
+    if (areas.length === 0 ||
+        !areas.some(a => a.areaId && parseInt(a.maxCapacity, 10) > 0)) {
+        return res.status(400).json({
+            message: 'Mindestens ein Bereich mit Kapazität > 0 ist erforderlich'
+        });
+    }
+
+    for (const area of areas) {
+        if (!area.areaId || parseInt(area.maxCapacity, 10) <= 0) {
+            return res.status(400).json({
+                message: 'Alle Bereiche benötigen gültige IDs und Kapazität > 0'
+            });
+        }
+    }
+
     if (!name?.trim() || !address?.trim() || !cityId) {
         return res.status(400).json({
             message: 'Name, Adresse und Stadt sind erforderlich'
@@ -1724,6 +1739,20 @@ app.put('/venues/:id', upload.single('venue_image'), async (req, res) => {
         venueAreas = [];
     }
 
+    if (venueAreas.length === 0 ||
+        !venueAreas.some(a => a.areaId && parseInt(a.maxCapacity, 10) > 0)) {
+        return res.status(400).json({
+            message: 'Mindestens ein Bereich mit Kapazität > 0 ist erforderlich'
+        });
+    }
+    for (const va of venueAreas) {
+        if (!va.areaId || parseInt(va.maxCapacity, 10) <= 0) {
+            return res.status(400).json({
+                message: 'Alle Bereiche benötigen gültige IDs und Kapazität > 0'
+            });
+        }
+    }
+
     if (!name?.trim() || !address?.trim() || !cityId) {
         return res
             .status(400)
@@ -1811,6 +1840,32 @@ app.put('/venues/:id', upload.single('venue_image'), async (req, res) => {
 app.delete('/venues/:id', async (req, res) => {
     const venueId = req.params.id;
     try {
+        // Prüfen, ob noch Events oder Tickets existieren
+        const { rows: ticketRows } = await client.query(
+            `SELECT 1
+               FROM tickets t
+                        JOIN event_categories ec ON ec.id = t.event_category_id
+                        JOIN events e ON e.id = ec.event_id
+              WHERE e.venue_id = $1
+              LIMIT 1`,
+            [venueId]
+        );
+        if (ticketRows.length > 0) {
+            return res.status(400).json({
+                message: 'Venue kann nicht gelöscht werden, da Tickets für Events existieren.'
+            });
+        }
+
+        const { rows: eventRows } = await client.query(
+            'SELECT 1 FROM events WHERE venue_id = $1 LIMIT 1',
+            [venueId]
+        );
+        if (eventRows.length > 0) {
+            return res.status(400).json({
+                message: 'Venue kann nicht gelöscht werden, solange noch Events vorhanden sind.'
+            });
+        }
+
         await client.query('BEGIN');
         await client.query('DELETE FROM venue_areas WHERE venue_id = $1', [venueId]);
         await client.query('DELETE FROM venues WHERE id = $1', [venueId]);
@@ -1836,6 +1891,20 @@ app.post('/create-event', express.json(), async (req, res) => {
 
     if (!tourId || !venueId || !doorTime || !startTime || !endTime) {
         return res.status(400).json({ message: 'Tour, Venue und alle Zeitangaben sind erforderlich' });
+    }
+
+    if (!Array.isArray(categories) || categories.length === 0) {
+        return res.status(400).json({ message: 'Mindestens eine Kategorie ist erforderlich' });
+    }
+    for (const cat of categories) {
+        if (!Array.isArray(cat.venueAreas) || cat.venueAreas.length === 0) {
+            return res.status(400).json({ message: 'Jede Kategorie benötigt mindestens einen Bereich' });
+        }
+        for (const entry of cat.venueAreas) {
+            if (!entry.areaId || parseInt(entry.capacity, 10) <= 0) {
+                return res.status(400).json({ message: 'Alle Bereichszuordnungen benötigen gültige IDs und Kapazität > 0' });
+            }
+        }
     }
 
     try {
@@ -2378,6 +2447,42 @@ app.put('/artists/:id', upload.single('artist_image'), async (req, res) => {
 app.delete('/artists/:id', async (req, res) => {
     const artistId = req.params.id;
     try {
+        const { rows: ticketRows } = await client.query(
+            `SELECT 1
+               FROM tickets t
+                        JOIN event_categories ec ON ec.id = t.event_category_id
+                        JOIN events e ON e.id = ec.event_id
+                        JOIN event_supporting_acts esa ON esa.event_id = e.id
+              WHERE esa.artist_id = $1
+              LIMIT 1`,
+            [artistId]
+        );
+        if (ticketRows.length > 0) {
+            return res.status(400).json({
+                message: 'Artist kann nicht gelöscht werden, da Tickets für Events existieren.'
+            });
+        }
+
+        const { rows: refRows } = await client.query(
+            'SELECT 1 FROM event_supporting_acts WHERE artist_id = $1 LIMIT 1',
+            [artistId]
+        );
+        if (refRows.length > 0) {
+            return res.status(400).json({
+                message: 'Artist kann nicht gelöscht werden, da Events auf ihn verweisen.'
+            });
+        }
+
+        const { rows: tourRef } = await client.query(
+            'SELECT 1 FROM tour_artists WHERE artist_id = $1 LIMIT 1',
+            [artistId]
+        );
+        if (tourRef.length > 0) {
+            return res.status(400).json({
+                message: 'Artist kann nicht gelöscht werden, da Touren auf ihn verweisen.'
+            });
+        }
+
         // 1) hole artist_image id
         const { rows } = await client.query(
             'SELECT artist_image FROM artists WHERE id = $1',
