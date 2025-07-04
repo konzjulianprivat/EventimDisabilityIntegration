@@ -1116,6 +1116,87 @@ app.patch('/users/:id/password', async (req, res) => {
     }
 });
 
+// PATCH: update disability related data via service
+app.patch('/service/users/:id', async (req, res) => {
+    const sessionUser = req.session.userId;
+    if (!sessionUser) {
+        return res.status(401).json({ message: 'Not logged in' });
+    }
+
+    const paramUserId = req.params.id;
+    if (sessionUser !== paramUserId && !req.session.hasAccountManagementAccess) {
+        return res.status(403).json({ message: 'Forbidden' });
+    }
+
+    const {
+        salutation,
+        firstName,
+        lastName,
+        birthDate,
+        disabilityDegree,
+        disabilityCardExpiryDate,
+        disabilityMarks = []
+    } = req.body || {};
+
+    try {
+        await client.query(
+            `UPDATE users
+                SET salutation = $1,
+                    first_name = $2,
+                    last_name  = $3,
+                    birth_date = $4,
+                    disability_degree = $5,
+                    disability_card_expiry_date = $6,
+                    updated_at = NOW()
+              WHERE user_id = $7`,
+            [
+                salutation || null,
+                firstName || null,
+                lastName || null,
+                birthDate || null,
+                disabilityDegree || null,
+                disabilityCardExpiryDate || null,
+                paramUserId
+            ]
+        );
+
+        await client.query('DELETE FROM user_disability_marks WHERE user_id = $1', [paramUserId]);
+        if (Array.isArray(disabilityMarks)) {
+            for (const m of disabilityMarks) {
+                await client.query(
+                    'INSERT INTO user_disability_marks (user_id, mark_code) VALUES ($1,$2)',
+                    [paramUserId, m]
+                );
+            }
+        }
+
+        const { rows } = await client.query(
+            `SELECT salutation, first_name, last_name, birth_date, disability_degree, disability_card_expiry_date
+               FROM users WHERE user_id = $1`,
+            [paramUserId]
+        );
+        const { rows: markRows } = await client.query(
+            'SELECT mark_code FROM user_disability_marks WHERE user_id = $1',
+            [paramUserId]
+        );
+
+        return res.json({
+            user: {
+                salutation: rows[0].salutation,
+                firstName: rows[0].first_name,
+                lastName: rows[0].last_name,
+                birth_date: rows[0].birth_date,
+                disability_degree: rows[0].disability_degree,
+                disability_card_expiry_date: rows[0].disability_card_expiry_date
+            },
+            marks: markRows.map(m => m.mark_code && m.mark_code.trim())
+        });
+    } catch (err) {
+        console.error('Error updating user via service:', err);
+        return res.status(500).json({ message: 'Server error' });
+    }
+});
+
 // Liefert alle verfügbaren Versandoptionen
 app.get('/shipping-options', async (req, res) => {
     try {
