@@ -1,6 +1,8 @@
 "use client";
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useValidation } from '../hooks/useValidation';
 import { useRouter } from 'next/router';
+import DisabilityExpiredModal from '../components/DisabilityExpiredModal';
 
 export default function LoginPage() {
     const router = useRouter();
@@ -12,13 +14,42 @@ export default function LoginPage() {
     const [loginPassword, setLoginPassword] = useState('');
     const [loginError, setLoginError] = useState('');
     const [loginLoading, setLoginLoading] = useState(false);
+    const [showExpiryModal, setShowExpiryModal] = useState(false);
 
     // Registrierungs‐States (unverändert)
     const [registerEmail, setRegisterEmail] = useState('');
     const [registerPassword, setRegisterPassword] = useState('');
     const [registerError, setRegisterError] = useState('');
+    const [emailExists, setEmailExists] = useState(false);
+
+    const loginValidation = useValidation({ loginEmail: '', loginPassword: '' });
+    const registerValidation = useValidation({ registerEmail: '', registerPassword: '' });
 
     const isValidEmail = (email) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+
+    const checkEmailExists = async (email) => {
+        try {
+            const res = await fetch(
+                `http://localhost:4000/email-exists?email=${encodeURIComponent(email)}`
+            );
+            const data = await res.json();
+            return data.exists;
+        } catch {
+            return false;
+        }
+    };
+
+    useEffect(() => {
+        const timeout = setTimeout(async () => {
+            if (registerEmail && isValidEmail(registerEmail)) {
+                const exists = await checkEmailExists(registerEmail);
+                setEmailExists(exists);
+            } else {
+                setEmailExists(false);
+            }
+        }, 300);
+        return () => clearTimeout(timeout);
+    }, [registerEmail]);
 
     // 1) Login‐Handler: jetzt mit credentials: 'include'
     const handleLogin = async (e) => {
@@ -28,6 +59,10 @@ export default function LoginPage() {
 
         if (!loginEmail.trim() || !loginPassword.trim()) {
             setLoginError('Bitte E-Mail und Passwort eingeben.');
+            setLoginLoading(false);
+            return;
+        }
+        if (!loginValidation.isValid()) {
             setLoginLoading(false);
             return;
         }
@@ -51,15 +86,32 @@ export default function LoginPage() {
                 localStorage.setItem(
                     'user',
                     JSON.stringify({
-                        userId:    data.user.userId,
-                        email:     data.user.email,
+                        userId: data.user.userId,
+                        email: data.user.email,
                         firstName: data.user.firstName,
-                        lastName:  data.user.lastName,
-                        disabilityCheck: data.user.disabilityCheck,
+                        lastName: data.user.lastName,
+                        requestForDisability: data.user.requestForDisability,
+                        isCurrentlyDisabled: data.user.isCurrentlyDisabled,
+                        disabilityCardExpiryDate: data.user.disabilityCardExpiryDate,
                         disabilityMarks: data.user.disabilityMarks,
+                        visibleUserId: data.user.visibleUserId,
+                        role: data.user.role,
+                        hasRoleAppointingCapability: data.user.hasRoleAppointingCapability,
+                        hasDisabilityApprovalAccess: data.user.hasDisabilityApprovalAccess,
+                        hasAccountManagementAccess: data.user.hasAccountManagementAccess,
+                        hasCreationAccess: data.user.hasCreationAccess,
+                        hasEditingAccess: data.user.hasEditingAccess,
+                        hasDeletionPermission: data.user.hasDeletionPermission,
                     })
                 );
-                router.push(redirect || '/').then(() => window.location.reload());
+
+                if (data.cardExpired) {
+                    setShowExpiryModal(true);
+                } else {
+                    router
+                        .push(redirect || '/')
+                        .then(() => window.location.reload());
+                }
             } else {
                 setLoginError(data.message || 'Ungültige Anmeldedaten.');
             }
@@ -82,6 +134,9 @@ export default function LoginPage() {
         }
         if (!isValidEmail(registerEmail.trim())) {
             setRegisterError('Bitte eine gültige E-Mail-Adresse eingeben.');
+            return;
+        }
+        if (!registerValidation.isValid()) {
             return;
         }
         sessionStorage.setItem('preRegEmail', registerEmail.trim());
@@ -139,12 +194,33 @@ export default function LoginPage() {
                                 type="email"
                                 id="loginEmail"
                                 name="loginEmail"
-                                className="input"
+                                className={`input ${loginValidation.classFor('loginEmail', loginEmail)}`}
                                 placeholder="E-Mail-Adresse eingeben"
                                 value={loginEmail}
-                                onChange={(e) => setLoginEmail(e.target.value)}
+                                onChange={(e) => {
+                                    setLoginEmail(e.target.value);
+                                    loginValidation.validate('loginEmail', e.target.value, {
+                                        required: true,
+                                        pattern: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
+                                        message:
+                                            'Die E-Mail muss in einem validen E-Mail Format (bspw. Max.Mustermann@test.de) vorliegen',
+                                    });
+                                }}
+                                onBlur={(e) =>
+                                    loginValidation.validate('loginEmail', e.target.value, {
+                                        required: true,
+                                        pattern: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
+                                        message:
+                                            'Die E-Mail muss in einem validen E-Mail Format (bspw. Max.Mustermann@test.de) vorliegen',
+                                    })
+                                }
                                 required
                             />
+                            {loginValidation.errors.loginEmail && (
+                                <div className="validation-msg">
+                                    {loginValidation.errors.loginEmail}
+                                </div>
+                            )}
                         </div>
                         <div className="form-group">
                             <label htmlFor="loginPassword" className="label">
@@ -154,22 +230,31 @@ export default function LoginPage() {
                                 type="password"
                                 id="loginPassword"
                                 name="loginPassword"
-                                className="input"
+                                className={`input ${loginValidation.classFor('loginPassword', loginPassword)}`}
                                 placeholder="Passwort eingeben"
                                 value={loginPassword}
-                                onChange={(e) => setLoginPassword(e.target.value)}
+                                onChange={(e) => {
+                                    setLoginPassword(e.target.value);
+                                    loginValidation.validate('loginPassword', e.target.value, { required: true });
+                                }}
+                                onBlur={(e) => loginValidation.validate('loginPassword', e.target.value, { required: true })}
                                 required
                             />
+                            {loginValidation.errors.loginPassword && (
+                                <div className="validation-msg">
+                                    {loginValidation.errors.loginPassword}
+                                </div>
+                            )}
                         </div>
                         <div className="form-footer">
-                            <a href="#" className="link-forgot">
+                            <a href="404.jsx" className="link-forgot">
                                 Passwort vergessen?
                             </a>
                         </div>
                         <button
                             type="submit"
                             className="button-primary"
-                            disabled={loginLoading}
+                            disabled={loginLoading || !loginValidation.isValid()}
                         >
                             {loginLoading ? 'Bitte warten...' : 'Anmelden'}
                         </button>
@@ -199,12 +284,46 @@ export default function LoginPage() {
                                 type="email"
                                 id="registerEmail"
                                 name="registerEmail"
-                                className="input"
+                                className={`input ${registerValidation.classFor('registerEmail', registerEmail)}`}
                                 placeholder="E-Mail-Adresse eingeben"
                                 value={registerEmail}
-                                onChange={(e) => setRegisterEmail(e.target.value)}
+                                onChange={(e) => {
+                                    setRegisterEmail(e.target.value);
+                                    registerValidation.validate('registerEmail', e.target.value, {
+                                        required: true,
+                                        pattern: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
+                                        message:
+                                            'Die E-Mail muss in einem validen E-Mail Format (bspw. Max.Mustermann@test.de) vorliegen',
+                                    });
+                                }}
+                                onBlur={async (e) => {
+                                    const value = e.target.value;
+                                    const valid = registerValidation.validate('registerEmail', value, {
+                                        required: true,
+                                        pattern: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
+                                        message:
+                                            'Die E-Mail muss in einem validen E-Mail Format (bspw. Max.Mustermann@test.de) vorliegen',
+                                    });
+                                    if (valid && (await checkEmailExists(value))) {
+                                        registerValidation.validate('registerEmail', value, {
+                                            required: true,
+                                            pattern: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
+                                            message: 'Diese E-Mail ist bereits registriert.',
+                                        });
+                                    }
+                                }}
                                 required
                             />
+                            {registerValidation.errors.registerEmail && (
+                                <div className="validation-msg">
+                                    {registerValidation.errors.registerEmail}
+                                </div>
+                            )}
+                            {!registerValidation.errors.registerEmail && emailExists && (
+                                <div className="validation-msg">
+                                    Diese E-Mail ist bereits registriert.
+                                </div>
+                            )}
                         </div>
                         <div className="form-group">
                             <label htmlFor="registerPassword" className="label">
@@ -214,12 +333,31 @@ export default function LoginPage() {
                                 type="password"
                                 id="registerPassword"
                                 name="registerPassword"
-                                className="input"
+                                className={`input ${registerValidation.classFor('registerPassword', registerPassword)}`}
                                 placeholder="Neues Passwort eingeben"
                                 value={registerPassword}
-                                onChange={(e) => setRegisterPassword(e.target.value)}
+                                onChange={(e) => {
+                                    setRegisterPassword(e.target.value);
+                                    registerValidation.validate('registerPassword', e.target.value, {
+                                        required: true,
+                                        pattern: /^(?=.*[A-Za-z])(?=.*\d)(?=.*[^A-Za-z\d]).{8,}$/,
+                                        message: 'Passwort zu schwach',
+                                    });
+                                }}
+                                onBlur={(e) =>
+                                    registerValidation.validate('registerPassword', e.target.value, {
+                                        required: true,
+                                        pattern: /^(?=.*[A-Za-z])(?=.*\d)(?=.*[^A-Za-z\d]).{8,}$/,
+                                        message: 'Passwort zu schwach',
+                                    })
+                                }
                                 required
                             />
+                            {registerValidation.errors.registerPassword && (
+                                <div className="validation-msg">
+                                    {registerValidation.errors.registerPassword}
+                                </div>
+                            )}
                         </div>
                         <p className="info-text">
                             Bitte gib mindestens acht Zeichen ein, es müssen Buchstaben (Groß- und
@@ -227,17 +365,31 @@ export default function LoginPage() {
                         </p>
                         <p className="info-text">
                             EVENTIM legt großen Wert auf Datenschutz. Die Datenschutzinformation kannst du{' '}
-                            <a href="#" className="link-inline">
+                            <a href="https://www.eventim.de/help/data-protection/?affiliate=GMD" className="link-inline">
                                 hier
                             </a>{' '}
                             nachlesen.
                         </p>
-                        <button type="submit" className="button-primary">
+                        <button
+                            type="submit"
+                            className="button-primary"
+                            disabled={!registerValidation.isValid() || emailExists}
+                        >
                             Weiter
                         </button>
                     </form>
                 )}
             </div>
+            {showExpiryModal && (
+                <DisabilityExpiredModal
+                    onClose={() => {
+                        setShowExpiryModal(false);
+                        router
+                            .push(redirect || '/')
+                            .then(() => window.location.reload());
+                    }}
+                />
+            )}
         </div>
     );
 }

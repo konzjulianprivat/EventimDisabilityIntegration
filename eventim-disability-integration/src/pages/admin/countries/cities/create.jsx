@@ -1,7 +1,11 @@
 import React, { useState, useEffect } from 'react';
+import { useValidation } from '../../../../hooks/useValidation';
 import { useRouter } from 'next/router';
+import { useRequireAccess } from '../../../../hooks/useRequireAccess';
+import { ADMIN_PERMISSIONS } from '../../../../adminPermissions';
 
 export default function CityCreation() {
+    useRequireAccess(ADMIN_PERMISSIONS);
     const router = useRouter();
     const [formData, setFormData] = useState({
         name: '',
@@ -10,6 +14,7 @@ export default function CityCreation() {
     const [countries, setCountries] = useState([]);
     const [message, setMessage] = useState('');
     const [loading, setLoading] = useState(false);
+    const validation = useValidation({ name: '', countryId: '' });
 
     useEffect(() => {
         // Länder für Dropdown laden
@@ -22,6 +27,8 @@ export default function CityCreation() {
     const handleChange = e => {
         const { name, value } = e.target;
         setFormData(prev => ({ ...prev, [name]: value }));
+        if (name === 'name') validation.validate('name', value, { required: true });
+        if (name === 'countryId') validation.validate('countryId', value, { required: true });
     };
 
     const handleSubmit = async e => {
@@ -29,8 +36,8 @@ export default function CityCreation() {
         setLoading(true);
         setMessage('');
 
-        if (!formData.name.trim() || !formData.countryId) {
-            setMessage('Name und Land sind erforderlich');
+        if (!validation.isValid()) {
+            setMessage('Bitte alle Pflichtfelder korrekt ausfüllen');
             setLoading(false);
             return;
         }
@@ -82,9 +89,13 @@ export default function CityCreation() {
                         name="name"
                         value={formData.name}
                         onChange={handleChange}
+                        className={validation.classFor('name', formData.name)}
                         required
                         style={{ width: '100%', padding: '0.5rem', borderRadius: '4px', border: '1px solid #ccc' }}
                     />
+                    {validation.errors.name && (
+                        <div className="validation-msg">{validation.errors.name}</div>
+                    )}
                 </div>
 
                 <div style={{ marginBottom: '1rem' }}>
@@ -94,6 +105,7 @@ export default function CityCreation() {
                         name="countryId"
                         value={formData.countryId}
                         onChange={handleChange}
+                        className={validation.classFor('countryId', formData.countryId)}
                         required
                         style={{ width: '100%', padding: '0.5rem', borderRadius: '4px', border: '1px solid #ccc' }}
                     >
@@ -102,11 +114,14 @@ export default function CityCreation() {
                             <option key={c.id} value={c.id}>{c.name}</option>
                         ))}
                     </select>
+                    {validation.errors.countryId && (
+                        <div className="validation-msg">{validation.errors.countryId}</div>
+                    )}
                 </div>
 
                 <button
                     type="submit"
-                    disabled={loading}
+                    disabled={loading || !validation.isValid()}
                     style={{
                         backgroundColor: '#002b55',
                         color: 'white',

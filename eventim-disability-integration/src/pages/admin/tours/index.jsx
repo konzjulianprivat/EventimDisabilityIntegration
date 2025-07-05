@@ -1,11 +1,16 @@
-// pages/admin/tours/index.jsx
+// pages/admin/tours/shopping-cart.jsx
 
 import React, { useEffect, useState } from 'react';
 import FilterBar from '../../../components/filter-bar';
 import { useRouter } from 'next/router';
 import { API_BASE_URL } from '../../../config';
+import { useAuth } from '../../../hooks/useAuth';
+import { useRequireAccess } from '../../../hooks/useRequireAccess';
+import { ADMIN_PERMISSIONS } from '../../../adminPermissions';
+import BackLink from '../../../components/back-link';
 
 export default function ToursContent() {
+    useRequireAccess(ADMIN_PERMISSIONS);
     const [tours, setTours] = useState([]);
     const [basicFilteredTours, setBasicFilteredTours] = useState([]);
     const [filteredTours, setFilteredTours] = useState([]);
@@ -23,7 +28,10 @@ export default function ToursContent() {
     const [allGenres, setAllGenres] = useState([]);
     const [tourArtists, setTourArtists] = useState([]);
     const [tourGenres, setTourGenres] = useState([]);
+    const [allVenues, setAllVenues] = useState([]);
+    const [eventEdits, setEventEdits] = useState({});
     const [confirmDeleteId, setConfirmDeleteId] = useState(null);
+    const [eventTickets, setEventTickets] = useState({});
 
     // Erweiterte Filter‐States
     const [filterStartDate, setFilterStartDate] = useState('');
@@ -34,6 +42,7 @@ export default function ToursContent() {
     const [filterArtists, setFilterArtists] = useState([]);
 
     const router = useRouter();
+    const { user } = useAuth();
 
     const filterFields = [
         { key: 'title', label: 'Titel', match: 'startsWith' },
@@ -72,6 +81,7 @@ export default function ToursContent() {
         fetchTours();
         fetchAllArtists();
         fetchAllGenresWithSub();
+        fetchAllVenues();
     }, []);
     const fetchTours = async () => {
         try {
@@ -111,6 +121,40 @@ export default function ToursContent() {
             setAllGenres([]);
         }
     };
+
+    const fetchAllVenues = async () => {
+        try {
+            const res = await fetch(`${API_BASE_URL}/venues`);
+            if (!res.ok) throw new Error();
+            const j = await res.json();
+            setAllVenues(j.venues || []);
+        } catch {
+            setAllVenues([]);
+        }
+    };
+
+    // Lade Ticket-Informationen für Events
+    useEffect(() => {
+        const ids = [];
+        tours.forEach((t) =>
+            (t.events || []).forEach((ev) => ids.push(ev.id))
+        );
+        ids.forEach((id) => {
+            if (eventTickets[id] !== undefined) return;
+            fetch(`${API_BASE_URL}/event-capacities/${id}`)
+                .then((r) => (r.ok ? r.json() : null))
+                .then((d) => {
+                    const sold = (d?.categories || []).reduce(
+                        (s, c) => s + (c.capacity - c.remaining),
+                        0
+                    );
+                    setEventTickets((p) => ({ ...p, [id]: sold > 0 }));
+                })
+                .catch(() =>
+                    setEventTickets((p) => ({ ...p, [id]: false }))
+                );
+        });
+    }, [tours]);
 
     // ── Erweiterte Filter anwenden
     useEffect(() => {
@@ -179,11 +223,43 @@ export default function ToursContent() {
         } catch {
             setTourArtists([]); setTourGenres([]);
         }
+
+        // Event-Details laden
+        try {
+            const promises = (tour.events || []).map((ev) =>
+                fetch(`${API_BASE_URL}/event-details/${ev.id}`).then((r) =>
+                    r.ok ? r.json() : null
+                )
+            );
+            const arr = await Promise.all(promises);
+            const map = {};
+            arr.forEach((d) => {
+                if (d && d.event) {
+                    map[d.event.id] = {
+                        venueId: d.event.venue_id || '',
+                        doorTime: d.event.door_time ? d.event.door_time.slice(0, 16) : '',
+                        startTime: d.event.start_time ? d.event.start_time.slice(0, 16) : '',
+                        endTime: d.event.end_time ? d.event.end_time.slice(0, 16) : '',
+                        description: d.event.description || ''
+                    };
+                }
+            });
+            setEventEdits(map);
+        } catch {
+            setEventEdits({});
+        }
     };
     const handleInputChange = (e) => {
         const { name, value, files } = e.target;
         if (files) setEditedData((p) => ({ ...p, [name]: files[0] }));
         else setEditedData((p) => ({ ...p, [name]: value }));
+    };
+
+    const handleEventFieldChange = (eventId, field, value) => {
+        setEventEdits((prev) => ({
+            ...prev,
+            [eventId]: { ...prev[eventId], [field]: value }
+        }));
     };
     const addArtistField = () => setTourArtists((p) => [...p, { id: '', name: '' }]);
     const updateArtistField = (i, id) => {
@@ -239,6 +315,15 @@ export default function ToursContent() {
                 body: fd,
             });
             if (!r.ok) throw new Error();
+
+            const eventPromises = Object.entries(eventEdits).map(([eid, data]) =>
+                fetch(`${API_BASE_URL}/events/${eid}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                })
+            );
+            await Promise.all(eventPromises);
             setEditingId(null);
             fetchTours();
         } catch {
@@ -257,17 +342,32 @@ export default function ToursContent() {
         }
     };
 
+    const handleEventDelete = async (eventId, e) => {
+        e.stopPropagation();
+        if (!confirm('Event wirklich löschen?')) return;
+        try {
+            const r = await fetch(`${API_BASE_URL}/events/${eventId}`, { method: 'DELETE' });
+            if (!r.ok) throw new Error();
+            fetchTours();
+        } catch {
+            console.error('Event löschen fehlgeschlagen');
+        }
+    };
+
     return (
         <div className="artists-wrapper">
+            <BackLink />
             {/* Header + Create */}
             <div className="artists-header">
                 <h2 className="artists-title">Übersicht – Touren</h2>
-                <button
-                    className="btn-create-entity"
-                    onClick={() => router.push(`/admin/tours/create`)}
-                >
-                    + Tour erstellen
-                </button>
+                {user?.hasCreationAccess && (
+                    <button
+                        className="btn-create-entity"
+                        onClick={() => router.push(`/admin/tours/create`)}
+                    >
+                        + Tour erstellen
+                    </button>
+                )}
             </div>
 
             {/* Filter */}
@@ -533,6 +633,63 @@ export default function ToursContent() {
                                                     + Event hinzufügen
                                                 </button>
                                             </div>
+
+                                            {(tour.events || []).map((ev, idx) => {
+                                                const d = eventEdits[ev.id] || {};
+                                                return (
+                                                    <div key={ev.id} className="section-block event-edit-block">
+                                                        <span className="section-label">Event {idx + 1}</span>
+                                                        <label className="event-edit-label">
+                                                            Venue:
+                                                            <select
+                                                                value={d.venueId || ''}
+                                                                onChange={(e) => handleEventFieldChange(ev.id, 'venueId', e.target.value)}
+                                                                className="input-website"
+                                                            >
+                                                                <option value="">— Venue wählen —</option>
+                                                                {allVenues.map((v) => (
+                                                                    <option key={v.id} value={v.id}>
+                                                                        {v.name}
+                                                                    </option>
+                                                                ))}
+                                                            </select>
+                                                        </label>
+                                                        <label className="event-edit-label">
+                                                            Einlass:
+                                                            <input
+                                                                type="datetime-local"
+                                                                value={d.doorTime || ''}
+                                                                onChange={(e) => handleEventFieldChange(ev.id, 'doorTime', e.target.value)}
+                                                                className="input-date"
+                                                            />
+                                                        </label>
+                                                        <label className="event-edit-label">
+                                                            Start:
+                                                            <input
+                                                                type="datetime-local"
+                                                                value={d.startTime || ''}
+                                                                onChange={(e) => handleEventFieldChange(ev.id, 'startTime', e.target.value)}
+                                                                className="input-date"
+                                                            />
+                                                        </label>
+                                                        <label className="event-edit-label">
+                                                            Ende:
+                                                            <input
+                                                                type="datetime-local"
+                                                                value={d.endTime || ''}
+                                                                onChange={(e) => handleEventFieldChange(ev.id, 'endTime', e.target.value)}
+                                                                className="input-date"
+                                                            />
+                                                        </label>
+                                                        <textarea
+                                                            value={d.description || ''}
+                                                            onChange={(e) => handleEventFieldChange(ev.id, 'description', e.target.value)}
+                                                            className="input-website"
+                                                            placeholder="Beschreibung"
+                                                        />
+                                                    </div>
+                                                );
+                                            })}
                                         </>
                                     ) : (
                                         /* ——— DISPLAY MODE ——— */
@@ -591,7 +748,6 @@ export default function ToursContent() {
                                             {/* FIRST TWO EVENTS */}
                                             <div className="sub-events">
                                                 {(tour.events || [])
-                                                    .slice(0, 2)
                                                     .map((ev) => {
                                                         const dt = new Date(ev.start_time);
                                                         const ds = dt.toLocaleDateString('de-DE', {
@@ -635,15 +791,25 @@ export default function ToursContent() {
                                                                         </div>
                                                                     )}
                                                                 </div>
-                                                                <button
-                                                                    className="btn-tickets"
-                                                                    onClick={(e) => {
-                                                                        e.stopPropagation();
-                                                                        router.push(evUrl);
-                                                                    }}
-                                                                >
-                                                                    Tickets
-                                                                </button>
+                                                                {/*<button*/}
+                                                                {/*    className="btn-tickets"*/}
+                                                                {/*    onClick={(e) => {*/}
+                                                                {/*        e.stopPropagation();*/}
+                                                                {/*        router.push(evUrl);*/}
+                                                                {/*    }}*/}
+                                                                {/*>*/}
+                                                                {/*    Tickets*/}
+                                                                {/*</button>*/}
+                                                                {user?.hasDeletionPermission &&
+                                                                    eventTickets[ev.id] === false && (
+                                                                        <button
+                                                                            className="btn-delete-event"
+                                                                            onClick={(e) => handleEventDelete(ev.id, e)}
+                                                                            title="Event löschen"
+                                                                        >
+                                                                            ❌
+                                                                        </button>
+                                                                    )}
                                                             </div>
                                                         );
                                                     })}
@@ -656,25 +822,29 @@ export default function ToursContent() {
                             {/* Edit + Delete icons */}
                             {editingId !== tour.id && (
                                 <div className="card-footer-icons">
-                                    <button
-                                        className="btn-edit small-edit"
-                                        onClick={() => handleEditToggle(tour)}
-                                        title="Bearbeiten"
-                                    >
-                                        ✎
-                                    </button>
-                                    <button
-                                        className="btn-edit delete-icon"
-                                        onClick={() => setConfirmDeleteId(tour.id)}
-                                        title="Löschen"
-                                    >
-                                        🗑
-                                    </button>
+                                    {user?.hasEditingAccess && (
+                                        <button
+                                            className="btn-edit small-edit"
+                                            onClick={() => handleEditToggle(tour)}
+                                            title="Bearbeiten"
+                                        >
+                                            ✎
+                                        </button>
+                                    )}
+                                    {user?.hasDeletionPermission && (
+                                        <button
+                                            className="btn-edit delete-icon"
+                                            onClick={() => setConfirmDeleteId(tour.id)}
+                                            title="Löschen"
+                                        >
+                                            🗑
+                                        </button>
+                                    )}
                                 </div>
                             )}
 
                             {/* Delete modal */}
-                            {confirmDeleteId === tour.id && (
+                            {confirmDeleteId === tour.id && user?.hasDeletionPermission && (
                                 <div className="modal-overlay">
                                     <div className="modal-box">
                                         <p>Möchtest du diese Tour wirklich löschen?</p>

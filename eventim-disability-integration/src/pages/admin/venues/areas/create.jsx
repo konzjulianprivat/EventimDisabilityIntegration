@@ -1,18 +1,24 @@
 "use client";
 
 import React, { useState } from 'react';
+import { useValidation } from '../../../../hooks/useValidation';
+import { useRequireAccess } from '../../../../hooks/useRequireAccess';
+import { ADMIN_PERMISSIONS } from '../../../../adminPermissions';
 
 export default function AreaCreation() {
+    useRequireAccess(ADMIN_PERMISSIONS);
     const [formData, setFormData] = useState({
         name: '',
         description: ''
     });
     const [message, setMessage] = useState('');
     const [loading, setLoading] = useState(false);
+    const validation = useValidation({ name: '' });
 
     const handleChange = e => {
         const { name, value } = e.target;
         setFormData(f => ({ ...f, [name]: value }));
+        if (name === 'name') validation.validate('name', value, { required: true });
     };
 
     const handleSubmit = async e => {
@@ -21,7 +27,7 @@ export default function AreaCreation() {
         setLoading(true);
 
         const { name } = formData;
-        if (!name.trim()) {
+        if (!validation.isValid()) {
             setMessage('Name ist erforderlich');
             setLoading(false);
             return;
@@ -50,6 +56,7 @@ export default function AreaCreation() {
 
     return (
         <div className="creation-container" style={{ maxWidth: '600px', margin: '0 auto', padding: '2rem' }}>
+            <BackLink />
             <h1 style={{ color: '#002b55', marginBottom: '1.5rem' }}>Neuen Bereich anlegen</h1>
 
             {message && (
@@ -77,9 +84,13 @@ export default function AreaCreation() {
                         name="name"
                         value={formData.name}
                         onChange={handleChange}
+                        className={validation.classFor('name', formData.name)}
                         required
                         style={{ width: '100%', padding: '.5rem', border: '1px solid #ccc', borderRadius: '4px' }}
                     />
+                    {validation.errors.name && (
+                        <div className="validation-msg">{validation.errors.name}</div>
+                    )}
                 </div>
 
                 {/* Beschreibung */}
@@ -99,7 +110,7 @@ export default function AreaCreation() {
                 {/* Submit */}
                 <button
                     type="submit"
-                    disabled={loading}
+                    disabled={loading || !validation.isValid()}
                     style={{
                         backgroundColor: '#002b55',
                         color: 'white',

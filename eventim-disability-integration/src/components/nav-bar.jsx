@@ -12,11 +12,16 @@ export default function NavBar() {
     const [genres, setGenres] = useState([]);
     const [cities, setCities] = useState([]);
     const { items: cartItems, loading: cartLoading, reload: reloadCart } = useCart();
+    const [showCheckoutModal, setShowCheckoutModal] = useState(false);
+
+    const [searchQuery, setSearchQuery] = useState('');
+    const [searchResults, setSearchResults] = useState([]);
 
     const eventsRef = useRef(null);
     const placesRef = useRef(null);
     const profileRef = useRef(null);
     const cartRef = useRef(null);
+    const searchRef = useRef(null);
 
     const { loading: authLoading, loggedIn, user } = useAuth();
 
@@ -27,6 +32,39 @@ export default function NavBar() {
             .then((body) => setGenres(body.genres))
             .catch((err) => console.error('Error loading genres:', err));
     }, []);
+
+    // Search tours on input
+    useEffect(() => {
+        const controller = new AbortController();
+        const q = searchQuery.trim();
+        if (!q) {
+            setSearchResults([]);
+            return;
+        }
+        const timeout = setTimeout(async () => {
+            try {
+                const res = await fetch(
+                    `${API_BASE_URL}/search-tours?q=${encodeURIComponent(q)}`,
+                    { signal: controller.signal }
+                );
+                if (res.ok) {
+                    const data = await res.json();
+                    setSearchResults(Array.isArray(data.tours) ? data.tours : []);
+                } else {
+                    setSearchResults([]);
+                }
+            } catch (err) {
+                if (err.name !== 'AbortError') {
+                    console.error('Search error:', err);
+                    setSearchResults([]);
+                }
+            }
+        }, 300);
+        return () => {
+            controller.abort();
+            clearTimeout(timeout);
+        };
+    }, [searchQuery]);
 
     // Load cities
     useEffect(() => {
@@ -43,7 +81,8 @@ export default function NavBar() {
                 eventsRef.current && !eventsRef.current.contains(e.target) &&
                 placesRef.current && !placesRef.current.contains(e.target) &&
                 profileRef.current && !profileRef.current.contains(e.target) &&
-                cartRef.current && !cartRef.current.contains(e.target)
+                cartRef.current && !cartRef.current.contains(e.target) &&
+                searchRef.current && !searchRef.current.contains(e.target)
             ) {
                 setOpenDropdown(null);
             }
@@ -72,6 +111,7 @@ export default function NavBar() {
     };
 
     return (
+        <>
         <div className="nav-bar">
             <div className="nav-wrapper">
                 <div className="logo">
@@ -103,11 +143,19 @@ export default function NavBar() {
                         <div className="dropdown-menu">
                             {genres.map((g) => (
                                 <div key={g.id} className="dropdown-item">
-                                    <span className="label">{g.name}</span>
+                                    <a href={`/genres/${g.id}`} className="label" style={{color: 'black'}}>
+                                        {g.name}
+                                    </a>
                                     <div className="sub-menu">
                                         {g.subgenres.map((s) => (
-                                            <a key={s.id} href="#" className="dropdown-item">
+                                            <a
+                                                key={s.id}
+                                                href={`/genres/${g.id}/${s.id}`}
+                                                className="dropdown-item"
+                                                style={{color: 'black'}}
+                                            >
                                                 {s.name}
+                                                {typeof s.event_count === 'number' && ` (${s.event_count})`}
                                             </a>
                                         ))}
                                     </div>
@@ -133,11 +181,19 @@ export default function NavBar() {
                         <div className="dropdown-menu">
                             {cities.map((c) => (
                                 <div key={c.id} className="dropdown-item">
-                                    <span className="label">{c.name}</span>
+                                    <a href={`/locations/${c.id}`} className="label" style={{color: 'black'}}>
+                                        {c.name}
+                                    </a>
                                     <div className="sub-menu">
                                         {c.venues.map((v) => (
-                                            <a key={v.id} href="#" className="dropdown-item">
+                                            <a
+                                                key={v.id}
+                                                href={`/locations/${c.id}/${v.id}`}
+                                                className="dropdown-item"
+                                                style={{color: 'black'}}
+                                            >
                                                 {v.name}
+                                                {typeof v.event_count === 'number' && ` (${v.event_count})`}
                                             </a>
                                         ))}
                                     </div>
@@ -147,8 +203,62 @@ export default function NavBar() {
                     </div>
                 </nav>
 
-                <div className="search">
-                    <input type="search" placeholder="Suche nach Künstlern und Events" />
+                <div className="search" ref={searchRef}>
+                    <input
+                        type="search"
+                        placeholder="Suche nach Touren"
+                        value={searchQuery}
+                        onChange={(e) => {
+                            setSearchQuery(e.target.value);
+                            if (!openDropdown) setOpenDropdown('search');
+                        }}
+                        onFocus={() => setOpenDropdown('search')}
+                    />
+                    <div className="search-icon">
+                        <Image
+                            src="/pictures/search_icon.png"
+                            alt="Suche"
+                            width={20}
+                            height={20}
+                        />
+                    </div>
+                    {openDropdown === 'search' && (
+                        <div className="nav-search-results">
+                            {searchQuery.trim() && searchResults.length === 0 && (
+                                <div className="nav-search-no-results">Keine Ergebnisse</div>
+                            )}
+                            {searchResults.map((tour) => (
+                                <div key={tour.id} className="nav-search-item">
+                                    <a
+                                        href={`/artists/${tour.artist_id}/${tour.id}`}
+                                        className="search-tour-title"
+                                    >
+                                        {tour.title}
+                                    </a>
+                                    <button className="btn-view-events">Tickets buchen</button>
+                                    <div className="nav-search-events">
+                                         {(
+                                           // build a Map keyed by event.id → last-seen event, then grab unique events
+                                               [...new Map(tour.events.map(ev => [ev.id, ev])).values()]
+                                         ).map(ev => {
+                                            const dt = new Date(ev.start_time);
+                                            const ds = dt.toLocaleDateString('de-DE');
+                                            const ts = dt.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' });
+                                            return (
+                                                <a
+                                                    key={ev.id}
+                                                    href={`/artists/${tour.artist_id}/${tour.id}/${ev.id}`}
+                                                    className="nav-search-event-link"
+                                                >
+                                                    {ds} {ts} – {ev.cityName}, {ev.venueName}
+                                                </a>
+                                            );
+                                        })}
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    )}
                 </div>
 
                 <div className="icons">
@@ -183,26 +293,28 @@ export default function NavBar() {
                                     <div className="cart-empty-panel">
                                         <h4>Ihr Warenkorb ist noch leer!</h4>
                                         <p>Entdecke jetzt spannende Events und sichere dir dein Ticket.</p>
-                                        <a href="/events" className="btn-discover">
-                                            Events entdecken
-                                        </a>
                                     </div>
                                 ) : (
                                     <>
                                         {cartItems.map((item) => (
-                                            <div key={item.id} className="cart-row">
+                                            <div key={item.id} className={`cart-row ${item.is_assistance_ticket ? 'assistance' : ''}`}>
                                                 <div className="cart-info">
                                                     <span className="cart-title">{item.title}</span>
                                                     <span className="cart-subtitle">{item.category}</span>
                                                 </div>
                                                 <div className="cart-qty">{item.quantity}</div>
+                                                <div className="cart-qty">
+                                                    {item.is_assistance_ticket && <span className="assist-flag">B</span>}
+                                                </div>
                                                 <div className="cart-line-price">
                                                     {(item.quantity * parseFloat(item.price)).toFixed(2)} €
                                                 </div>
                                                 <button
                                                     className="cart-delete-btn"
                                                     onClick={() => deleteCartItem(item.id)}
+                                                    disabled={item.is_assistance_ticket}
                                                     aria-label="Entfernen"
+                                                    style={{color: item.is_assistance_ticket ? 'lightgray' : undefined}}
                                                 >
                                                     ×
                                                 </button>
@@ -217,7 +329,24 @@ export default function NavBar() {
                                         <button
                                             type="button"
                                             className="login-button dropdown-logout"
-                                            onClick={() => (window.location.href = '/checkout')}
+                                            onClick={async () => {
+                                                try {
+                                                    const res = await fetch(`${API_BASE_URL}/checkout`, {
+                                                        method: 'POST',
+                                                        credentials: 'include',
+                                                    });
+                                                    if (res.ok) {
+                                                        window.location.href = '/checkout/shopping-cart';
+                                                    } else if (res.status === 409) {
+                                                        setShowCheckoutModal(true);
+                                                    } else {
+                                                        alert('Fehler beim Erstellen des Checkouts.');
+                                                    }
+                                                } catch (err) {
+                                                    console.error(err);
+                                                    alert('Netzwerkfehler beim Checkout.');
+                                                }
+                                            }}
                                         >
                                             Weiter
                                         </button>
@@ -251,14 +380,18 @@ export default function NavBar() {
                             </a>
                             <div className="dropdown-menu">
                                 <a href="/profile" className="dropdown-item">
-                                    Übersicht
+                                    EVENTIM - Profil
                                 </a>
-                                <a href="#" className="dropdown-item">
-                                    Persönliche Daten
-                                </a>
-                                <a href="#" className="dropdown-item">
-                                    Meine Bestellungen
-                                </a>
+                                {user.hasDisabilityApprovalAccess && (
+                                    <a href="/service" className="dropdown-item">
+                                        EVENTIM - Service Center
+                                    </a>
+                                )}
+                                {(user.hasCreationAccess || user.hasEditingAccess || user.hasDeletionPermission) && (
+                                    <a href="/admin" className="dropdown-item">
+                                        EVENTIM - Admin Tooling
+                                    </a>
+                                )}
 
                                 <div className="dropdown-divider" />
 
@@ -268,6 +401,7 @@ export default function NavBar() {
                                         <h3>
                                             {user.firstName} {user.lastName}
                                         </h3>
+                                        <p style={{fontSize: "0.75rem", color: "grey"}}>{user.visibleUserId ? ` User-ID: ${user.visibleUserId}` : ''}</p>
                                     </div>
                                 </div>
 
@@ -302,5 +436,42 @@ export default function NavBar() {
                 </div>
             </div>
         </div>
+        {showCheckoutModal && (
+            <div className="checkout-modal-overlay">
+                <div className="checkout-modal">
+                    <p>Sie haben bereits einen laufenden Checkout.</p>
+                    <div className="checkout-modal-actions">
+                        <button
+                            className="btn-ok"
+                            onClick={() => setShowCheckoutModal(false)}
+                        >
+                            Okay
+                        </button>
+                        <button
+                            className="btn-end"
+                            onClick={async () => {
+                                try {
+                                    const res = await fetch(`${API_BASE_URL}/checkout`, {
+                                        method: 'DELETE',
+                                        credentials: 'include',
+                                    });
+                                    if (res.ok) {
+                                        setShowCheckoutModal(false);
+                                    } else {
+                                        alert('Fehler beim Beenden des Checkouts.');
+                                    }
+                                } catch (err) {
+                                    console.error(err);
+                                    alert('Netzwerkfehler beim Beenden des Checkouts.');
+                                }
+                            }}
+                        >
+                            Checkout beenden
+                        </button>
+                    </div>
+                </div>
+            </div>
+        )}
+        </>
     );
 }

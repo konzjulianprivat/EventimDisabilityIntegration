@@ -1,6 +1,7 @@
 // src/pages/registration.jsx
 
 import React, { useState, useEffect } from 'react';
+import { useValidation } from '../hooks/useValidation';
 import { useRouter } from 'next/router';
 
 export default function Registration() {
@@ -15,9 +16,11 @@ export default function Registration() {
         confirmPassword: '',
         birthDate: '',
         phone: '',
-        disabilityCheck: false,
+        requestForDisability: false,
         disabilityDegree: '',
-        disabilityCardImage: null,
+        disabilityCardImageFront: null,
+        disabilityCardImageBack: null,
+        isCurrentlyDisabled: false,
         streetAddress: '',
         city: '',
         postalCode: '',
@@ -26,13 +29,23 @@ export default function Registration() {
         salutation: '',
     });
 
+    const [hasExpiry, setHasExpiry] = useState(false);
+
     // Holds all marks fetched from server:
     const [disabilityMarks, setDisabilityMarks] = useState([]);
     // Holds the mark_codes that the user has checked:
     const [selectedMarks, setSelectedMarks] = useState([]);
+    const [disabilityCardExpiryDate, setDisabilityCardExpiryDate] = useState('9999-01-01');
 
     const [message, setMessage] = useState('');
     const [loading, setLoading] = useState(false);
+    const validation = useValidation({
+        firstName: '',
+        lastName: '',
+        email: '',
+        password: '',
+        confirmPassword: ''
+    });
 
     // 1) Prefill email/password from sessionStorage if present (unchanged)
     useEffect(() => {
@@ -74,22 +87,23 @@ export default function Registration() {
                 ...formData,
                 [name]: e.target.files[0],
             });
-        } else if (type === 'checkbox' && name === 'disabilityCheck') {
+        } else if (type === 'checkbox' && name === 'requestForDisability') {
             // For the single “Ich habe einen Behindertenausweis” box:
             setFormData({
                 ...formData,
-                disabilityCheck: e.target.checked,
+                requestForDisability: e.target.checked,
                 // If unchecked, also clear degree and any selectedMarks:
                 ...(e.target.checked
                     ? {}
                     : {
                         disabilityDegree: '',
-                        disabilityCardImage: null,
+                        disabilityCardImageFront: null,
+                        disabilityCardImageBack: null,
                         // Clear any mark‐checkboxes if user unticks “I have a card”
                         selectedMarks: [],
                     }),
             });
-            // If the user just cleared disabilityCheck, clear selectedMarks state:
+            // If the user just cleared the disability checkbox, clear selectedMarks state:
             if (!e.target.checked) {
                 setSelectedMarks([]);
             }
@@ -99,6 +113,27 @@ export default function Registration() {
                 ...formData,
                 [name]: value,
             });
+            if (['firstName', 'lastName', 'email', 'password', 'confirmPassword'].includes(name)) {
+                const opts = { required: true };
+                if (name === 'email') {
+                    opts.pattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+                    opts.message =
+                        'Die E-Mail muss in einem validen E-Mail Format (bspw. Max.Mustermann@test.de) vorliegen';
+                }
+                if (name === 'password') {
+                    opts.pattern = /^(?=.*[A-Za-z])(?=.*\d)(?=.*[^A-Za-z\d]).{8,}$/;
+                    opts.message = 'Passwort zu schwach';
+                }
+                if (name === 'confirmPassword') {
+                    if (value !== formData.password) {
+                        validation.validate('confirmPassword', value, { required: true, message: 'Passwörter stimmen nicht überein' });
+                    } else {
+                        validation.validate('confirmPassword', value, { required: true });
+                    }
+                } else {
+                    validation.validate(name, value, opts);
+                }
+            }
         }
     };
 
@@ -115,10 +150,32 @@ export default function Registration() {
         });
     };
 
+    const handleExpiryToggle = (checked) => {
+        setHasExpiry(checked);
+        if (!checked) {
+            setFormData(prev => ({
+                ...prev,
+                disabilityCardExpiryDate: '9999-01-01',
+            }));
+        } else {
+            const today = new Date().toISOString().split('T')[0];
+            setFormData(prev => ({
+                ...prev,
+                disabilityCardExpiryDate: today,
+            }));
+        }
+    };
+
     const handleSubmit = async (e) => {
         e.preventDefault();
         setLoading(true);
         setMessage('');
+
+        if (!validation.isValid()) {
+            setLoading(false);
+            setMessage('Bitte alle Pflichtfelder korrekt ausfüllen');
+            return;
+        }
 
         // 1) Passwords match?
         if (formData.password !== formData.confirmPassword) {
@@ -130,18 +187,23 @@ export default function Registration() {
         try {
             // Build FormData
             const payload = new FormData();
-            // Append all existing simple fields except file and except we’ll handle marks separately
+            // Append all existing simple fields except files; handle marks separately
             Object.keys(formData).forEach((key) => {
-                // We’ll append the file later. Also skip disabilityCardImage if null
-                if (key === 'disabilityCardImage') return;
+                if (key === 'disabilityCardImageFront' || key === 'disabilityCardImageBack' || key === 'disabilityCardExpiryDate') return;
                 payload.append(key, formData[key]);
             });
 
-            // Append the file if present
-            if (formData.disabilityCardImage) {
-                payload.append('disabilityCardImage', formData.disabilityCardImage);
-            }
+            // Generate an 8 digit visible user id
+            const visibleUserId = Math.floor(10000000 + Math.random() * 90000000);
+            payload.append('visibleUserId', visibleUserId);
 
+            if (formData.disabilityCardImageFront) {
+                payload.append('disabilityCardImageFront', formData.disabilityCardImageFront);
+            }
+            if (formData.disabilityCardImageBack) {
+                payload.append('disabilityCardImageBack', formData.disabilityCardImageBack);
+            }
+            payload.append('disabilityCardExpiryDate', disabilityCardExpiryDate)
             // Append the selected marks as a JSON string
             // (Server will parse JSON.parse(req.body.disabilityMarks))
             payload.append('disabilityMarks', JSON.stringify(selectedMarks));
@@ -170,6 +232,12 @@ export default function Registration() {
         } finally {
             setLoading(false);
         }
+    };
+
+    const toggleMark = (code) => {
+        setSelectedMarks(prev => prev.includes(code)
+            ? prev.filter(m => m !== code)
+            : [...prev, code]);
     };
 
     return (
@@ -219,7 +287,6 @@ export default function Registration() {
                         <option value="Frau">Frau</option>
                         <option value="Dr.">Dr.</option>
                         <option value="Prof.">Prof.</option>
-                        <option value="Divers">Divers</option>
                     </select>
                 </div>
 
@@ -237,6 +304,7 @@ export default function Registration() {
                         name="firstName"
                         value={formData.firstName}
                         onChange={handleChange}
+                        className={validation.classFor('firstName', formData.firstName)}
                         required
                         style={{
                             width: '100%',
@@ -245,6 +313,11 @@ export default function Registration() {
                             border: '1px solid #ccc',
                         }}
                     />
+                    {validation.errors.firstName && (
+                        <div className="validation-msg">
+                            {validation.errors.firstName}
+                        </div>
+                    )}
                 </div>
 
                 {/* ---------------- Nachname ---------------- */}
@@ -261,6 +334,7 @@ export default function Registration() {
                         name="lastName"
                         value={formData.lastName}
                         onChange={handleChange}
+                        className={validation.classFor('lastName', formData.lastName)}
                         required
                         style={{
                             width: '100%',
@@ -269,6 +343,11 @@ export default function Registration() {
                             border: '1px solid #ccc',
                         }}
                     />
+                    {validation.errors.lastName && (
+                        <div className="validation-msg">
+                            {validation.errors.lastName}
+                        </div>
+                    )}
                 </div>
 
                 {/* ---------------- Firma ---------------- */}
@@ -438,25 +517,27 @@ export default function Registration() {
                     />
                 </div>
 
+                <label className="new-label">NEW</label>
+
                 {/* ---------------- Behindertenausweis Checkbox ---------------- */}
                 <div style={{ marginBottom: '1rem' }}>
                     <div style={{ display: 'flex', alignItems: 'center' }}>
                         <input
                             type="checkbox"
-                            id="disabilityCheck"
-                            name="disabilityCheck"
-                            checked={formData.disabilityCheck || false}
+                            id="requestForDisability"
+                            name="requestForDisability"
+                            checked={formData.requestForDisability || false}
                             onChange={handleChange}
                             style={{ marginRight: '0.5rem' }}
                         />
-                        <label htmlFor="disabilityCheck" style={{ fontWeight: 'bold' }}>
-                            Ich habe einen Behindertenausweis
+                        <label htmlFor="requestForDisability" style={{ fontWeight: 'bold' }}>
+                            Ich besitze einen Schwerbehindertenausweis
                         </label>
                     </div>
                 </div>
 
                 {/* ---------------- Wenn Behindertenausweis gesetzt, zeige Grad + Datei + Markierungen ---------------- */}
-                {formData.disabilityCheck && (
+                {formData.requestForDisability && (
                     <>
                         {/* Grad der Behinderung */}
                         <div style={{ marginBottom: '1rem' }}>
@@ -483,18 +564,18 @@ export default function Registration() {
                             />
                         </div>
 
-                        {/* Behindertenausweis hochladen */}
+                        {/* Behindertenausweis Vorderseite hochladen */}
                         <div style={{ marginBottom: '1rem' }}>
                             <label
-                                htmlFor="disabilityCardImage"
+                                htmlFor="disabilityCardImageFront"
                                 style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 'bold' }}
                             >
-                                Behindertenausweis hochladen
+                                Behindertenausweis hochladen (Vorderseite)
                             </label>
                             <input
                                 type="file"
-                                id="disabilityCardImage"
-                                name="disabilityCardImage"
+                                id="disabilityCardImageFront"
+                                name="disabilityCardImageFront"
                                 onChange={handleChange}
                                 style={{
                                     width: '100%',
@@ -503,6 +584,70 @@ export default function Registration() {
                                     border: '1px solid #ccc',
                                 }}
                             />
+                        </div>
+
+                        {/* Behindertenausweis Rückseite hochladen */}
+                        <div style={{ marginBottom: '1rem' }}>
+                            <label
+                                htmlFor="disabilityCardImageBack"
+                                style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 'bold' }}
+                            >
+                                Behindertenausweis hochladen (Rückseite)
+                            </label>
+                            <input
+                                type="file"
+                                id="disabilityCardImageBack"
+                                name="disabilityCardImageBack"
+                                onChange={handleChange}
+                                style={{
+                                    width: '100%',
+                                    padding: '0.5rem',
+                                    borderRadius: '4px',
+                                    border: '1px solid #ccc',
+                                }}
+                            />
+                        </div>
+
+                        {/* Befristung des Ausweises */}
+                        <div style={{ marginBottom: '1rem' }}>
+                            <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 'bold' }}>
+                                Gültigkeit des Ausweises
+                            </label>
+                            <div className="toggle-container" style={{marginBottom: '0.5rem'}}>
+                                <label className="switch">
+                                    <input
+                                        type="checkbox"
+                                        id="hasExpiryProfile"
+                                        checked={hasExpiry}
+                                        onChange={(e) => {
+                                            setHasExpiry(e.target.checked);
+                                            if (!e.target.checked) {
+                                                setDisabilityCardExpiryDate('9999-01-01');
+                                            } else {
+                                                const t = new Date().toISOString().split('T')[0];
+                                                setDisabilityCardExpiryDate(t);
+                                            }
+                                        }}
+                                    />
+                                    <span className="slider" />
+                                </label>
+                                <span className="toggle-label">
+                                                            {hasExpiry ? 'befristet' : 'unbefristet'}
+                                                        </span>
+                            </div>
+                            {hasExpiry && (
+                                <input
+                                    type="date"
+                                    id="disabilityCardExpiryDateProfile"
+                                    value={disabilityCardExpiryDate}
+                                    onChange={e => setDisabilityCardExpiryDate(e.target.value)}
+                                    style={{ marginTop: '0.5rem',
+                                        width: '100%',
+                                        padding: '0.5rem',
+                                        borderRadius: '4px',
+                                        border: '1px solid #ccc',}}
+                                />
+                            )}
                         </div>
 
                         {/* ---------------- Grad der Behinderung: Auswahl der Markierungen ---------------- */}
@@ -515,23 +660,30 @@ export default function Registration() {
 
                             {/* Grid-Container für alle Marks */}
                             <div className="marks-grid">
-                                {disabilityMarks.map((mark) => (
-                                    <div key={mark.mark_code} className="mark-item">
-                                        <input
-                                            type="checkbox"
-                                            id={`mark-${mark.mark_code}`}
-                                            checked={selectedMarks.includes(mark.mark_code)}
-                                            onChange={() => handleMarkToggle(mark.mark_code)}
-                                            className="mark-checkbox"
-                                        />
-                                        <label
-                                            htmlFor={`mark-${mark.mark_code}`}
-                                            className="mark-label"
+                                {disabilityMarks.map(mark => {
+                                    const isSelected = selectedMarks.includes(mark.mark_code);
+                                    return (
+                                        <div
+                                            key={mark.mark_code}
+                                            className={`mark-card ${isSelected ? 'mark-card--selected' : ''}`}
+                                            onClick={() => toggleMark(mark.mark_code)}
                                         >
-                                            {mark.mark_code} – {mark.description}
-                                        </label>
-                                    </div>
-                                ))}
+                                            <input
+                                                type="checkbox"
+                                                id={`mark-${mark.mark_code}`}
+                                                checked={isSelected}
+                                                onChange={() => handleMarkToggle(mark.mark_code)}
+                                                className="mark-card__checkbox"
+                                            />
+                                            <label
+                                                htmlFor={`mark-${mark.mark_code}`}
+                                                className="mark-card__label"
+                                            >
+                                                {mark.mark_code} – {mark.description}
+                                            </label>
+                                        </div>
+                                    );
+                                })}
                             </div>
                         </div>
                     </>
@@ -540,7 +692,7 @@ export default function Registration() {
                 {/* ---------------- Submit Button ---------------- */}
                 <button
                     type="submit"
-                    disabled={loading}
+                    disabled={loading || !validation.isValid()}
                     style={{
                         backgroundColor: '#002b55',
                         color: 'white',

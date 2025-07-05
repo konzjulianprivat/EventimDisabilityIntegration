@@ -1,8 +1,13 @@
 import React, { useEffect, useState } from 'react';
 import FilterBar from '../../../components/filter-bar';
 import { useRouter } from 'next/router';
+import { useAuth } from '../../../hooks/useAuth';
+import { useRequireAccess } from '../../../hooks/useRequireAccess';
+import { ADMIN_PERMISSIONS } from '../../../adminPermissions';
+import BackLink from '../../../components/back-link';
 
 export default function VenuesContent() {
+    useRequireAccess(ADMIN_PERMISSIONS);
     const [venues, setVenues] = useState([]);
     const [filteredVenues, setFilteredVenues] = useState([]);
     const [editingId, setEditingId] = useState(null);
@@ -12,6 +17,8 @@ export default function VenuesContent() {
         address: '',
         cityId: '',
         website: '',
+        venue_image: null,
+        existingImageId: null,
     });
     const [cities, setCities] = useState([]);
     const [areas, setAreas] = useState([]);
@@ -19,6 +26,7 @@ export default function VenuesContent() {
     const [confirmDeleteId, setConfirmDeleteId] = useState(null);
 
     const router = useRouter();
+    const { user } = useAuth();
 
     const filterFields = [
         { key: 'name', label: 'Name', match: 'startsWith' },
@@ -75,6 +83,8 @@ export default function VenuesContent() {
             address: venue.address || '',
             cityId: venue.cityId || '',
             website: venue.website || '',
+            venue_image: null,
+            existingImageId: venue.venue_image || null,
         });
         try {
             const res = await fetch(`http://localhost:4000/venue-areas?venueId=${venue.id}`);
@@ -88,8 +98,12 @@ export default function VenuesContent() {
     };
 
     const handleInputChange = (e) => {
-        const { name, value } = e.target;
-        setEditedData((prev) => ({ ...prev, [name]: value }));
+        const { name, value, files } = e.target;
+        if (files) {
+            setEditedData((prev) => ({ ...prev, [name]: files[0] }));
+        } else {
+            setEditedData((prev) => ({ ...prev, [name]: value }));
+        }
     };
 
     const addArea = () => {
@@ -108,19 +122,35 @@ export default function VenuesContent() {
 
     const handleSave = async () => {
         try {
-            const payload = {
-                name: editedData.name,
-                address: editedData.address,
-                cityId: editedData.cityId,
-                website: editedData.website,
-                venueAreas,
-            };
+            if (venueAreas.length === 0 ||
+                !venueAreas.some(v => v.areaId && parseInt(v.maxCapacity, 10) > 0)) {
+                alert('Mindestens ein Bereich mit Kapazität > 0 ist erforderlich');
+                return;
+            }
+            for (const v of venueAreas) {
+                if (!v.areaId || !v.maxCapacity || parseInt(v.maxCapacity, 10) <= 0) {
+                    alert('Alle Bereiche benötigen eine Kapazität > 0 und Auswahl');
+                    return;
+                }
+            }
+            const fd = new FormData();
+            fd.append('name', editedData.name);
+            fd.append('address', editedData.address);
+            fd.append('cityId', editedData.cityId);
+            fd.append('website', editedData.website);
+            fd.append('venueAreas', JSON.stringify(venueAreas));
+            if (editedData.venue_image instanceof File) {
+                fd.append('venue_image', editedData.venue_image);
+            }
+
             const response = await fetch(`http://localhost:4000/venues/${editedData.id}`, {
                 method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(payload),
+                body: fd,
             });
-            if (!response.ok) throw new Error('Server-Fehler beim Speichern');
+            if (!response.ok) {
+                const d = await response.json().catch(() => ({}));
+                throw new Error(d.message || 'Server-Fehler beim Speichern');
+            }
             setEditingId(null);
             fetchVenues();
         } catch (err) {
@@ -133,7 +163,11 @@ export default function VenuesContent() {
             const response = await fetch(`http://localhost:4000/venues/${id}`, {
                 method: 'DELETE',
             });
-            if (!response.ok) throw new Error('Server-Fehler beim Löschen');
+            if (!response.ok) {
+                const d = await response.json().catch(() => ({}));
+                alert(d.message || 'Server-Fehler beim Löschen');
+                return;
+            }
             setConfirmDeleteId(null);
             fetchVenues();
         } catch (err) {
@@ -143,41 +177,44 @@ export default function VenuesContent() {
 
     return (
         <div className="artists-wrapper">
+            <BackLink />
             <div className="artists-header">
                 <h2 className="artists-title">Übersicht – Venues</h2>
-                <button
-                    className="btn-create-entity"
-                    onClick={() => router.push('/admin/venues/create')}
-                >
-                    + Venue erstellen
-                </button>
+                {user?.hasCreationAccess && (
+                    <button
+                        className="btn-create-entity"
+                        onClick={() => router.push('/admin/venues/create')}
+                    >
+                        + Venue erstellen
+                    </button>
+                )}
             </div>
 
-            <div className="filter-container">
-                <FilterBar
-                    items={venues}
-                    onFiltered={(arr) => setFilteredVenues(arr)}
-                    entityName="Venue"
-                    entityRoute="venues"
-                    filterFields={filterFields}
-                    filterCategories={[]}
-                    setFilterCategories={() => {}}
-                    categoryOptions={[]}
-                    filterStartDate={''}
-                    setFilterStartDate={() => {}}
-                    filterEndDate={''}
-                    setFilterEndDate={() => {}}
-                    filterVenue={''}
-                    setFilterVenue={() => {}}
-                    venueOptions={[]}
-                    filterCity={''}
-                    setFilterCity={() => {}}
-                    cityOptions={cities.map((c) => c.name)}
-                    filterArtists={[]}
-                    setFilterArtists={() => {}}
-                    artistOptions={[]}
-                />
-            </div>
+            {/*<div className="filter-container">*/}
+            {/*    <FilterBar*/}
+            {/*        items={venues}*/}
+            {/*        onFiltered={(arr) => setFilteredVenues(arr)}*/}
+            {/*        entityName="Venue"*/}
+            {/*        entityRoute="venues"*/}
+            {/*        filterFields={filterFields}*/}
+            {/*        filterCategories={[]}*/}
+            {/*        setFilterCategories={() => {}}*/}
+            {/*        categoryOptions={[]}*/}
+            {/*        filterStartDate={''}*/}
+            {/*        setFilterStartDate={() => {}}*/}
+            {/*        filterEndDate={''}*/}
+            {/*        setFilterEndDate={() => {}}*/}
+            {/*        filterVenue={''}*/}
+            {/*        setFilterVenue={() => {}}*/}
+            {/*        venueOptions={[]}*/}
+            {/*        filterCity={''}*/}
+            {/*        setFilterCity={() => {}}*/}
+            {/*        cityOptions={cities.map((c) => c.name)}*/}
+            {/*        filterArtists={[]}*/}
+            {/*        setFilterArtists={() => {}}*/}
+            {/*        artistOptions={[]}*/}
+            {/*    />*/}
+            {/*</div>*/}
 
             <div className="artists-grid">
                 {filteredVenues.length === 0 && (
@@ -208,17 +245,33 @@ export default function VenuesContent() {
                                     💾
                                 </button>
                             ) : (
-                                <button
-                                    className="btn-edit"
-                                    onClick={() => handleEditToggle(venue)}
-                                    title="Bearbeiten"
-                                >
-                                    ✎
-                                </button>
+                                user?.hasEditingAccess && (
+                                    <button
+                                        className="btn-edit"
+                                        onClick={() => handleEditToggle(venue)}
+                                        title="Bearbeiten"
+                                    >
+                                        ✎
+                                    </button>
+                                )
                             )}
                         </div>
 
                         <div className="card-body">
+                            <div className="image-wrapper">
+                                <img
+                                    className="artist-image"
+                                    src={
+                                        editingId === venue.id &&
+                                        editedData.venue_image instanceof File
+                                            ? URL.createObjectURL(editedData.venue_image)
+                                            : venue.venue_image
+                                                ? `http://localhost:4000/image/${venue.venue_image}`
+                                                : '/pictures/placeholder.png'
+                                    }
+                                    alt={venue.name || 'Unbekanntes Venue'}
+                                />
+                            </div>
                             <div className="details-wrapper">
                                 {editingId === venue.id ? (
                                     <>
@@ -250,6 +303,13 @@ export default function VenuesContent() {
                                             onChange={handleInputChange}
                                             placeholder="Website"
                                             className="input-website"
+                                        />
+                                        <input
+                                            type="file"
+                                            name="venue_image"
+                                            onChange={handleInputChange}
+                                            accept="image/*"
+                                            className="input-file"
                                         />
 
                                         <div style={{ marginBottom: '0.5rem' }}>
@@ -340,7 +400,7 @@ export default function VenuesContent() {
                             </div>
                         </div>
 
-                        {editingId !== venue.id && (
+                        {editingId !== venue.id && user?.hasDeletionPermission && (
                             <button
                                 className="btn-edit"
                                 style={{ marginLeft: 'auto', marginRight: '0.5rem' }}
@@ -351,7 +411,7 @@ export default function VenuesContent() {
                             </button>
                         )}
 
-                        {confirmDeleteId === venue.id && (
+                        {confirmDeleteId === venue.id && user?.hasDeletionPermission && (
                             <div className="modal-overlay">
                                 <div className="modal-box">
                                     <p>Möchtest du dieses Venue wirklich löschen?</p>

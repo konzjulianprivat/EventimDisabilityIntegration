@@ -18,8 +18,6 @@ export default function Footer() {
                     <ul className="footer-links">
                         <li><a href="https://corporate.eventim.de/" className="link-clean">Corporate Website</a></li>
                         <li><a href="https://karriere.eventim.de/" className="link-clean">Jobs & Karriere</a></li>
-                        <li><a href="/admin/login" className="link-clean">Admin-Login</a></li>
-                        <li><a href="/service/login" className="link-clean">Service-Login</a></li>
                     </ul>
                 </div>
                 <div>
@@ -54,13 +52,6 @@ export default function Footer() {
                         <li><a href="https://www.fansale.de/fansale/" className="link-clean">fanSales</a></li>
                         <li><a href="https://www.eventim-travel.de/?utm_source=eventim&utm_medium=dp&utm_campaign=homepage&utm_content=footer" className="link-clean">EVENTIM.Travel</a></li>
                         <li><a href="https://www.waldbuehne-berlin.de/" className="link-clean">Waldbühne Berlin</a></li>
-                    </ul>
-                </div>
-                <div>
-                <h3 className="footer-heading">Musicals</h3>
-                    <ul className="footer-links">
-                        {/* No Musicals listed yet. This section may be populated in the future. */}
-                        <li>No Musicals listed yet</li>
                     </ul>
                 </div>
             </div>

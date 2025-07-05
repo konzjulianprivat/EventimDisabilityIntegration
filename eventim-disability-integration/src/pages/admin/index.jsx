@@ -1,57 +1,34 @@
 import React from 'react';
+import { useRequireAccess } from '../../hooks/useRequireAccess';
+import { ADMIN_PERMISSIONS } from '../../adminPermissions';
 
-export default function AdminTooling() {
-    const links = [
-        { label: 'Artist', url: 'admin/artists' },
-        { label: 'Countries', url: 'admin/countries' },
-        { label: 'Cities', url: 'admin/cities' },
-        { label: 'Genres', url: 'admin/genres' },
-        { label: 'Tours', url: 'admin/tours' },
-        { label: 'Events', url: 'admin/tours/events' },
-        { label: 'Venues', url: 'admin/venues' },
-        { label: 'Areas', url: 'admin/areas/venues' },
-        { label: 'User-Accounts', url: 'admin/userAccounts' },
-        { label: 'Service-Accounts', url: 'admin/serviceAccounts' },
-        { label: 'Admin-Accounts', url: 'admin/adminAccounts' },
+export default function AdminHome() {
+    useRequireAccess(ADMIN_PERMISSIONS);
+    const entities = [
+        { name: 'Artists', url: '/admin/artists' },
+        { name: 'Countries', url: '/admin/countries' },
+        { name: 'Genres', url: '/admin/genres' },
+        { name: 'Tours', url: '/admin/tours' },
+        { name: 'Venues', url: '/admin/venues' },
     ];
 
-    const firstLinks = links.slice(0, 8);
-    const secondLinks = links.slice(8);
-
     return (
-        <div className="admin-container">
-            <h1 className="admin-heading">Admin-Tooling</h1>
-
-            <div className="button-row">
-                {firstLinks.map((link, index) => (
-                    <a
-                        key={index}
-                        href={link.url}
-                        className="admin-button"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                    >
-                        {link.label}
-                    </a>
-                ))}
-            </div>
-
-            <div className="horizontal-separator"></div>
-
-            <h1 className="admin-heading">Accounts-Tooling</h1>
-
-            <div className="button-row">
-                {secondLinks.map((link, index) => (
-                    <a
-                        key={index}
-                        href={link.url}
-                        className="admin-button"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                    >
-                        {link.label}
-                    </a>
-                ))}
+        <div className="profile-container" style={{ flexDirection: 'column' }}>
+            <div className="content-inner" style={{ paddingTop: '24px' }}>
+                <div className="white-box events-white-box">
+                    <div className="content-inner">
+                        <h1 className="events-header" style={{color: "#002b55"}}>Admin Übersicht</h1>
+                        <p className="subtitle">Übersicht aller ADMIN-Applikationen und Übersichten.</p>
+                        <div className="profile-section-divider" />
+                        <div className="tile-grid">
+                            {entities.map(e => (
+                                <a key={e.url} href={e.url} className="tile-link">
+                                    {e.name} verwalten
+                                </a>
+                            ))}
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     );

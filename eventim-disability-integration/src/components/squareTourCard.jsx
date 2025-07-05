@@ -3,14 +3,7 @@
 
 import React, { useState, useEffect } from "react";
 
-/**
- * Props:
- * - imageId:    UUID der Tour-Bilddatei in der Datenbank
- * - title:      String, z.B. "Rod Stewart"
- * - priceText:  String, z.B. "Tickets ab € 68,00"
- * - link:       URL, auf die beim Klick auf Titel/Preis navigiert wird
- */
-const SquareTourCard = ({ imageId, title, priceText, link }) => {
+const SquareTourCard = ({ imageId, title, bottomText, link }) => {
     const [imageUrl, setImageUrl] = useState(null);
 
     useEffect(() => {
@@ -60,7 +53,7 @@ const SquareTourCard = ({ imageId, title, priceText, link }) => {
                 <h2 className="square-tourCard-title">{title}</h2>
                 <p className="square-tourCard-price">
                     <a href={link} className="square-tourCard-link">
-                        {priceText}
+                        {bottomText}
                     </a>
                 </p>
             </div>

@@ -1,0 +1,230 @@
+/* src/styles/service.css */
+
+.profile-orders-table {
+    width: 100%;
+    border-collapse: collapse;
+    table-layout: fixed;      /* ← enforce fixed layout */
+    margin-bottom: 1rem;
+}
+
+.profile-orders-table th,
+.profile-orders-table td {
+    padding: 0.5rem;
+    border-bottom: 1px solid #e0e0e0;
+    text-align: left;
+}
+
+.profile-orders-table th {
+    background-color: #f0f0f0;
+    color: #002b55;
+    font-weight: 600;
+}
+
+/* 1st column = 24% */
+.profile-orders-table th:nth-child(1),
+.profile-orders-table td:nth-child(1) {
+    width: 24%;
+}
+
+/* 2nd column = 24% */
+.profile-orders-table th:nth-child(2),
+.profile-orders-table td:nth-child(2) {
+    width: 24%;
+}
+
+/* 3rd column = 24% */
+.profile-orders-table th:nth-child(3),
+.profile-orders-table td:nth-child(3) {
+    width: 24%;
+}
+
+/* 4th column = 24% */
+.profile-orders-table th:nth-child(4),
+.profile-orders-table td:nth-child(4) {
+    width: 24%;
+}
+
+/* 5th column = 4% */
+.profile-orders-table th:nth-child(5),
+.profile-orders-table td:nth-child(5) {
+    width: 4%;
+}
+
+.clickable-row:hover {
+    background-color: #f9f9f9;
+    cursor: pointer;
+}
+
+.request-modal-content {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+}
+
+.request-modal-info {
+    flex: 1 1 50%;
+}
+
+.request-modal-images {
+    flex: 1 1 50%;
+    text-align: center;
+}
+
+.disability-card-image {
+    width: 240px;
+    height: 160px;
+    object-fit: contain;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    margin-bottom: 0.5rem;
+}
+
+.modal-close {
+    margin-top: 1rem;
+}
+
+.request-modal-grid {
+    background-color: white;
+    padding: 2rem;                     /* more generous rem padding */
+    border-radius: 1rem;               /* rem for radius too */
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: auto 1fr auto;
+    gap: 1.5rem;
+
+    /* make it adapt to viewport but not get ridiculously large */
+    width: 90vw;                       /* 90% of viewport width */
+    max-width: 80vw;                  /* but no wider than 60rem */
+    height: 80vh;                      /* 80% of viewport height */
+    max-height: 80vh;                 /* but no taller than 50rem */
+
+    box-sizing: border-box;            /* include padding in those dims */
+    overflow: auto;                    /* scroll if content overflows */
+}
+
+.request-modal-grid h2 {
+    grid-column: span 2;
+    margin: 0;
+    text-align: left;
+}
+
+.request-modal-grid-left {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 2rem;
+}
+
+.request-modal-grid-images {
+    /* make the column span 80% of viewport width, capped at a rem-based max */
+    width: 70vw;
+    max-width: 60vw;
+    max-height: 70vh;
+
+    /* keep your existing flex rules */
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
+    text-align: center;
+
+    /* if content might overflow, scroll it */
+    overflow: auto;
+    box-sizing: border-box;
+}
+.request-modal-grid-images img {
+    width: 100%;   /* fill its container’s width */
+    height: auto;  /* preserve aspect ratio */
+    object-fit: cover; /* or contain, as you prefer */
+}
+
+
+.request-modal-actions {
+    grid-column: span 2;
+    display: flex;
+    justify-content: center;
+    gap: 1rem;
+}
+
+.service__modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.4);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 10;
+}
+
+.role-select {
+    padding: 0.5rem 0.75rem;
+    font-size: 1rem;
+    line-height: 1;
+    color: #333;
+    font-family: inherit;
+    border: 1px solid #cccccc;
+    border-radius: 4px;
+    background-color: #ffffff;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.role-select:focus {
+    outline: none;
+    border-color: #007bff;
+    box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.25);
+}
+
+/* Search bar for account management */
+.user-search-bar {
+    display: flex;
+    gap: 0.5rem;
+    padding: 0.25rem 0;
+    align-items: center;
+}
+
+.user-search-bar h3{
+    padding-right: 0.5rem;
+}
+
+.user-search-input {
+    flex: 1;
+    padding: 0.4rem 0.6rem;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    background-color: #fff;
+    font-size: 0.95rem;
+    color: #333;
+}
+
+.tile-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+    justify-content: flex-start;
+}
+
+.tile-link {
+    width: 180px;
+    height: 180px;
+    padding: 2rem;
+    background-color: #ffffff;
+    border: 2px solid #e0e0e0;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-decoration: none;
+    color: #002b55;
+    font-weight: bold;
+    text-align: center;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    margin: 0.5rem;
+}
+
+.tile-link:hover {
+    transform: scale(1.1);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}

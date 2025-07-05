@@ -20,7 +20,6 @@
     display: flex;
     flex-direction: column;
     gap: 1rem;       /* Abstand zwischen Filter‐Bar und Grid */
-    margin: 1rem;    /* Außenabstand zum Viewport */
     width: 100%;
 }
 
@@ -317,4 +316,50 @@
     .image-wrapper {
         margin-bottom: 0.75rem;
     }
+}
+
+/* ------------------------------------------------
+   14) Sub-Lists for Countries/Genres
+------------------------------------------------ */
+/* container tweaks */
+.sub-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    border: 1px solid #e0e0e0;
+    border-radius: 6px;
+    overflow: hidden;
+    background: #fafafa;
+}
+
+/* each city item */
+.sub-item {
+    position: relative;
+    display: flex;
+    align-items: center;
+    padding: 0.6rem 1rem;
+    font-size: 0.9rem;
+    color: #333;
+    background: #fff;
+    transition: background 0.2s ease;
+}
+
+/* divider between items */
+.sub-item + .sub-item {
+    border-top: 1px solid #e0e0e0;
+}
+
+/* hover/focus state */
+.sub-item:hover {
+    background: #f0f8ff;
+}
+
+/* last item—no divider after */
+.sub-item:last-child {
+    border-bottom: none;
+}
+
+/* smaller text for longer names, if needed */
+.sub-item.long-name {
+    font-size: 0.85rem;
 }

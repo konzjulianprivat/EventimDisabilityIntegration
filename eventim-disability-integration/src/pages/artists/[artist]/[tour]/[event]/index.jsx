@@ -12,6 +12,7 @@ export default function EventPage() {
 
     const [eventData, setEventData] = useState(null);
     const [categories, setCategories] = useState([]);
+    const [bookingForMe, setBookingForMe] = useState(true);
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(true);
 
@@ -19,7 +20,7 @@ export default function EventPage() {
     const [qty_disabled, setQty_disabled] = useState(1);
     const [selectedCat, setSelectedCat] = useState(null);
 
-// Track category IDs already in cart
+    // Track category IDs already in cart
     const [inCartItems, setInCartItems] = useState({});
     const { reload: reloadCart, items: cartItems, counts } = useCart();
 
@@ -27,8 +28,18 @@ export default function EventPage() {
     const [errorMessage, setErrorMessage] = useState('');
     const [lastClickedSection, setLastClickedSection] = useState(null);  // 'disabled' or 'regular'
     const [addDisabled, setAddDisabled] = useState(false);
+    const [assistanceInCart, setAssistanceInCart] = useState(false);
 
-// Build lookup table for items currently in cart
+    // Redirect to 404 page if event data could not be loaded within 3 seconds
+    useEffect(() => {
+        if (!artist || !tour || !event) return;
+        const timer = setTimeout(() => {
+            if (!eventData) router.replace('/404');
+        }, 3000);
+        return () => clearTimeout(timer);
+    }, [artist, tour, event, eventData]);
+
+    // Build lookup table for items currently in cart
     useEffect(() => {
         if (!loggedIn) {
             setInCartItems({});
@@ -36,10 +47,21 @@ export default function EventPage() {
         }
         const map = {};
         (cartItems || []).forEach((i) => {
+            if (i.is_assistance_ticket) return;
             map[i.event_category_id] = { id: i.id, quantity: i.quantity };
         });
         setInCartItems(map);
-    }, [loggedIn, cartItems]);
+        const hasAssistance = (cartItems || []).some(
+            (i) => i.event_id === event && i.is_assistance_ticket
+        );
+        setAssistanceInCart(hasAssistance);
+    }, [loggedIn, cartItems, event]);
+
+    useEffect(() => {
+        if (assistanceInCart) {
+            setBookingForMe(false);
+        }
+    }, [assistanceInCart]);
 
 
     useEffect(() => {
@@ -70,17 +92,20 @@ export default function EventPage() {
     }, [artist, tour, event]);
 
     const userMarks = (user && user.disabilityMarks) || [];
+    const notExpired = user?.disabilityCardExpiryDate && new Date(user.disabilityCardExpiryDate) >= new Date();
     const showDisabledSection =
-        loggedIn && user?.disabilityCheck && categories.some((c) =>
-            c.disability_support_for &&
-            userMarks.includes(c.disability_support_for.trim())
+        loggedIn && user?.isCurrentlyDisabled && notExpired && categories.some(
+            (c) => c.disability_support_for && userMarks.includes(c.disability_support_for.trim())
         );
+
+    const requiresAssistance = userMarks.some((mark) => mark.trim() === 'B');
 
     const disabledCategories = categories.filter(
         (c) =>
             c.disability_support_for != null &&
             loggedIn &&
-            user?.disabilityCheck &&
+            user?.isCurrentlyDisabled &&
+            notExpired &&
             userMarks.includes(c.disability_support_for.trim())
     );
 
@@ -108,9 +133,22 @@ export default function EventPage() {
     const isDisabledCatSelected = Boolean(currentCat_disabled.id);
     const isRegularCatSelected = !isDisabledCatSelected;
 
+    // now compute the display-only quantities (UI shows +1 when bookingForMe)
+    const displayQty = (requiresAssistance && bookingForMe && isRegularCatSelected)
+        ? qty + 1
+        : qty;
+
+    const displayQtyDisabled = (requiresAssistance && bookingForMe && isDisabledCatSelected)
+        ? qty_disabled + 1
+        : qty_disabled;
+
     // only show real total when that section is active
-    const total = isRegularCatSelected ? (qty * (currentCat.price || 0)).toFixed(2).replace('.', ',') : '0,00';
-    const total_disabled = isDisabledCatSelected ? (qty_disabled * (currentCat_disabled.price || 0)).toFixed(2).replace('.', ',') : '0,00';
+    const total = isRegularCatSelected
+        ? (qty * (currentCat.price || 0)).toFixed(2).replace('.', ',')
+        : '0,00';
+    const total_disabled = isDisabledCatSelected
+        ? (qty_disabled * (currentCat_disabled.price || 0)).toFixed(2).replace('.', ',')
+        : '0,00';
 
     // Handler to add selected item to cart
     const handleAddToCart = async () => {
@@ -183,6 +221,7 @@ export default function EventPage() {
                 ((isDisabledCatSelected ? currentCat_disabled.price : currentCat.price) || 0)
                     .toFixed(2)
             ),
+            isAssistanceTicket: false,
         };
         try {
             const res = await fetch(`${API_BASE_URL}/cart-items`, {
@@ -197,6 +236,20 @@ export default function EventPage() {
                     ...prev,
                     [selectedCat]: { id: newItem.id, quantity: newItem.quantity },
                 }));
+                if (requiresAssistance && bookingForMe) {
+                    await fetch(`${API_BASE_URL}/cart-items`, {
+                        method: 'POST',
+                        credentials: 'include',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            eventId: event,
+                            eventCategoryId: selectedCat,
+                            quantity: 1,
+                            price: 0,
+                            isAssistanceTicket: true,
+                        }),
+                    });
+                }
                 setLastClickedSection(isDisabledCatSelected ? 'disabled' : 'regular');
                 setSuccessMessage('Erfolgreich zum Warenkorb hinzugefügt!');
                 setErrorMessage('');
@@ -248,8 +301,7 @@ export default function EventPage() {
                             <span className="icon-calendar" /> {formatDate(eventData.start_time)} | {formatTime(eventData.start_time)}
                         </div>
                         <div className="meta-item">
-                            <span className="icon-location" /> {eventData.cityName} |{' '}
-                            <a href="#" className="venue-link">{eventData.venueName}</a>
+                            <span className="icon-location" /> {eventData.cityName} | {eventData.venueName}
                         </div>
                     </div>
                 </div>
@@ -258,46 +310,73 @@ export default function EventPage() {
                         src={
                             eventData.tourImage
                                 ? `${API_BASE_URL}/image/${eventData.tourImage}`
-                                : '/placeholder-tour.png'
+                                : '/pictures/placeholder.png'
                         }
                         alt={eventData.tourTitle || 'Event'}
                     />
                 </div>
             </header>
 
-            {showDisabledSection && (
-            <section className="ticket-section">
-                <label className="new-label">NEW</label>
-                <h2 className="section-title">Ticketbuchung für Menschen mit Schwerbehinderung</h2>
-                <div className="ticket-card" style={{borderColor: "purple"}}>
-                    {/* 1. Anzahl */}
-                    <div className="card-row">
-                        <div className="row-label">
-                            1. Bitte wähle die Anzahl der Tickets:
-                            <div className="row-note"> Bitte beachte, dass du nur Tickets für dich selbst buchen kannst.</div>
+            {(showDisabledSection || requiresAssistance) && (
+                <section className="ticket-section" style={{
+                    paddingBottom: (requiresAssistance && !showDisabledSection) ? 0 : undefined,
+                }}>
+                    <label className="new-label">NEW</label>
+                    <h2 className="section-title">Ticketbuchung für Menschen mit Schwerbehinderung</h2>
+                    {requiresAssistance && (
+                        <div className="toggle-container">
+                            <label className="switch">
+                                <input
+                                    type="checkbox"
+                                    checked={bookingForMe}
+                                    disabled={assistanceInCart}
+                                    onChange={() => setBookingForMe(!bookingForMe)}
+                                />
+                                <span className="slider"/>
+                            </label>
+                            <span className="toggle-label">
+                          {bookingForMe ? 'Buchung für mich (inkl. Begleitung)' : 'Buchung für andere Personen'}
+                      </span>
                         </div>
-                        <div className="row-control">
-                            <button
-                                onClick={() => setQty_disabled((q) => Math.max(1, q - 1))}
-                                disabled={!isDisabledCatSelected || qty_disabled <= 1}
-                            >−</button>
-                                <span className="qty-value">
-                                    {isDisabledCatSelected ? qty_disabled : 1}
-                                </span>
-                            <button
-                                onClick={() => setQty_disabled((q) => Math.min(1, q + 1))}
-                                disabled={!isDisabledCatSelected || qty_disabled >= 1}
-                            >+</button>
+                    )}
+                    { showDisabledSection && (
+                    <div className="ticket-card" style={{borderColor: "purple", boxShadow: "0 0 4px 2px #8000804D, 0 0 6px 3px #80008099, 0 0 8px 4px #800080FF"}}>
+                        {/* 1. Anzahl */}
+                        <div className="card-row">
+                            <div className="row-label">
+                                1. Bitte wähle die Anzahl der Tickets:
+                                <div className="row-note">
+                                    Bitte beachte, dass du nur Tickets für dich {requiresAssistance ? 'und deine Begleitperson' : 'selbst'} buchen kannst.
+                                </div>
+                            </div>
+                            {requiresAssistance && bookingForMe && isDisabledCatSelected && (
+                                <div className="row-control">
+                                    <div className="row-note" style={{color: "purple"}}>
+                                        <img src="/pictures/info_icon_new.png" alt="Info" style={{maxWidth: "15px", maxHeight: "15px"}} />
+                                        Deine Begleitperson wird automatisch mitgebucht.
+                                    </div>
+                                </div>
+                            )}
+                            <div className="row-control">
+                                <button
+                                    onClick={() => setQty_disabled((q) => Math.max(1, q - 1))}
+                                    disabled={!isDisabledCatSelected || qty_disabled <= 1}
+                                >−</button>
+                                <span className="qty-value">{qty_disabled} {(requiresAssistance && isDisabledCatSelected && bookingForMe) ? <a style={{color: "purple"}}>+ 1</a> : ''}</span>
+                                <button
+                                    onClick={() => setQty_disabled((q) => Math.min(1, q + 1))}
+                                    disabled={!isDisabledCatSelected || qty_disabled >= 1}
+                                >+</button>
+                            </div>
                         </div>
-                    </div>
 
-                    {/* 2. Kategorie */}
-                    <div className="card-row">
-                        <div className="row-label">2. Bitte wähle die Platzkategorie:</div>
-                    </div>
+                        {/* 2. Kategorie */}
+                        <div className="card-row">
+                            <div className="row-label">2. Bitte wähle die Platzkategorie:</div>
+                        </div>
 
-                    {/* Kategorien */}
-                    {disabledCategories.map((cat) => (
+                        {/* Kategorien */}
+                        {disabledCategories.map((cat) => (
                             <div
                                 key={cat.id}
                                 className={`category-item${selectedCat === cat.id ? ' selected' : ''}`}
@@ -305,7 +384,7 @@ export default function EventPage() {
                             >
                                 <div className="col name">
                                     <div className="cat-name">{cat.name} ({cat.disability_support_for.trim()})</div>
-                                    <div className="cat-desc" >{cat.area_description}</div>
+                                    <div className="cat-desc">{cat.area_description}</div>
                                 </div>
                                 <div className="col type">{cat.disability_support_for == null ? 'Normalpreis': 'Reduzierter Preis'}</div>
                                 <div className="col price">
@@ -318,58 +397,69 @@ export default function EventPage() {
                                     />
                                 </div>
                             </div>
-                    ))}
-                    {/* Action row */}
-                    <div className="action-row">
-                        {lastClickedSection === 'disabled' && successMessage && (
-                            <div className="success-message">{successMessage}</div>
-                        )}
-                        {lastClickedSection === 'disabled' && errorMessage && (
-                            <div className="error-message">{errorMessage}</div>
-                        )}
-                        <button
-                            className="total-button"
-                            disabled={
-                                !isDisabledCatSelected ||
-                                Boolean(inCartItems[selectedCat]) ||
-                                eventCounts.disabled >= 1
-                            }
-                            onClick={handleAddToCart}
-                        >
-                        <span className="icon-cart" />{' '}
-                            {isDisabledCatSelected ? `${qty_disabled} Ticket${qty_disabled > 1 ? 's' : ''}` : '1 Ticket'}, € {total_disabled}
-                        </button>
-                    </div>
+                        ))}
+                        {/* Action row */}
+                        <div className="action-row">
+                            {lastClickedSection === 'disabled' && successMessage && (
+                                <div className="success-message">{successMessage}</div>
+                            )}
+                            {lastClickedSection === 'disabled' && errorMessage && (
+                                <div className="error-message">{errorMessage}</div>
+                            )}
+                            <button
+                                className="total-button"
+                                disabled={
+                                    !isDisabledCatSelected ||
+                                    Boolean(inCartItems[selectedCat]) ||
+                                    eventCounts.disabled >= 1
+                                }
+                                onClick={handleAddToCart}
+                            >
+                                <span className="icon-cart" />{' '}
+                                {`${displayQtyDisabled} Ticket${displayQtyDisabled > 1 ? 's' : ''}`}, € {total_disabled}
+                            </button>
+                        </div>
 
-                    {/* Note */}
-                    <div className="note">
-                        Angezeigte Preise inkl. der gesetzl. MwSt., Vorverkaufsgebühr,
-                        <a href="#"> Buchungsgebühr von max. € 0,00</a>
-                        <br />
-                        zzgl. <a href="#">Versandkosten</a>.
+                        {/* Note */}
+                        <div className="note">
+                            Angezeigte Preise inkl. der gesetzl. MwSt., Vorverkaufsgebühr,
+                            <a href="#"> Buchungsgebühr von max. € 0,00</a>
+                            <br />
+                            zzgl. <a href="#">Versandkosten</a>.
+                        </div>
                     </div>
-                </div>
-            </section>
+                    )}
+                </section>
             )}
 
             {/* ————— TICKET PICKER ————— */}
-            <section className="ticket-section">
-            <h2 className="section-title">Reguläre Tickets buchen</h2>
+            <section className="ticket-section" style={{
+                marginTop: (requiresAssistance && !showDisabledSection) ? 0 : undefined,
+                paddingTop: (requiresAssistance && !showDisabledSection) ? 0 : undefined,
+
+            }}>
+                {(!requiresAssistance || showDisabledSection) && (<h2 className="section-title">Reguläre Tickets buchen</h2>)}
                 <div className="ticket-card">
                     {/* 1. Anzahl */}
                     <div className="card-row">
                         <div className="row-label">
                             1. Bitte wähle die Anzahl der Tickets:
-                            <div className="row-note"> Bitte beachte, dass du nur maximal 8 Tickets buchen auf einmal buchen kannst.</div>
+                            <div className="row-note">Bitte beachte, dass du nur maximal 8 Tickets auf einmal buchen kannst.</div>
                         </div>
+                        {requiresAssistance && bookingForMe && isRegularCatSelected && (
+                            <div className="row-control">
+                                <div className="row-note" style={{color: "purple"}}>
+                                    <img src="/pictures/info_icon_new.png" alt="Info" style={{maxWidth: "15px", maxHeight: "15px"}} />
+                                    Deine Begleitperson wird automatisch mitgebucht.
+                                </div>
+                            </div>
+                        )}
                         <div className="row-control">
                             <button
                                 onClick={() => setQty((q) => Math.max(1, q - 1))}
                                 disabled={!isRegularCatSelected || qty <= 1}
                             >−</button>
-                                <span className="qty-value">
-                                    {isRegularCatSelected ? qty : 1}
-                                </span>
+                            <span className="qty-value">{qty} {(requiresAssistance && isRegularCatSelected && bookingForMe) ? <a style={{color: "purple"}}>+ 1</a> : ''}</span>
                             <button
                                 onClick={() => setQty((q) => Math.min(8 - eventCounts.regular, q + 1))}
                                 disabled={!isRegularCatSelected || qty >= (8 - eventCounts.regular)}
@@ -384,30 +474,28 @@ export default function EventPage() {
 
                     {/* Kategorien */}
                     {regularCategories.map((cat) => (
-                            <div
-                                key={cat.id}
-                                className={`category-item${selectedCat === cat.id ? ' selected' : ''}`}
-                                onClick={() => setSelectedCat(cat.id)}
-                            >
-                                <div className="col name">
-                                    <div className="cat-name">{cat.name}</div>
-                                    <div className="cat-desc">
-                                        {cat.venue_area_names
-                                            .map((n) => n.split(' - ').join(' '))
-                                            .join(', ')}
-                                    </div>
-                                </div>
-                                <div className="col type">{cat.disability_support_for || 'Normalpreis'}</div>
-                                <div className="col price">
-                                    <span>€ {cat.price.toFixed(2).replace('.', ',')}</span>
-                                    <input
-                                        type="radio"
-                                        name="category"
-                                        checked={selectedCat === cat.id}
-                                        readOnly
-                                    />
+                        <div
+                            key={cat.id}
+                            className={`category-item${selectedCat === cat.id ? ' selected' : ''}`}
+                            onClick={() => setSelectedCat(cat.id)}
+                        >
+                            <div className="col name">
+                                <div className="cat-name">{cat.name}</div>
+                                <div className="cat-desc">
+                                    {cat.venue_area_names.map((n) => n.split(' - ').join(' ')).join(', ')}
                                 </div>
                             </div>
+                            <div className="col type">{cat.disability_support_for || 'Normalpreis'}</div>
+                            <div className="col price">
+                                <span>€ {cat.price.toFixed(2).replace('.', ',')}</span>
+                                <input
+                                    type="radio"
+                                    name="category"
+                                    checked={selectedCat === cat.id}
+                                    readOnly
+                                />
+                            </div>
+                        </div>
                     ))}
 
                     {/* Action row */}
@@ -423,35 +511,34 @@ export default function EventPage() {
                             disabled={addDisabled || !isRegularCatSelected || eventCounts.regular >= 8}
                             onClick={handleAddToCart}
                         >
-                        <span className="icon-cart" />{' '}
-                             {isRegularCatSelected ? `${qty} Ticket${qty > 1 ? 's' : ''}` : '1 Ticket'}, € {total}
+                            <span className="icon-cart" />{' '}
+                            {`${displayQty} Ticket${displayQty > 1 ? 's' : ''}`}, € {total}
                         </button>
                     </div>
 
                     {/* Note */}
                     <div className="note">
                         Angezeigte Preise inkl. der gesetzl. MwSt., Vorverkaufsgebühr,
-                        <a href="#"> Buchungsgebühr von max. € 0,00</a>
+                        <a href="src/pages/404.jsx"> Buchungsgebühr von max. € 0,00</a>
                         <br />
-                        zzgl. <a href="#">Versandkosten</a>.
+                        zzgl. <a href="src/pages/404.jsx">Versandkosten</a>.
                     </div>
                 </div>
 
-                {/* ————— ACCORDIONS ————— */}
-                <div className="accordion">
-                    <details>
-                        <summary>Versandmöglichkeiten</summary>
-                        <div>Hier stehen Ihre Versandoptionen …</div>
-                    </details>
-                    <details>
-                        <summary>Informationen zur Buchung</summary>
-                        <div>Buchungsinformationen …</div>
-                    </details>
-                    <details>
-                        <summary>Informationen zum Veranstalter</summary>
-                        <div>Veranstalter-Infos …</div>
-                    </details>
-                </div>
+                {/*<div className="accordion">*/}
+                {/*    <details>*/}
+                {/*        <summary>Versandmöglichkeiten</summary>*/}
+                {/*        <div>Hier stehen Ihre Versandoptionen …</div>*/}
+                {/*    </details>*/}
+                {/*    <details>*/}
+                {/*        <summary>Informationen zur Buchung</summary>*/}
+                {/*        <div>Buchungsinformationen …</div>*/}
+                {/*    </details>*/}
+                {/*    <details>*/}
+                {/*        <summary>Informationen zum Veranstalter</summary>*/}
+                {/*        <div>Veranstalter-Infos …</div>*/}
+                {/*    </details>*/}
+                {/*</div>*/}
             </section>
         </div>
     );

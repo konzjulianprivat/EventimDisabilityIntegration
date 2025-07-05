@@ -5,16 +5,30 @@
    ----------------------------------- */
 .profile-container {
     display: flex;
-    min-height: 100vh;
     background-color: #f5f5f5;
+    /* fill the viewport and hide extra overflow */
+    height: 100vh;
     font-family: Arial, sans-serif;
+    overflow-y: hidden; /* scrolling handled inside main-content */
+    overflow-x: hidden;
+}
+
+.user_management__profile-container {
+    display: flex;
+    background-color: #f5f5f5;
+    /* fill the viewport and hide extra overflow */
+    min-height: 100vh;
+    font-family: Arial, sans-serif;
+    overflow-y: hidden; /* scrolling handled inside main-content */
+    overflow-x: hidden;
 }
 
 /* -----------------------------------
    2) Sidebar links
    ----------------------------------- */
 .sidebar {
-    width: 260px;
+    flex: 0 0 200px;
+    width: 200px;
     background-color: #ffffff;
     border-right: 1px solid #e0e0e0;
     display: flex;
@@ -22,6 +36,11 @@
     justify-content: space-between;
     box-sizing: border-box;
     padding: 1rem 0;
+    align-self: flex-start;   /* don’t stretch full height */
+    position: sticky;         /* stick to its scroll container (the viewport) */
+    top: 2rem;                /* match main-content’s padding so it sits flush */
+    height: calc(93vh - 4rem); /* account for 2rem top + 2rem bottom padding */
+    overflow-y: auto;         /* scroll internally if content exceeds that max-height */
 }
 
 .sidebar-item {
@@ -81,48 +100,48 @@
    3) Hauptbereich rechts
    ----------------------------------- */
 .main-content {
-    flex: 1;
-    padding: 2rem; /* Außenabstand zum Viewport-Rand */
+    padding: 2rem; /* matches top-padding for sticky “top” offset */
     box-sizing: border-box;
+    flex: 1 1 auto;
+    width: auto;
+    height: 100%;
+    overflow-y: auto;   /* allow internal scrolling */
+    scroll-padding-top: 11vh;
+    padding-bottom: 12vh; /* space for footer when scrolled to last section */
 }
 
-/* -------------------------------------------------------
-   .inner-container: legt die absolute Maximalbreite fest
-   (5 Karten × 180px + 6 × 1rem)
-   ------------------------------------------------------- */
 .inner-container {
     width: 100%;
-    max-width: calc(5 * 180px + 6 * 1rem); /* 5×180px + 6×16px */
     margin: 0 auto; /* zentriert */
 }
 
 /* -----------------------------------
    4) Weiße Boxen („white-box“)
-   • events-white-box  (oben)
-   • help-white-box    (unten)
    ----------------------------------- */
 .white-box {
     background-color: #ffffff;
     border-radius: 6px;
     box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
     margin-bottom: 2rem;
+    scroll-margin-top: 7vh;
 }
 
 .events-white-box {
-    /* Vertikales Padding oben/unten */
     padding: 1rem 0;
 }
 
 .help-white-box {
-    /* Vertikales Padding oben/unten */
     padding: 1rem 0;
+}
+
+#meine-events,
+#meine-bestellungen,
+#help-center {
+    scroll-margin-top: 7vh;
 }
 
 /* -----------------------------------
    5) Gemeinsames inneres Padding
-   für Inhalte in events-white-box und help-white-box
-   • sorgt dafür, dass Überschriften, Boxen, Karussell, FAQ
-     stets 1rem Abstand zu den weißen Rändern auf beiden Seiten haben.
    ----------------------------------- */
 .content-inner {
     padding: 0 1rem; /* 1rem links/rechts */
@@ -130,19 +149,22 @@
 }
 
 /* -----------------------------------
-   6) „Meine Events“-Header (in .content-inner)
+   6) „Meine Events“-Header
    ----------------------------------- */
 .events-header {
     display: flex;
     align-items: center;
     gap: 0.5rem;
-    margin-bottom: 0.25rem;
+    margin-bottom: 0.5rem;
 }
 
 .events-header h1 {
     font-size: 1.5rem;
     color: #002b55;
-    margin: 0;
+}
+
+.events-header h3 {
+    color: #002b55;
 }
 
 .events-header .arrow {
@@ -158,42 +180,27 @@
 
 /* -----------------------------------
    7) Blauer Platzhalter-Bereich
-   (im .events-white-box, eingerückt via .content-inner)
    ----------------------------------- */
 .blue-placeholder {
     background-color: #e8eff7;
     border-radius: 6px;
-    padding: 2rem 0;     /* nur vertikales Padding, horizontal über .content-inner */
+    padding: 2rem 0;
     margin-bottom: 1.5rem;
-    width: 100%;         /* nimmt volle Breite der .content-inner ein */
+    width: 100%;
 }
 
-.blue-placeholder-text {
-    text-align: center;
-    margin-bottom: 1rem;
-    font-size: 1rem;
-    line-height: 1.4;
-}
-
-/*
-   cards-container: begrenzt auf (5 × 180px + 4 × 1rem) – das ist
-   die exakte Breite, in der 5 Karten nebeneinander + 4 Lücken passen.
-   Wir zentrieren es mit margin: 0 auto, damit es Mitte im blauen Feld sitzt.
-*/
 .cards-container {
     width: 100%;
-    max-width: calc(5 * 180px + 4 * 1rem);
     margin: 0 auto;
 }
 
-/* Flex-Container für die blauen Karten (oben) */
 .blue-cards {
     display: flex;
     gap: 1rem;
-    justify-content: flex-start;
+    justify-content: flex-start; /* zentriert die ersten N Karten */
+    margin: 0 2rem
 }
 
-/* Scrollbar ausblenden, falls mehr als 5 Karten wären */
 .blue-cards::-webkit-scrollbar {
     display: none;
 }
@@ -203,39 +210,11 @@
 }
 
 /* -----------------------------------
-   8) Recommendations‐Label + graue Box
-   (ebenfalls im .events-white-box, eingerückt via .content-inner)
-   ----------------------------------- */
-.recommendations-label {
-    font-size: 1.25rem;
-    color: #002b55;
-    margin: 0 0 0.75rem 0; /* unten 0.75 rem Abstand */
-}
-
-/* Grey Placeholder: exakt wie Blue-Placeholder, aber grau */
-.grey-placeholder {
-    background-color: #f0f0f0;
-    border-radius: 6px;
-    padding: 1rem 0;      /* nur vertikales Padding */
-    margin-bottom: 1.5rem;
-    width: 100%;
-}
-
-/* Flex-Container für die grauen Karten (Recommendations) */
-.grey-cards {
-    display: flex;
-    gap: 1rem;
-    justify-content: flex-start;
-}
-
-/* -----------------------------------
-   9) 5-Karten-Karussell
-   (im .events-white-box, eingerückt via .content-inner)
+   8) Recommendations-Carousels
    ----------------------------------- */
 .carousel-container {
     width: 100%;
-    max-width: calc(5 * 180px + 4 * 1rem);
-    margin: 0 auto 2rem; /* unten 2rem, um Abschluss der weißen Box zu markieren */
+    margin: 0 auto 2rem;
 }
 
 .carousel-wrapper {
@@ -247,6 +226,7 @@
 .carousel-track {
     display: flex;
     gap: 1rem;
+    justify-content: center; /* zentriert die sichtbaren Karten */
     transition: transform 0.3s ease;
 }
 
@@ -270,11 +250,11 @@
 }
 
 .carousel-button.left {
-    left: 4px;   /* komplett sichtbar INSIDE des Karussells */
+    left: 4px;
 }
 
 .carousel-button.right {
-    right: 4px;  /* komplett sichtbar INSIDE des Karussells */
+    right: 4px;
 }
 
 .carousel-button:disabled {
@@ -283,23 +263,23 @@
 }
 
 /* -----------------------------------
-   10) SquareTourCard: 180×180px
+   9) SquareTourCard (unverändert)
    ----------------------------------- */
 .square-tourCard-class {
-    width: 180px;      /* feste Breite */
-    flex-shrink: 0;    /* darf im flex nicht schrumpfen */
+    width: 180px;
+    flex-shrink: 0;
     background-color: #ffffff;
     border: 1px solid #e0e0e0;
     border-radius: 4px;
     overflow: hidden;
     display: flex;
     flex-direction: column;
-    margin: 0;         /* kein eigener Margin, gap übernimmt Abstand */
+    margin: 0;
 }
 
 .square-tourCard-image-wrapper {
     width: 100%;
-    height: 180px;     /* Bild-Teil exakt 180px hoch */
+    height: 180px;
     overflow: hidden;
     position: relative;
 }
@@ -346,10 +326,64 @@
 }
 
 /* -----------------------------------
-   11) Help Center / FAQ (im .help-white-box)
+   10) Orders Table
+   ----------------------------------- */
+.orders-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 1rem;
+}
+.orders-table th,
+.orders-table td {
+    padding: 0.5rem;
+    border-bottom: 1px solid #e0e0e0;
+    text-align: left;
+}
+.orders-table th {
+    background-color: #f0f0f0;
+    color: #002b55;
+    font-weight: 600;
+}
+.order-row:hover {
+    background-color: #f9f9f9;
+    cursor: pointer;
+}
+.order-status.send {
+    color: green;
+}
+.order-status.progress {
+    color: #ffc700;
+}
+.order-detail-shipping p {
+    margin: 0;
+}
+.tickets-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 1rem;
+}
+.tickets-table th,
+.tickets-table td {
+    padding: 0.4rem;
+    border-bottom: 1px solid #ddd;
+    text-align: left;
+}
+.tickets-table th {
+    background-color: #fafafa;
+    color: #002b55;
+    font-weight: 600;
+}
+
+.qr-code-info {
+    margin-top: 2vh;
+}
+
+
+/* -----------------------------------
+   11) Help Center / FAQ
    ----------------------------------- */
 .help-section {
-    padding: 0;       /* vertikales Padding kommt von .content-inner */
+    padding: 0;
     width: 100%;
 }
 
@@ -367,7 +401,7 @@
 
 .faq-placeholder {
     display: grid;
-    grid-template-columns: repeat(2, 1fr);
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
     gap: 1rem;
 }
 
@@ -381,4 +415,333 @@
     justify-content: center;
     color: #999999;
     font-size: 0.95rem;
+}
+
+/* -----------------------------------
+   12) Profile Buttons → reuse nav-bar style
+   ----------------------------------- */
+
+/* Primary action buttons in “Meine Daten” */
+.profile__btn-cancel {
+    /* colors & typography */
+    background-color: #007bff;    /* same blue as .login-button */
+    color: #ffffff;               /* white text */
+    font-size: 0.9rem;
+    font-weight: 600;
+
+    /* sizing & shape */
+    padding: 0.5rem 1rem;       /* match nav-bar */
+    border: none;
+    border-radius: 4px;
+
+    /* interactivity */
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+/* hover / focus states */
+.profile__btn-cancel:hover,
+.profile__btn-cancel:focus {
+    background-color: #0056b3;    /* darker blue on hover */
+}
+
+/* Full-width on very narrow screens */
+@media (max-width: 480px) {
+    .profile__btn-cancel {
+        width: 100%;
+        box-sizing: border-box;
+    }
+}
+
+
+/* -----------------------------------
+   11) Mobile-Fallback
+   ----------------------------------- */
+@media (max-width: 768px) {
+    .profile-container {
+        flex-direction: column;
+        overflow-y: auto; /* allow full page scrolling on small screens */
+    }
+
+    .sidebar {
+        width: 100%;
+        border-right: none;
+        border-bottom: 1px solid #e0e0e0;
+    }
+
+    .main-content {
+        width: 100%;
+        padding: 1rem;
+        height: auto;
+        overflow-y: visible;
+    }
+}
+
+.no-orders {
+    width: 100%;
+    padding: 2rem 1rem;           /* match content-inner padding */
+    text-align: center;
+    color: #666666;               /* same as .subtitle */
+    font-size: 1rem;              /* same base size as items */
+    border: 1px dashed #e0e0e0;   /* echo the table’s border color */
+    border-radius: 4px;           /* same radius as cards/tables */
+    background-color: #fafafa;    /* a very light background to set it apart */
+}
+
+.no-orders p {
+                      /* reset default p-margins */
+}
+
+.profile-data-form label {
+    display: block;
+    font-weight: bold;
+}
+
+/* -----------------------------------
+   Refactored: Responsive grid for profile form
+   ----------------------------------- */
+.profile-data-form {
+    display: grid;
+    gap: 1rem;                                     /* space between fields */
+    /* by default, stack on small screens */
+    grid-template-columns: 1fr;
+}
+
+/* two-cols at tablet+ */
+@media (min-width: 768px) {
+    .profile-data-form {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+/* three-cols at desktop+ for very wide layouts */
+@media (min-width: 1200px) {
+    .profile-data-form {
+        grid-template-columns: repeat(3, 1fr);
+    }
+}
+
+/* ensure full-width on grid items, but let the grid define their size */
+.profile-data-form .form-field {
+    margin-bottom: 0;         /* grid gap handles spacing now */
+}
+
+/* inputs/selects still fill their grid cell */
+.profile-data-form input,
+.profile-data-form select {
+    width: 100%;
+    box-sizing: border-box;
+
+    /* spacing & typography */
+    padding: 0.5rem 0.75rem;
+    font-size: 1rem;
+    line-height: 1;
+    color: #333;
+    font-family: inherit;
+
+    /* border & background */
+    border: 1px solid #cccccc;
+    border-radius: 4px;
+    background-color: #ffffff;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.profile-data-form input:focus,
+.profile-data-form select:focus {
+    outline: none;
+    border-color: #007bff;               /* Eventim blue */
+    box-shadow: 0 0 0 3px rgba(0,123,255,0.25);
+}
+
+.profile-data-form input[disabled],
+.profile-data-form select[disabled] {
+    background-color: #f5f5f5;
+    color: #666666;
+    cursor: not-allowed;
+}
+
+.input-field {
+    width: 100%;
+    box-sizing: border-box;
+
+    /* spacing & typography */
+    padding: 0.5rem 0.75rem;
+    font-size: 1rem;
+    line-height: 1;
+    color: #333;
+    font-family: inherit;
+
+    /* border & background */
+    border: 1px solid #cccccc;
+    border-radius: 4px;
+    background-color: #ffffff;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.input-field:focus{
+    outline: none;
+    border-color: #007bff;               /* Eventim blue */
+    box-shadow: 0 0 0 3px rgba(0,123,255,0.25);
+}
+
+.input-field[disabled] {
+    background-color: #f5f5f5;
+    color: #666666;
+    cursor: not-allowed;
+}
+
+.profile-data-display {
+    padding: 0.5rem 0;
+}
+
+.profile-data-form .form-actions {
+    grid-column: 1 / -1;
+    margin-top: 1rem;
+    text-align: right;
+}
+
+.profile-section-divider {
+    border-top: 1px solid #e0e0e0;
+    margin: 1.5rem 0;
+}
+
+.success-message {
+    padding: 0.75rem;
+    background-color: #d4edda;
+    color: #155724;
+    border-radius: 4px;
+    margin-top: 1rem;
+}
+
+/* -----------------------------------
+   FAQ Flip-Cards
+   ----------------------------------- */
+.faq-card {
+    perspective: 1000px;
+    cursor: pointer;
+}
+
+.faq-card-inner {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    transition: transform 0.6s;
+    transform-style: preserve-3d;
+}
+
+.faq-card-inner.flipped {
+    transform: rotateX(180deg);
+}
+
+.faq-card-front,
+.faq-card-back {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    backface-visibility: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1rem;
+    box-sizing: border-box;
+    border-radius: 4px;
+    font-size: 0.95rem;
+    text-align: center;
+}
+
+.faq-card-front {
+    background-color: #f9f9f9;
+    color: #333;
+}
+
+.faq-card-back {
+    background-color: #e8eff7;
+    color: #002b55;
+    transform: rotateX(180deg);
+}
+
+.profile__expiry-container {     /* oder Euer Eventim-Farbton */
+    border-radius: 4px;
+    padding: 0.5rem 1rem;         /* etwas horizontalen Puffer */
+    display: flex;                /* <— wichtig: checkbox + text inline */
+    align-items: center;
+    gap: 0.5rem;
+    margin-top: 0.5rem;
+    width: fit-content;           /* passt die Box eng ans Inhaltsmaß an */
+}
+
+.profile__expiry-checkbox {
+    width: 1rem;
+    height: 1rem;
+}
+
+.profile__expiry-label {
+    font-weight: bold;
+    cursor: pointer;
+}
+
+.profile__expiry-date {
+    padding: 0.25rem;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+}
+
+/* container grid: 3 columns, shrinks responsively */
+.marks-grid {
+    display: grid;
+    gap: 1rem;
+    margin-top: 0.5rem;
+    grid-template-columns: repeat(2, 1fr);
+}
+
+/* each card */
+.mark-card {
+    position: relative;
+    padding: 1rem;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    background: #fff;
+    cursor: pointer;
+    transition: background-color 0.2s, border-color 0.2s;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+}
+
+/* selected state: light Eventim yellow */
+.mark-card--selected {
+    background-color: #fff7d1;  /* example light yellow */
+    border-color: #ffdd57;      /* slightly darker accent */
+}
+
+/* hide the real checkbox but keep it in the DOM for focus/aria */
+.mark-card__checkbox {
+    position: absolute;
+    opacity: 0;
+    pointer-events: none;
+}
+
+/* label spans */
+.mark-card__label {
+    cursor: pointer;          /* so clicking text also toggles */
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    width: 100%;
+}
+
+.mark-card__code {
+    font-weight: bold;
+    font-size: 1.1rem;
+}
+
+.mark-card__desc {
+    font-size: 0.9rem;
+    color: #555;
+}
+
+/* heading styling tweak */
+.marks__heading {
+    font-weight: 600;
 }

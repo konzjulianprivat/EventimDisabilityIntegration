@@ -2,7 +2,8 @@ const express = require('express');
 const session = require('express-session');
 const cors = require('cors');
 const path = require('path');
-const { Client } = require('pg');
+const db = require('./db');
+const client = db;
 const bcrypt = require('bcrypt');
 const multer = require('multer');
 const crypto = require('crypto');
@@ -75,7 +76,10 @@ app.get('/image/:id', async (req, res) => {
 //     const multer = require('multer');
 //     const upload = multer({ storage: multer.memoryStorage() });
 
-app.post('/register-user', upload.single('disabilityCardImage'), async (req, res) => {
+app.post('/register-user', upload.fields([
+    { name: 'disabilityCardImageFront', maxCount: 1 },
+    { name: 'disabilityCardImageBack', maxCount: 1 }
+]), async (req, res) => {
     try {
         const {
             firstName,
@@ -84,14 +88,16 @@ app.post('/register-user', upload.single('disabilityCardImage'), async (req, res
             password,
             birthDate,
             phone,
-            disabilityCheck,
+            requestForDisability,
             disabilityDegree,
+            disabilityCardExpiryDate,
             streetAddress,
             city,
             postalCode,
             country,
             company,
             salutation,
+            visibleUserId,
         } = req.body;
 
         // 1) Pflichtfelder prüfen
@@ -116,18 +122,46 @@ app.post('/register-user', upload.single('disabilityCardImage'), async (req, res
         const saltRounds = 10;
         const hashedPass = await bcrypt.hash(password, saltRounds);
 
-        // 5) Behindertenausweis‐Bild verarbeiten (falls vorhanden)
-        let imageId = null;
-        if (req.file) {
-            imageId = uuidv4();
+        // 5) Behindertenausweis-Bilder verarbeiten (falls vorhanden)
+        let imageFrontId = null;
+        let imageBackId = null;
+        if (req.files && req.files['disabilityCardImageFront']) {
+            const f = req.files['disabilityCardImageFront'][0];
+            imageFrontId = uuidv4();
             await client.query(
                 `INSERT INTO images (id, image_data, image_type, entity_type, entity_id)
                  VALUES ($1, $2, $3, $4, $5)`,
-                [imageId, req.file.buffer, req.file.mimetype, 'user', userId]
+                [imageFrontId, f.buffer, f.mimetype, 'user', userId]
+            );
+        }
+        if (req.files && req.files['disabilityCardImageBack']) {
+            const b = req.files['disabilityCardImageBack'][0];
+            imageBackId = uuidv4();
+            await client.query(
+                `INSERT INTO images (id, image_data, image_type, entity_type, entity_id)
+                 VALUES ($1, $2, $3, $4, $5)`,
+                [imageBackId, b.buffer, b.mimetype, 'user', userId]
             );
         }
 
-        // 6) Benutzer in users‐Tabelle einfügen
+        // 6) ID der Standardrolle ermitteln
+        const { rows: roleRows } = await client.query(
+            `SELECT id
+               FROM user_roles
+              WHERE COALESCE(has_account_management_access, false) = false
+                AND COALESCE(has_editing_access, false) = false
+                AND COALESCE(has_creation_access, false) = false
+                AND COALESCE(has_role_appointing_capability, false) = false
+              LIMIT 1`
+        );
+
+        if (roleRows.length === 0) {
+            return res.status(500).json({ message: 'Standardrolle nicht gefunden' });
+        }
+
+        const userRoleId = roleRows[0].id;
+
+        // 7) Benutzer in users‐Tabelle einfügen
         const result = await client.query(
             `
                 INSERT INTO users (
@@ -138,7 +172,7 @@ app.post('/register-user', upload.single('disabilityCardImage'), async (req, res
                     password,
                     birth_date,
                     phone,
-                    disability_check,
+                    request_for_disability,
                     disability_degree,
                     street_address,
                     city,
@@ -146,13 +180,18 @@ app.post('/register-user', upload.single('disabilityCardImage'), async (req, res
                     country,
                     company,
                     salutation,
-                    disability_card_image,
+                    disability_card_image_front,
+                    disability_card_image_back,
+                    disability_card_expiry_date,
+                    is_currently_disabled,
+                    role,
+                    visible_user_id,
                     created_at,
                     updated_at
                 ) VALUES (
-                             $1, $2, $3, $4, $5, $6, $7, $8, $9,
-                             $10, $11, $12, $13, $14, $15, $16, NOW(), NOW()
-                         ) RETURNING *;
+                    $1, $2, $3, $4, $5, $6, $7, $8, $9,
+                    $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, NOW(), NOW()
+                ) RETURNING *;
             `,
             [
                 userId,
@@ -162,7 +201,7 @@ app.post('/register-user', upload.single('disabilityCardImage'), async (req, res
                 hashedPass,
                 birthDate || null,
                 phone || null,
-                disabilityCheck === 'true',
+                requestForDisability === 'true',
                 disabilityDegree || null,
                 streetAddress.trim(),
                 city.trim(),
@@ -170,7 +209,12 @@ app.post('/register-user', upload.single('disabilityCardImage'), async (req, res
                 country?.trim() || 'Deutschland',
                 company?.trim() || null,
                 salutation?.trim() || null,
-                imageId,
+                imageFrontId,
+                imageBackId,
+                disabilityCardExpiryDate || '9999-01-01',
+                false,
+                userRoleId,
+                parseInt(visibleUserId, 10) || Math.floor(Math.random() * 90000000) + 10000000,
             ]
         );
 
@@ -203,6 +247,9 @@ app.post('/register-user', upload.single('disabilityCardImage'), async (req, res
         });
     } catch (error) {
         console.error('Registration error:', error);
+        if (error.code === '23505' && error.constraint === 'unique_user_email') {
+            return res.status(409).json({ message: 'E-Mail ist bereits registriert.' });
+        }
         return res.status(500).json({ message: 'Serverfehler während der Registrierung' });
     }
 });
@@ -225,7 +272,11 @@ app.post('/login-user', async (req, res) => {
                     password,
                     first_name,
                     last_name,
-                    disability_check,
+                    visible_user_id,
+                    request_for_disability,
+                    is_currently_disabled,
+                    disability_card_expiry_date,
+                    role,
                     created_at,
                     updated_at
                 FROM users
@@ -245,23 +296,74 @@ app.post('/login-user', async (req, res) => {
             return res.status(401).json({ message: 'Ungültige Anmeldedaten.' });
         }
 
+        let cardExpired = false;
+        const now = new Date();
+        if (
+            user.is_currently_disabled &&
+            user.disability_card_expiry_date &&
+            new Date(user.disability_card_expiry_date) < now
+        ) {
+            await client.query(
+                `UPDATE users
+                    SET is_currently_disabled = false,
+                        updated_at = NOW()
+                  WHERE user_id = $1`,
+                [user.user_id]
+            );
+            user.is_currently_disabled = false;
+            cardExpired = true;
+        }
+
         req.session.userId = user.user_id;
         req.session.email = user.email;
+        req.session.role = user.role;
+        req.session.visibleUserId = user.visible_user_id;
 
         const { rows: markRows } = await client.query(
             'SELECT mark_code FROM user_disability_marks WHERE user_id = $1',
             [user.user_id]
         );
 
+        const { rows: roleRows } = await client.query(
+            `SELECT has_role_appointing_capability,
+                    has_disability_approval_access,
+                    has_account_management_access,
+                    has_creation_access,
+                    has_editing_access,
+                    has_deletion_permission
+               FROM user_roles WHERE id = $1`,
+            [user.role]
+        );
+
+        const perms = roleRows[0] || {};
+        const canAppoint = !!perms.has_role_appointing_capability;
+        req.session.hasRoleAppointingCapability = canAppoint;
+        req.session.hasDisabilityApprovalAccess = !!perms.has_disability_approval_access;
+        req.session.hasAccountManagementAccess = !!perms.has_account_management_access;
+        req.session.hasCreationAccess = !!perms.has_creation_access;
+        req.session.hasEditingAccess = !!perms.has_editing_access;
+        req.session.hasDeletionPermission = !!perms.has_deletion_permission;
+
         return res.status(200).json({
             message: 'Login erfolgreich',
+            cardExpired,
             user: {
                 userId: user.user_id,
                 email: user.email,
                 firstName: user.first_name,
                 lastName: user.last_name,
-                disabilityCheck: user.disability_check,
+                requestForDisability: user.request_for_disability,
+                isCurrentlyDisabled: user.is_currently_disabled,
+                disabilityCardExpiryDate: user.disability_card_expiry_date,
                 disabilityMarks: markRows.map((m) => m.mark_code && m.mark_code.trim()),
+                role: user.role,
+                visibleUserId: user.visible_user_id,
+                hasRoleAppointingCapability: canAppoint,
+                hasDisabilityApprovalAccess: !!perms.has_disability_approval_access,
+                hasAccountManagementAccess: !!perms.has_account_management_access,
+                hasCreationAccess: !!perms.has_creation_access,
+                hasEditingAccess: !!perms.has_editing_access,
+                hasDeletionPermission: !!perms.has_deletion_permission,
             },
         });
     } catch (err) {
@@ -282,7 +384,12 @@ app.get('/session-status', async (req, res) => {
     try {
         // Hole first_name + last_name + email aus der DB via userId
         const { rows } = await client.query(
-            `SELECT first_name, last_name, email, disability_check
+            `SELECT first_name, last_name, email,
+                    request_for_disability,
+                    is_currently_disabled,
+                    disability_card_expiry_date,
+                    role,
+                    visible_user_id
        FROM users
        WHERE user_id = $1
        LIMIT 1`,
@@ -294,22 +401,79 @@ app.get('/session-status', async (req, res) => {
             return res.status(200).json({ loggedIn: false });
         }
 
-        const { first_name, last_name, email, disability_check } = rows[0];
+        const {
+            first_name,
+            last_name,
+            email,
+            request_for_disability,
+            is_currently_disabled,
+            disability_card_expiry_date,
+            role,
+            visible_user_id,
+        } = rows[0];
+
+        if (!req.session.role) {
+            req.session.role = role;
+        }
+        if (!req.session.visibleUserId) {
+            req.session.visibleUserId = visible_user_id;
+        }
 
         const { rows: markRows } = await client.query(
             'SELECT mark_code FROM user_disability_marks WHERE user_id = $1',
             [req.session.userId]
         );
 
+        const { rows: roleRows } = await client.query(
+            `SELECT has_role_appointing_capability,
+                    has_disability_approval_access,
+                    has_account_management_access,
+                    has_creation_access,
+                    has_editing_access,
+                    has_deletion_permission
+               FROM user_roles WHERE id = $1`,
+            [req.session.role]
+        );
+        const perms = roleRows[0] || {};
+        const canAppoint = !!perms.has_role_appointing_capability;
+        if (req.session.hasRoleAppointingCapability === undefined) {
+            req.session.hasRoleAppointingCapability = canAppoint;
+        }
+        if (req.session.hasDisabilityApprovalAccess === undefined) {
+            req.session.hasDisabilityApprovalAccess = !!perms.has_disability_approval_access;
+        }
+        if (req.session.hasAccountManagementAccess === undefined) {
+            req.session.hasAccountManagementAccess = !!perms.has_account_management_access;
+        }
+        if (req.session.hasCreationAccess === undefined) {
+            req.session.hasCreationAccess = !!perms.has_creation_access;
+        }
+        if (req.session.hasEditingAccess === undefined) {
+            req.session.hasEditingAccess = !!perms.has_editing_access;
+        }
+        if (req.session.hasDeletionPermission === undefined) {
+            req.session.hasDeletionPermission = !!perms.has_deletion_permission;
+        }
+
         return res.status(200).json({
             loggedIn: true,
             user: {
-                userId:    req.session.userId,
-                email:     email,
+                userId: req.session.userId,
+                email,
                 firstName: first_name,
-                lastName:  last_name,
-                disabilityCheck: disability_check,
+                lastName: last_name,
+                requestForDisability: request_for_disability,
+                isCurrentlyDisabled: is_currently_disabled,
+                disabilityCardExpiryDate: disability_card_expiry_date,
                 disabilityMarks: markRows.map((m) => m.mark_code && m.mark_code.trim()),
+                role: req.session.role,
+                visibleUserId: req.session.visibleUserId,
+                hasRoleAppointingCapability: canAppoint,
+                hasDisabilityApprovalAccess: req.session.hasDisabilityApprovalAccess,
+                hasAccountManagementAccess: req.session.hasAccountManagementAccess,
+                hasCreationAccess: req.session.hasCreationAccess,
+                hasEditingAccess: req.session.hasEditingAccess,
+                hasDeletionPermission: req.session.hasDeletionPermission,
             },
         });
     } catch (err) {
@@ -329,6 +493,213 @@ app.post('/logout', (req, res) => {
         res.clearCookie('sid');
         return res.status(200).json({ message: 'Erfolgreich ausgeloggt.' });
     });
+});
+
+// Liefert die in der Nutzertabelle hinterlegte Standardadresse
+app.get('/user-address', async (req, res) => {
+    if (!req.session.userId) {
+        return res.status(401).json({ message: 'Not logged in' });
+    }
+
+    try {
+        const { rows } = await client.query(
+            `SELECT salutation, first_name, last_name, company, street_address, postal_code, city, country
+             FROM users WHERE user_id = $1`,
+            [req.session.userId]
+        );
+        if (!rows.length) {
+            return res.status(404).json({ message: 'User not found' });
+        }
+        return res.json({ address: rows[0] });
+    } catch (err) {
+        console.error('Error fetching user address:', err);
+        return res.status(500).json({ message: 'Server error' });
+    }
+});
+
+// Liefert alle offenen Anträge auf Nachteilsausgleich
+app.get('/pending-disability-requests', async (req, res) => {
+    try {
+        const { rows } = await client.query(
+            `SELECT user_id, visible_user_id, birth_date, updated_at
+               FROM users
+              WHERE is_currently_disabled = false
+                AND request_for_disability = true
+              ORDER BY updated_at DESC`
+        );
+        return res.json({ requests: rows });
+    } catch (err) {
+        console.error('Error fetching pending disability requests:', err);
+        return res.status(500).json({ message: 'Server error' });
+    }
+});
+
+// Liefert akzeptierte Anträge der letzten 30 Tage
+app.get('/accepted-disability-requests', async (req, res) => {
+    try {
+        const { rows } = await client.query(
+            `SELECT user_id, visible_user_id, birth_date, updated_at
+               FROM users
+              WHERE is_currently_disabled = true
+                AND request_for_disability = true
+                AND updated_at >= NOW() - interval '30 days'
+              ORDER BY updated_at DESC`
+        );
+        return res.json({ requests: rows });
+    } catch (err) {
+        console.error('Error fetching accepted disability requests:', err);
+        return res.status(500).json({ message: 'Server error' });
+    }
+});
+
+// Liefert die hinterlegten Disability-Daten eines Users
+app.get('/users/:id/disability', async (req, res) => {
+    const userId = req.params.id;
+    try {
+        const { rows } = await client.query(
+            `SELECT salutation, first_name, last_name,
+                    disability_degree, disability_card_expiry_date,
+                    disability_card_image_front, disability_card_image_back
+               FROM users
+              WHERE user_id = $1
+              LIMIT 1`,
+            [userId]
+        );
+        if (!rows.length) {
+            return res.status(404).json({ message: 'User not found' });
+        }
+        const user = rows[0];
+        const { rows: markRows } = await client.query(
+            'SELECT mark_code FROM user_disability_marks WHERE user_id = $1',
+            [userId]
+        );
+        return res.json({
+            disabilityData: {
+                disability_degree: user.disability_degree,
+                disability_card_expiry_date: user.disability_card_expiry_date,
+                disability_card_image_front: user.disability_card_image_front,
+                disability_card_image_back: user.disability_card_image_back,
+                marks: markRows.map((m) => m.mark_code && m.mark_code.trim()),
+            },
+            user: {
+                salutation: user.salutation,
+                firstName: user.first_name,
+                lastName: user.last_name,
+            },
+        });
+    } catch (err) {
+        console.error('Error fetching disability data:', err);
+        return res.status(500).json({ message: 'Server error' });
+    }
+});
+
+// Accept a disability request
+app.post('/disability-requests/:id/accept', async (req, res) => {
+    const userId = req.params.id;
+    try {
+        await client.query(
+            `UPDATE users
+                SET is_currently_disabled = true,
+                    updated_at = NOW()
+              WHERE user_id = $1`,
+            [userId]
+        );
+        return res.json({ message: 'Request accepted' });
+    } catch (err) {
+        console.error('Error accepting disability request:', err);
+        return res.status(500).json({ message: 'Server error' });
+    }
+});
+
+// Decline a disability request
+app.post('/disability-requests/:id/decline', async (req, res) => {
+    const userId = req.params.id;
+    try {
+        await client.query(
+            `UPDATE users
+                SET request_for_disability = false,
+                    updated_at = NOW()
+              WHERE user_id = $1`,
+            [userId]
+        );
+        return res.json({ message: 'Request declined' });
+    } catch (err) {
+        console.error('Error declining disability request:', err);
+        return res.status(500).json({ message: 'Server error' });
+    }
+});
+
+// Temporäres Speichern der Versandinformationen in der Session (wird später in der DB gespeichert)
+app.post('/checkout-shipping', (req, res) => {
+    if (!req.session.userId) {
+        return res.status(401).json({ message: 'Not logged in' });
+    }
+
+    if (!req.session.checkout) {
+        return res.status(400).json({ message: 'No active checkout' });
+    }
+
+    if (Date.now() - req.session.checkout.startedAt > 15 * 60 * 1000) {
+        req.session.checkout = null;
+        return res.status(400).json({ message: 'Checkout expired' });
+    }
+
+    req.session.checkout.shippingInfo = req.body || {};
+    return res.status(200).json({ message: 'OK' });
+});
+
+// Liefert die aktuell in der Checkout-Session gespeicherten Lieferinformationen
+app.get('/checkout-shipping', (req, res) => {
+    if (!req.session.userId) {
+        return res.status(401).json({ message: 'Not logged in' });
+    }
+
+    if (!req.session.checkout) {
+        return res.status(404).json({ message: 'No active checkout' });
+    }
+
+    if (Date.now() - req.session.checkout.startedAt > 15 * 60 * 1000) {
+        req.session.checkout = null;
+        return res.status(404).json({ message: 'Checkout expired' });
+    }
+
+    return res.json({ shippingInfo: req.session.checkout.shippingInfo || null });
+});
+// Temporäres Speichern der Zahlungsart in der Session
+app.post('/checkout-payment', (req, res) => {
+    if (!req.session.userId) {
+        return res.status(401).json({ message: 'Not logged in' });
+    }
+
+    if (!req.session.checkout) {
+        return res.status(400).json({ message: 'No active checkout' });
+    }
+
+    if (Date.now() - req.session.checkout.startedAt > 15 * 60 * 1000) {
+        req.session.checkout = null;
+        return res.status(400).json({ message: 'Checkout expired' });
+    }
+
+    req.session.checkout.paymentMethod = req.body.paymentMethod || null;
+    return res.status(200).json({ message: 'OK' });
+});
+
+// Liefert die aktuell gespeicherte Zahlungsart
+app.get('/checkout-payment', (req, res) => {
+    if (!req.session.userId) {
+        return res.status(401).json({ message: 'Not logged in' });
+    }
+
+    if (!req.session.checkout) {
+        return res.status(404).json({ message: 'No active checkout' });
+    }
+
+    if (Date.now() - req.session.checkout.startedAt > 15 * 60 * 1000) {
+        req.session.checkout = null;
+        return res.status(404).json({ message: 'Checkout expired' });
+    }
+
+    return res.json({ paymentMethod: req.session.checkout.paymentMethod || null });
 });
 app.post('/create-country', async (req, res) => {
     try {
@@ -365,6 +736,522 @@ app.get('/countries', async (req, res) => {
         res.status(500).json({ message: 'Fehler beim Laden der Länder' });
     }
 });
+
+// PUT: update country incl. its cities
+app.put('/countries/:id', async (req, res) => {
+    const countryId = req.params.id;
+    const { name, code, cities = [] } = req.body;
+
+    if (!name || !name.trim()) {
+        return res.status(400).json({ message: 'Name ist erforderlich' });
+    }
+
+    try {
+        await client.query('BEGIN');
+
+        await client.query(
+            `UPDATE countries
+                 SET name = $1,
+                     iso_code = $2
+               WHERE id = $3`,
+            [name.trim(), code ? code.trim().toUpperCase() : null, countryId]
+        );
+
+        const { rows: existing } = await client.query(
+            'SELECT id FROM cities WHERE country_id = $1',
+            [countryId]
+        );
+        const remaining = new Set(existing.map(r => r.id));
+
+        for (const c of cities) {
+            if (c.id && remaining.has(c.id)) {
+                await client.query(
+                    'UPDATE cities SET name = $1 WHERE id = $2',
+                    [c.name.trim(), c.id]
+                );
+                remaining.delete(c.id);
+            } else if (!c.id) {
+                await client.query(
+                    'INSERT INTO cities (id, name, country_id) VALUES ($1, $2, $3)',
+                    [uuidv4(), c.name.trim(), countryId]
+                );
+            }
+        }
+
+        for (const delId of remaining) {
+            await client.query('DELETE FROM cities WHERE id = $1', [delId]);
+        }
+
+        await client.query('COMMIT');
+        res.status(200).json({ message: 'Land aktualisiert' });
+    } catch (err) {
+        await client.query('ROLLBACK');
+        console.error('Update-country error:', err);
+        res.status(500).json({ message: 'Serverfehler beim Aktualisieren des Landes' });
+    }
+});
+
+// DELETE: remove country and its cities
+app.delete('/countries/:id', async (req, res) => {
+    const countryId = req.params.id;
+    try {
+        await client.query('BEGIN');
+        await client.query('DELETE FROM cities WHERE country_id = $1', [countryId]);
+        await client.query('DELETE FROM countries WHERE id = $1', [countryId]);
+        await client.query('COMMIT');
+        res.status(200).json({ message: 'Land gelöscht' });
+    } catch (err) {
+        await client.query('ROLLBACK');
+        console.error('Delete-country error:', err);
+        res.status(500).json({ message: 'Serverfehler beim Löschen des Landes' });
+    }
+});
+
+app.get('/email-exists', async (req, res) => {
+    const email = req.query.email;
+    if (!email) return res.status(400).json({ message: 'Email erforderlich' });
+    try {
+        const { rows } = await client.query('SELECT 1 FROM users WHERE email = $1 LIMIT 1', [email.trim()]);
+        return res.json({ exists: rows.length > 0 });
+    } catch (err) {
+        console.error('Error checking email:', err);
+        return res.status(500).json({ message: 'Server error' });
+    }
+});
+
+// ---------- Admin: User Management ----------
+// Liefert alle Rollen
+app.get('/user-roles', async (req, res) => {
+    try {
+        const { rows } = await client.query('SELECT id, name FROM user_roles ORDER BY name');
+        return res.json({ roles: rows });
+    } catch (err) {
+        console.error('Error fetching user roles:', err);
+        return res.status(500).json({ message: 'Server error' });
+    }
+});
+
+// Liefert alle Nutzer, optional gefiltert nach Rolle
+app.get('/users', async (req, res) => {
+    const roleId = req.query.roleId;
+    const params = [];
+    let where = '';
+    if (roleId) {
+        params.push(roleId);
+        where = 'WHERE u.role = $1';
+    }
+    try {
+        const { rows } = await client.query(
+            `SELECT u.user_id,
+                    u.visible_user_id,
+                    u.created_at,
+                    u.role,
+                    ur.name AS role_name,
+                    COUNT(o.id) AS order_count
+             FROM users u
+                  JOIN user_roles ur ON ur.id = u.role
+                  LEFT JOIN orders o ON o.user_id = u.user_id
+             ${where}
+             GROUP BY u.user_id, u.visible_user_id, u.created_at, u.role, ur.name
+             ORDER BY u.created_at DESC`,
+            params
+        );
+        return res.json({ users: rows });
+    } catch (err) {
+        console.error('Error fetching users:', err);
+        return res.status(500).json({ message: 'Server error' });
+    }
+});
+
+// Detaildaten eines Nutzers inkl. Rolle und Disability Info
+app.get('/users/:id', async (req, res) => {
+    const userId = req.params.id;
+    try {
+        const { rows } = await client.query(
+            `SELECT u.*, ur.name AS role_name
+               FROM users u
+               JOIN user_roles ur ON ur.id = u.role
+              WHERE u.user_id = $1
+              LIMIT 1`,
+            [userId]
+        );
+        if (!rows.length) return res.status(404).json({ message: 'User not found' });
+
+        const user = rows[0];
+        const { rows: marks } = await client.query(
+            'SELECT mark_code FROM user_disability_marks WHERE user_id = $1',
+            [userId]
+        );
+        return res.json({
+            user: {
+                ...user,
+                marks: marks.map(m => m.mark_code && m.mark_code.trim()),
+            },
+        });
+    } catch (err) {
+        console.error('Error fetching user detail:', err);
+        return res.status(500).json({ message: 'Server error' });
+    }
+});
+
+// Bestellungen eines bestimmten Nutzers (Admin)
+app.get('/users/:id/orders', async (req, res) => {
+    const userId = req.params.id;
+    try {
+        const { rows } = await client.query(
+            `SELECT o.id,
+                    o.created_at,
+                    o.street_address,
+                    o.postal_code,
+                    o.city,
+                    o.country,
+                    COUNT(ot.ticket_id) AS ticket_count
+               FROM orders o
+                    LEFT JOIN order_tickets ot ON ot.order_id = o.id
+              WHERE o.user_id = $1
+              GROUP BY o.id, o.created_at
+              ORDER BY o.created_at DESC`,
+            [userId]
+        );
+        return res.json({ orders: rows });
+    } catch (err) {
+        console.error('Error fetching user orders:', err);
+        return res.status(500).json({ message: 'Server error' });
+    }
+});
+
+// Rolle eines Nutzers aktualisieren
+app.put('/users/:id/role', async (req, res) => {
+    if (!req.session.userId) {
+        return res.status(401).json({ message: 'Not logged in' });
+    }
+
+    const userId = req.params.id;
+    const { roleId } = req.body;
+
+    if (!roleId) {
+        return res.status(400).json({ message: 'roleId required' });
+    }
+
+    try {
+        const { rows: permRows } = await client.query(
+            'SELECT has_role_appointing_capability FROM user_roles WHERE id = $1',
+            [req.session.role]
+        );
+
+        if (!permRows.length || !permRows[0].has_role_appointing_capability) {
+            return res.status(403).json({ message: 'Forbidden' });
+        }
+
+        await client.query(
+            'UPDATE users SET role = $1, updated_at = NOW() WHERE user_id = $2',
+            [roleId, userId]
+        );
+
+        const { rows } = await client.query(
+            `SELECT u.user_id,
+                    u.visible_user_id,
+                    u.created_at,
+                    u.role,
+                    ur.name AS role_name
+               FROM users u
+                    JOIN user_roles ur ON ur.id = u.role
+              WHERE u.user_id = $1`,
+            [userId]
+        );
+
+        return res.json({ user: rows[0] });
+    } catch (err) {
+        console.error('Error updating user role:', err);
+        return res.status(500).json({ message: 'Server error' });
+    }
+});
+
+// server.js
+app.patch('/users/:id/compensation-request', async (req, res) => {
+    const sessionUserId = req.session.userId;
+    const paramUserId   = req.params.id;
+
+    // 1) Nur eigener Datensatz darf geändert werden
+    if (sessionUserId !== paramUserId) {
+        return res.status(403).json({ message: 'Unbefugter Zugriff' });
+    }
+
+    // 2) Nur die tatsächlich bearbeitbaren Felder aus dem Body entnehmen
+    const {
+        salutation,
+        firstName,
+        lastName,
+        birthDate,
+        disabilityDegree,
+        disabilityCardExpiryDate,
+        disabilityMarks    // Array von char(3)
+    } = req.body;
+
+    // 3) Mindestens ein Feld zum Aktualisieren erforderlich
+    if (
+        salutation               == null &&
+        firstName                == null &&
+        lastName                 == null &&
+        birthDate                == null &&
+        disabilityDegree         == null &&
+        disabilityCardExpiryDate == null &&
+        !Array.isArray(disabilityMarks)
+    ) {
+        return res.status(400).json({
+            message: 'Bitte übergeben Sie mindestens ein Profil- oder Disability-Feld'
+        });
+    }
+
+    try {
+        // 4) Transaktion starten
+        await client.query('BEGIN');
+
+        // 5) users-Tabelle updaten (COALESCE: nur neue Werte setzen)
+        await client.query(
+            `
+      UPDATE users
+         SET salutation                  = COALESCE($1, salutation),
+             first_name                  = COALESCE($2, first_name),
+             last_name                   = COALESCE($3, last_name),
+             birth_date                  = COALESCE($4, birth_date),
+             disability_degree           = COALESCE($5, disability_degree),
+             disability_card_expiry_date = COALESCE($6, disability_card_expiry_date),
+             updated_at                  = NOW()
+       WHERE user_id = $7
+      `,
+            [
+                salutation               ?? null,
+                firstName?.trim()        ?? null,
+                lastName?.trim()         ?? null,
+                birthDate                ?? null,
+                disabilityDegree         ?? null,
+                disabilityCardExpiryDate ?? null,
+                sessionUserId
+            ]
+        );
+
+        // 6) Wenn disabilityMarks übergeben wurden: Join-Tabelle neu schreiben
+        if (Array.isArray(disabilityMarks)) {
+            // a) alte Einträge löschen
+            await client.query(
+                `DELETE FROM user_disability_marks WHERE user_id = $1`,
+                [sessionUserId]
+            );
+            // b) neue Einträge bulk-insert (wenn nicht leer)
+            if (disabilityMarks.length > 0) {
+                const vals = disabilityMarks
+                    .map((_, i) => `($1, $${i + 2})`)
+                    .join(',');
+                await client.query(
+                    `INSERT INTO user_disability_marks(user_id, mark_code) VALUES ${vals}`,
+                    [sessionUserId, ...disabilityMarks]
+                );
+            }
+        }
+
+        // 7) Transaktion committen
+        await client.query('COMMIT');
+
+        // 8) Aktualisierte Daten auslesen (inkl. aktueller Marks)
+        const { rows: [ user ] } = await client.query(
+            `
+      SELECT
+        salutation                  AS "salutation",
+        first_name                  AS "firstName",
+        last_name                   AS "lastName",
+        birth_date                  AS "birthDate",
+        disability_degree           AS "disabilityDegree",
+        disability_card_expiry_date AS "disabilityCardExpiryDate"
+      FROM users
+      WHERE user_id = $1
+      `,
+            [sessionUserId]
+        );
+        const { rows: marksRows } = await client.query(
+            `SELECT mark_code FROM user_disability_marks WHERE user_id = $1`,
+            [sessionUserId]
+        );
+
+        // 9) Response
+        return res.status(200).json({
+            message: 'Profil und Disability-Details erfolgreich aktualisiert',
+            user: {
+                ...user,
+                marks: marksRows.map(r => r.mark_code)
+            }
+        });
+    } catch (err) {
+        await client.query('ROLLBACK');
+        console.error('Update-Fehler:', err);
+        return res.status(500).json({
+            message: 'Serverfehler beim Aktualisieren des Profils'
+        });
+    }
+});
+
+
+// PATCH: update user profile (allgemeine Profildaten)
+app.patch('/users/:id', async (req, res) => {
+    const sessionUserId = req.session.userId;
+    const paramUserId   = req.params.id;
+
+    // 1) Nur eigene Daten dürfen geändert werden
+    if (!sessionUserId) {
+        return res.status(401).json({ message: 'Not logged in' });
+    }
+    if (sessionUserId !== paramUserId) {
+        return res.status(403).json({ message: 'Forbidden' });
+    }
+
+    // 2) Felder aus dem Body entnehmen
+    const {
+        salutation,
+        firstName,
+        lastName,
+        email,
+        company,
+        streetAddress,
+        postalCode,
+        city,
+        country,
+        birthDate,
+        phone
+    } = req.body;
+
+    // 3) Pflichtfelder validieren (beispielhaft: Vor- und Nachname und E-Mail)
+    if (!firstName || !lastName || !email) {
+        return res.status(400).json({
+            message: 'firstName, lastName und email sind erforderlich'
+        });
+    }
+
+    try {
+        // 4) Update-Query
+        const { rows } = await client.query(
+            `
+        UPDATE users
+           SET salutation                   = $1,
+               first_name                   = $2,
+               last_name                    = $3,
+               email                        = $4,
+               company                      = $5,
+               street_address               = $6,
+               postal_code                  = $7,
+               city                         = $8,
+               country                      = $9,
+               birth_date                   = $10,
+               phone                        = $11,
+               updated_at                   = NOW()
+         WHERE user_id = $12
+         RETURNING user_id,
+                   salutation     AS "salutation",
+                   first_name     AS "firstName",
+                   last_name      AS "lastName",
+                   email          AS "email",
+                   company        AS "company",
+                   street_address AS "streetAddress",
+                   postal_code    AS "postalCode",
+                   city           AS "city",
+                   country        AS "country",
+                   birth_date     AS "birthDate",
+                   phone          AS "phone"
+      `,
+            [
+                salutation || null,
+                firstName.trim(),
+                lastName.trim(),
+                email.trim(),
+                company || null,
+                streetAddress || null,
+                postalCode || null,
+                city || null,
+                country || null,
+                birthDate || null,
+                phone || null,
+                sessionUserId
+            ]
+        );
+
+        if (rows.length === 0) {
+            return res.status(404).json({ message: 'User nicht gefunden' });
+        }
+
+        // 5) Erfolgreiche Antwort mit den neuen Profildaten
+        return res.status(200).json({
+            message: 'Profil erfolgreich aktualisiert',
+            user: rows[0]
+        });
+    } catch (err) {
+        console.error('Error updating profile:', err);
+        return res.status(500).json({ message: 'Serverfehler beim Aktualisieren des Profils' });
+    }
+});
+
+
+// Passwort eines Nutzers ändern
+app.patch('/users/:id/password', async (req, res) => {
+    const sessionUser = req.session.userId;
+    if (!sessionUser) {
+        return res.status(401).json({ message: 'Not logged in' });
+    }
+
+    const userId = req.params.id;
+    if (sessionUser !== userId) {
+        return res.status(403).json({ message: 'Forbidden' });
+    }
+
+    const { currentPassword, newPassword } = req.body || {};
+    if (!currentPassword || !newPassword) {
+        return res.status(400).json({ message: 'currentPassword and newPassword required' });
+    }
+
+    try {
+        const { rows } = await client.query(
+            'SELECT password FROM users WHERE user_id = $1',
+            [userId]
+        );
+        if (!rows.length) {
+            return res.status(404).json({ message: 'User not found' });
+        }
+
+        const match = await bcrypt.compare(currentPassword, rows[0].password);
+        if (!match) {
+            return res.status(400).json({ message: 'Aktuelles Passwort stimmt nicht' });
+        }
+        if (currentPassword === newPassword) {
+            return res.status(400).json({ message: 'Passwörter sind identisch' });
+        }
+        const pattern = /^(?=.*[A-Za-z])(?=.*\d)(?=.*[^A-Za-z\d]).{8,}$/;
+        if (!pattern.test(newPassword)) {
+            return res.status(400).json({ message: 'Anforderungen für ein Passwort nicht erfüllt' });
+        }
+
+        const hashed = await bcrypt.hash(newPassword, 10);
+        await client.query(
+            'UPDATE users SET password = $1, updated_at = NOW() WHERE user_id = $2',
+            [hashed, userId]
+        );
+
+        return res.json({ message: 'Passwort aktualisiert' });
+    } catch (err) {
+        console.error('Error updating password:', err);
+        return res.status(500).json({ message: 'Serverfehler beim Aktualisieren des Passworts' });
+    }
+});
+
+// Liefert alle verfügbaren Versandoptionen
+app.get('/shipping-options', async (req, res) => {
+    try {
+        const result = await client.query(
+            'SELECT id, label, price, description FROM shipping_options ORDER BY price'
+        );
+        res.status(200).json({ options: result.rows });
+    } catch (error) {
+        console.error('Error fetching shipping options:', error);
+        res.status(500).json({ message: 'Serverfehler beim Laden der Versandoptionen' });
+    }
+});
 app.post('/create-artist', upload.single('artistImage'), async (req, res) => {
     try {
         const { name, biography, website } = req.body;
@@ -390,6 +1277,9 @@ app.post('/create-artist', upload.single('artistImage'), async (req, res) => {
         res.status(201).json({ message: 'Artist created', artist });
     } catch (error) {
         console.error('Create-artist error:', error);
+        if (error.code === '23505' && error.constraint === 'unique_artist_name') {
+            return res.status(409).json({ message: 'Künstler mit diesem Namen existiert bereits.' });
+        }
         res.status(500).json({ message: 'Server error during artist creation' });
     }
 });
@@ -403,6 +1293,32 @@ app.get('/artists', async (req, res) => {
     } catch (err) {
         console.error('Error fetching artists:', err);
         res.status(500).json({ message: 'Fehler beim Laden der Künstler' });
+    }
+});
+
+app.get('/artist-details/:id', async (req, res) => {
+    const artistId = req.params.id;
+    try {
+        const { rows } = await client.query(
+            `SELECT a.id,
+                    a.name,
+                    a.biography,
+                    a.website,
+                    a.artist_image,
+                    COUNT(DISTINCT ta.tour_id) AS "tourCount"
+             FROM artists a
+             LEFT JOIN tour_artists ta ON ta.artist_id = a.id
+             WHERE a.id = $1
+             GROUP BY a.id, a.name, a.biography, a.website, a.artist_image`,
+            [artistId]
+        );
+        if (rows.length === 0) {
+            return res.status(404).json({ message: 'Artist nicht gefunden' });
+        }
+        return res.status(200).json({ artist: rows[0] });
+    } catch (err) {
+        console.error('Error in /artist-details:', err);
+        return res.status(500).json({ message: 'Fehler beim Laden des Künstlers' });
     }
 });
 
@@ -600,6 +1516,9 @@ app.post('/create-tour', upload.single('tourImage'), async (req, res) => {
     } catch (error) {
         await client.query('ROLLBACK');
         console.error('Create-tour error:', error);
+        if (error.code === '23505' && error.constraint === 'unique_tour_title_dates') {
+            return res.status(409).json({ message: 'Eine Tour mit diesen Daten existiert bereits.' });
+        }
         return res.status(500).json({ message: 'Serverfehler beim Erstellen der Tour' });
     }
 });
@@ -622,6 +1541,9 @@ app.post('/create-city', express.json(), async (req, res) => {
         res.status(201).json({ message: 'Stadt erstellt', city: result.rows[0] });
     } catch (error) {
         console.error('Create-city error:', error);
+        if (error.code === '23505' && error.constraint === 'unique_city_name_per_country') {
+            return res.status(409).json({ message: 'Stadt existiert bereits in diesem Land.' });
+        }
         res.status(500).json({ message: 'Serverfehler beim Erstellen der Stadt' });
     }
 });
@@ -668,7 +1590,7 @@ app.get('/areas', async (req, res) => {
 });
 
 // POST: Venue erstellen (inkl. area capacities)
-app.post('/create-venue', express.json(), async (req, res) => {
+app.post('/create-venue', upload.single('venueImage'), async (req, res) => {
     const {
         name,
         address,
@@ -676,6 +1598,29 @@ app.post('/create-venue', express.json(), async (req, res) => {
         website,
         venueAreas = [],
     } = req.body;
+
+    let areas = [];
+    try {
+        areas = typeof venueAreas === 'string' ? JSON.parse(venueAreas) : venueAreas;
+        if (!Array.isArray(areas)) areas = [];
+    } catch {
+        areas = [];
+    }
+
+    if (areas.length === 0 ||
+        !areas.some(a => a.areaId && parseInt(a.maxCapacity, 10) > 0)) {
+        return res.status(400).json({
+            message: 'Mindestens ein Bereich mit Kapazität > 0 ist erforderlich'
+        });
+    }
+
+    for (const area of areas) {
+        if (!area.areaId || parseInt(area.maxCapacity, 10) <= 0) {
+            return res.status(400).json({
+                message: 'Alle Bereiche benötigen gültige IDs und Kapazität > 0'
+            });
+        }
+    }
 
     if (!name?.trim() || !address?.trim() || !cityId) {
         return res.status(400).json({
@@ -687,15 +1632,24 @@ app.post('/create-venue', express.json(), async (req, res) => {
         await client.query('BEGIN');
         const venueId = uuidv4();
 
+        let imageId = null;
+        if (req.file) {
+            imageId = uuidv4();
+            await client.query(
+                'INSERT INTO images (id, image_data, image_type, entity_type, entity_id) VALUES ($1,$2,$3,$4,$5)',
+                [imageId, req.file.buffer, req.file.mimetype, 'venue', venueId]
+            );
+        }
+
         const { rows } = await client.query(
             `INSERT INTO venues
-                 (id, name, address, city_id, website)
-             VALUES ($1,$2,$3,$4,$5)
+                 (id, name, address, city_id, website, venue_image)
+             VALUES ($1,$2,$3,$4,$5,$6)
              RETURNING *`,
-            [venueId, name.trim(), address.trim(), cityId, website || null]
+            [venueId, name.trim(), address.trim(), cityId, website || null, imageId]
         );
 
-        for (const va of venueAreas) {
+        for (const va of areas) {
             await client.query(
                 `INSERT INTO venue_areas
                      (id, venue_id, area_id, max_capacity)
@@ -718,7 +1672,7 @@ app.get('/tours', async (req, res) => {
     res.json({ tours: result.rows });
 });
 app.get('/venues', async (req, res) => {
-    const result = await client.query('SELECT id, name FROM venues ORDER BY name');
+    const result = await client.query('SELECT id, name, venue_image FROM venues ORDER BY name');
     res.json({ venues: result.rows });
 });
 
@@ -758,6 +1712,7 @@ app.get('/venues-detailed', async (req, res) => {
                     v.address,
                     v.city_id    AS "cityId",
                     v.website,
+                    v.venue_image,
                     c.name       AS city_name
              FROM venues v
                       LEFT JOIN cities c ON c.id = v.city_id
@@ -770,10 +1725,33 @@ app.get('/venues-detailed', async (req, res) => {
     }
 });
 
-// PUT: Update a venue and its areas
-app.put('/venues/:id', async (req, res) => {
+// PUT: Update a venue, its areas and optionally the image
+app.put('/venues/:id', upload.single('venue_image'), async (req, res) => {
     const venueId = req.params.id;
-    const { name, address, cityId, website, venueAreas = [] } = req.body;
+    const { name, address, cityId, website } = req.body;
+    let venueAreas = [];
+    try {
+        venueAreas = req.body.venueAreas
+            ? JSON.parse(req.body.venueAreas)
+            : [];
+        if (!Array.isArray(venueAreas)) venueAreas = [];
+    } catch {
+        venueAreas = [];
+    }
+
+    if (venueAreas.length === 0 ||
+        !venueAreas.some(a => a.areaId && parseInt(a.maxCapacity, 10) > 0)) {
+        return res.status(400).json({
+            message: 'Mindestens ein Bereich mit Kapazität > 0 ist erforderlich'
+        });
+    }
+    for (const va of venueAreas) {
+        if (!va.areaId || parseInt(va.maxCapacity, 10) <= 0) {
+            return res.status(400).json({
+                message: 'Alle Bereiche benötigen gültige IDs und Kapazität > 0'
+            });
+        }
+    }
 
     if (!name?.trim() || !address?.trim() || !cityId) {
         return res
@@ -783,6 +1761,17 @@ app.put('/venues/:id', async (req, res) => {
 
     try {
         await client.query('BEGIN');
+
+        // Aktuelles Bild ermitteln
+        const { rows: existingVenue } = await client.query(
+            'SELECT venue_image FROM venues WHERE id = $1',
+            [venueId]
+        );
+        if (existingVenue.length === 0) {
+            await client.query('ROLLBACK');
+            return res.status(404).json({ message: 'Venue nicht gefunden' });
+        }
+        const oldImageId = existingVenue[0].venue_image;
 
         await client.query(
             `UPDATE venues
@@ -794,6 +1783,18 @@ app.put('/venues/:id', async (req, res) => {
                WHERE id = $5`,
             [name.trim(), address.trim(), cityId, website || null, venueId]
         );
+
+        if (req.file) {
+            const newImageId = uuidv4();
+            await client.query(
+                'INSERT INTO images (id, image_data, image_type, entity_type, entity_id) VALUES ($1,$2,$3,$4,$5)',
+                [newImageId, req.file.buffer, req.file.mimetype, 'venue', venueId]
+            );
+            await client.query('UPDATE venues SET venue_image = $1 WHERE id = $2', [newImageId, venueId]);
+            if (oldImageId) {
+                await client.query('DELETE FROM images WHERE id = $1', [oldImageId]);
+            }
+        }
 
         // Bestehende Areas laden
         const { rows: existing } = await client.query(
@@ -839,6 +1840,32 @@ app.put('/venues/:id', async (req, res) => {
 app.delete('/venues/:id', async (req, res) => {
     const venueId = req.params.id;
     try {
+        // Prüfen, ob noch Events oder Tickets existieren
+        const { rows: ticketRows } = await client.query(
+            `SELECT 1
+               FROM tickets t
+                        JOIN event_categories ec ON ec.id = t.event_category_id
+                        JOIN events e ON e.id = ec.event_id
+              WHERE e.venue_id = $1
+              LIMIT 1`,
+            [venueId]
+        );
+        if (ticketRows.length > 0) {
+            return res.status(400).json({
+                message: 'Venue kann nicht gelöscht werden, da Tickets für Events existieren.'
+            });
+        }
+
+        const { rows: eventRows } = await client.query(
+            'SELECT 1 FROM events WHERE venue_id = $1 LIMIT 1',
+            [venueId]
+        );
+        if (eventRows.length > 0) {
+            return res.status(400).json({
+                message: 'Venue kann nicht gelöscht werden, solange noch Events vorhanden sind.'
+            });
+        }
+
         await client.query('BEGIN');
         await client.query('DELETE FROM venue_areas WHERE venue_id = $1', [venueId]);
         await client.query('DELETE FROM venues WHERE id = $1', [venueId]);
@@ -864,6 +1891,20 @@ app.post('/create-event', express.json(), async (req, res) => {
 
     if (!tourId || !venueId || !doorTime || !startTime || !endTime) {
         return res.status(400).json({ message: 'Tour, Venue und alle Zeitangaben sind erforderlich' });
+    }
+
+    if (!Array.isArray(categories) || categories.length === 0) {
+        return res.status(400).json({ message: 'Mindestens eine Kategorie ist erforderlich' });
+    }
+    for (const cat of categories) {
+        if (!Array.isArray(cat.venueAreas) || cat.venueAreas.length === 0) {
+            return res.status(400).json({ message: 'Jede Kategorie benötigt mindestens einen Bereich' });
+        }
+        for (const entry of cat.venueAreas) {
+            if (!entry.areaId || parseInt(entry.capacity, 10) <= 0) {
+                return res.status(400).json({ message: 'Alle Bereichszuordnungen benötigen gültige IDs und Kapazität > 0' });
+            }
+        }
     }
 
     try {
@@ -950,6 +1991,9 @@ app.post('/create-event', express.json(), async (req, res) => {
     } catch (err) {
         await client.query('ROLLBACK');
         console.error('Create-event error:', err);
+        if (err.code === '23505' && err.constraint === 'unique_event_start_per_venue') {
+            return res.status(409).json({ message: 'In diesem Zeitraum besteht bereits ein Event an diesem Veranstaltungsort.' });
+        }
         return res.status(500).json({ message: 'Serverfehler beim Erstellen des Events' });
     }
 });
@@ -1002,7 +2046,77 @@ app.post('/create-genre', async (req, res) => {
     } catch (err) {
         await client.query('ROLLBACK');
         console.error('Create-genre error:', err);
+        if (err.code === '23505' && err.constraint === 'unique_genre_name') {
+            return res.status(409).json({ message: 'Genre existiert bereits.' });
+        }
         res.status(500).json({ message: 'Serverfehler beim Erstellen des Genres' });
+    }
+});
+
+// PUT: update a genre and its subgenres
+app.put('/genres/:id', async (req, res) => {
+    const genreId = req.params.id;
+    const { name, subgenres = [] } = req.body;
+
+    if (!name || !name.trim()) {
+        return res.status(400).json({ message: 'Name ist erforderlich' });
+    }
+
+    try {
+        await client.query('BEGIN');
+
+        await client.query(
+            'UPDATE genres SET name = $1 WHERE id = $2',
+            [name.trim(), genreId]
+        );
+
+        const { rows: existing } = await client.query(
+            'SELECT id FROM subgenres WHERE genre_id = $1',
+            [genreId]
+        );
+        const remaining = new Set(existing.map(r => r.id));
+
+        for (const sg of subgenres) {
+            if (sg.id && remaining.has(sg.id)) {
+                await client.query(
+                    'UPDATE subgenres SET name = $1 WHERE id = $2',
+                    [sg.name.trim(), sg.id]
+                );
+                remaining.delete(sg.id);
+            } else if (!sg.id) {
+                await client.query(
+                    'INSERT INTO subgenres (id, genre_id, name) VALUES ($1, $2, $3)',
+                    [uuidv4(), genreId, sg.name.trim()]
+                );
+            }
+        }
+
+        for (const delId of remaining) {
+            await client.query('DELETE FROM subgenres WHERE id = $1', [delId]);
+        }
+
+        await client.query('COMMIT');
+        res.status(200).json({ message: 'Genre aktualisiert' });
+    } catch (err) {
+        await client.query('ROLLBACK');
+        console.error('Update-genre error:', err);
+        res.status(500).json({ message: 'Serverfehler beim Aktualisieren des Genres' });
+    }
+});
+
+// DELETE: remove a genre completely
+app.delete('/genres/:id', async (req, res) => {
+    const genreId = req.params.id;
+    try {
+        await client.query('BEGIN');
+        await client.query('DELETE FROM subgenres WHERE genre_id = $1', [genreId]);
+        await client.query('DELETE FROM genres WHERE id = $1', [genreId]);
+        await client.query('COMMIT');
+        res.status(200).json({ message: 'Genre gelöscht' });
+    } catch (err) {
+        await client.query('ROLLBACK');
+        console.error('Delete-genre error:', err);
+        res.status(500).json({ message: 'Serverfehler beim Löschen des Genres' });
     }
 });
 
@@ -1018,14 +2132,22 @@ app.get('/genres-with-subgenres', async (req, res) => {
           json_agg(
             json_build_object(
               'id', s.id,
-              'name', s.name
+              'name', s.name,
+              'event_count', COALESCE(ec.event_count, 0)
             )
+            ORDER BY s.name
           ) FILTER (WHERE s.id IS NOT NULL),
           '[]'
         ) AS subgenres
       FROM genres g
       LEFT JOIN subgenres s
         ON s.genre_id = g.id
+      LEFT JOIN (
+        SELECT ts.subgenre_id, COUNT(e.id) AS event_count
+        FROM tour_subgenres ts
+        JOIN events e ON e.tour_id = ts.tour_id
+        GROUP BY ts.subgenre_id
+      ) ec ON ec.subgenre_id = s.id
       GROUP BY g.id, g.name
       ORDER BY g.name
     `);
@@ -1045,6 +2167,39 @@ app.get('/genres-with-subgenres', async (req, res) => {
     }
 });
 
+app.get('/countries-with-cities', async (req, res) => {
+    try {
+        const { rows } = await client.query(`
+      SELECT
+        co.id AS country_id,
+        co.name AS country_name,
+        co.iso_code      AS iso_code,
+        COALESCE(
+          json_agg(
+            json_build_object('id', ci.id, 'name', ci.name)
+          ) FILTER (WHERE ci.id IS NOT NULL),
+          '[]'
+        ) AS cities
+      FROM countries co
+      LEFT JOIN cities ci ON ci.country_id = co.id
+      GROUP BY co.id, co.name, co.iso_code
+      ORDER BY co.name
+    `);
+
+        const countriesWithCities = rows.map(r => ({
+            id: r.country_id,
+            name: r.country_name,
+            iso_code: r.iso_code,
+            cities: r.cities,
+        }));
+
+        return res.status(200).json({ countries: countriesWithCities });
+    } catch (error) {
+        console.error('Error fetching countries with cities:', error);
+        return res.status(500).json({ message: 'Fehler beim Laden der Länder und Städte' });
+    }
+});
+
 app.get('/cities-with-venues', async (req, res) => {
     try {
         const { rows } = await client.query(`
@@ -1055,14 +2210,22 @@ app.get('/cities-with-venues', async (req, res) => {
           json_agg(
             json_build_object(
               'id', v.id,
-              'name', v.name
+              'name', v.name,
+              'venue_image', v.venue_image,
+              'event_count', COALESCE(ev.event_count, 0)
             )
+            ORDER BY v.name
           ) FILTER (WHERE v.id IS NOT NULL),
           '[]'
         ) AS venues
       FROM cities ci
       LEFT JOIN venues v
         ON v.city_id = ci.id
+      LEFT JOIN (
+        SELECT venue_id, COUNT(id) AS event_count
+        FROM events
+        GROUP BY venue_id
+      ) ev ON ev.venue_id = v.id
       GROUP BY ci.id, ci.name
       ORDER BY ci.name
     `);
@@ -1083,9 +2246,21 @@ app.get('/cities-with-venues', async (req, res) => {
 app.get("/tours-with-images", async (req, res) => {
     try {
         const { rows } = await client.query(
-            `SELECT id, title, tour_image
-       FROM tours
-       ORDER BY title`
+            `
+                SELECT DISTINCT ON (t.id)
+                    t.id,
+                    t.title,
+                    t.tour_image,
+                    ta.artist_id
+                FROM tours AS t
+                     JOIN tour_artists AS ta ON ta.tour_id = t.id
+                WHERE EXISTS (
+                    SELECT 1 FROM events e WHERE e.tour_id = t.id
+                )
+                ORDER BY
+                    t.id,
+                    ta.artist_id;
+            `
         );
         res.status(200).json({ tours: rows });
     } catch (err) {
@@ -1097,15 +2272,92 @@ app.get("/tours-with-images", async (req, res) => {
 app.get("/artists-with-images", async (req, res) => {
     try {
         const { rows } = await client.query(
-            `SELECT id, name, artist_image
-       FROM artists
-       ORDER BY name`
+            `
+                SELECT DISTINCT a.id, a.name, a.artist_image
+                FROM artists a
+                     JOIN tour_artists ta ON ta.artist_id = a.id
+                WHERE EXISTS (
+                    SELECT 1 FROM events e WHERE e.tour_id = ta.tour_id
+                )
+                ORDER BY a.name
+            `
         );
         res.status(200).json({ artists: rows });
     } catch (err) {
         console.error("Error fetching artists:", err);
         res.status(500).json({ message: "Fehler beim Laden der Künstler" });
     }
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Suche nach Touren (inkl. 2 nächster Events) mit einfacher Cache-Schicht
+// ─────────────────────────────────────────────────────────────────────────────
+const SEARCH_CACHE_TTL = 5 * 60 * 1000; // 5 Minuten
+let toursSearchCache = { data: null, timestamp: 0 };
+
+async function loadToursSearchCache() {
+    const { rows } = await client.query(
+        `SELECT *
+         FROM (
+             SELECT
+                 t.id            AS tour_id,
+                 t.title         AS tour_title,
+                 t.tour_image    AS tour_image,
+                 ta.artist_id    AS artist_id,
+                 e.id            AS event_id,
+                 e.start_time    AS start_time,
+                 v.name          AS venue_name,
+                 c.name          AS city_name,
+                 ROW_NUMBER() OVER (PARTITION BY t.id ORDER BY e.start_time) AS rn
+             FROM tours t
+                  JOIN tour_artists ta ON ta.tour_id = t.id
+                  LEFT JOIN events e      ON e.tour_id = t.id
+                  LEFT JOIN venues v      ON v.id = e.venue_id
+                  LEFT JOIN cities c      ON c.id = v.city_id
+         ) sub
+         WHERE sub.event_id IS NOT NULL
+         ORDER BY sub.tour_title, sub.rn;`
+    );
+
+    const map = {};
+    rows.forEach((r) => {
+        if (!map[r.tour_id]) {
+            map[r.tour_id] = {
+                id: r.tour_id,
+                title: r.tour_title,
+                tour_image: r.tour_image,
+                artist_id: r.artist_id,
+                events: [],
+            };
+        }
+        if (r.event_id) {
+            map[r.tour_id].events.push({
+                id: r.event_id,
+                start_time: r.start_time,
+                venueName: r.venue_name,
+                cityName: r.city_name,
+            });
+        }
+    });
+
+    toursSearchCache = { data: Object.values(map), timestamp: Date.now() };
+}
+
+app.get('/search-tours', async (req, res) => {
+    const query = (req.query.q || '').toLowerCase();
+    if (!toursSearchCache.data || Date.now() - toursSearchCache.timestamp > SEARCH_CACHE_TTL) {
+        try {
+            await loadToursSearchCache();
+        } catch (err) {
+            console.error('Error loading search cache:', err);
+            return res.status(500).json({ message: 'Fehler beim Laden der Suchdaten' });
+        }
+    }
+
+    const result = toursSearchCache.data.filter((t) =>
+        t.title.toLowerCase().includes(query)
+    );
+    res.json({ tours: result.slice(0, 10) });
 });
 
 app.post('/create-area', async (req, res) => {
@@ -1195,6 +2447,42 @@ app.put('/artists/:id', upload.single('artist_image'), async (req, res) => {
 app.delete('/artists/:id', async (req, res) => {
     const artistId = req.params.id;
     try {
+        const { rows: ticketRows } = await client.query(
+            `SELECT 1
+               FROM tickets t
+                        JOIN event_categories ec ON ec.id = t.event_category_id
+                        JOIN events e ON e.id = ec.event_id
+                        JOIN event_supporting_acts esa ON esa.event_id = e.id
+              WHERE esa.artist_id = $1
+              LIMIT 1`,
+            [artistId]
+        );
+        if (ticketRows.length > 0) {
+            return res.status(400).json({
+                message: 'Artist kann nicht gelöscht werden, da Tickets für Events existieren.'
+            });
+        }
+
+        const { rows: refRows } = await client.query(
+            'SELECT 1 FROM event_supporting_acts WHERE artist_id = $1 LIMIT 1',
+            [artistId]
+        );
+        if (refRows.length > 0) {
+            return res.status(400).json({
+                message: 'Artist kann nicht gelöscht werden, da Events auf ihn verweisen.'
+            });
+        }
+
+        const { rows: tourRef } = await client.query(
+            'SELECT 1 FROM tour_artists WHERE artist_id = $1 LIMIT 1',
+            [artistId]
+        );
+        if (tourRef.length > 0) {
+            return res.status(400).json({
+                message: 'Artist kann nicht gelöscht werden, da Touren auf ihn verweisen.'
+            });
+        }
+
         // 1) hole artist_image id
         const { rows } = await client.query(
             'SELECT artist_image FROM artists WHERE id = $1',
@@ -1254,6 +2542,10 @@ app.delete('/artists/:id', async (req, res) => {
 
 app.get('/tours-detailed', async (req, res) => {
     try {
+        const marks = (req.query.marks || '')
+            .split(',')
+            .map((m) => m.trim())
+            .filter((m) => m.length > 0);
         // 0) Vorab: Alle disability_marks abfragen (area_id → mark_code), aber trim() auf mark_code
         const { rows: allMarks } = await client.query(`
             SELECT area_id, mark_code
@@ -1274,8 +2566,8 @@ app.get('/tours-detailed', async (req, res) => {
 
         console.log('marksMap (disability_marks):', marksMap);
 
-        // 1) Alle Tours holen
-        const { rows: tourRows } = await client.query(`
+        // 1) Alle Tours holen (optional nach Disability-Marks gefiltert)
+        const tourQueryBase = `
             SELECT
                 t.id,
                 t.title,
@@ -1283,9 +2575,17 @@ app.get('/tours-detailed', async (req, res) => {
                 t.start_date,
                 t.end_date,
                 t.tour_image
-            FROM tours t
-            ORDER BY t.start_date;
-        `);
+            FROM tours t`;
+        const filterClause = marks.length > 0 ? `
+            WHERE EXISTS (
+                SELECT 1
+                FROM events e
+                    JOIN event_categories ec ON ec.event_id = e.id
+                WHERE e.tour_id = t.id
+                  AND ec.disability_support_for = ANY($1::text[])
+            )` : '';
+        const tourQuery = `${tourQueryBase} ${filterClause} ORDER BY t.start_date;`;
+        const { rows: tourRows } = await client.query(tourQuery, marks.length > 0 ? [marks] : []);
 
         console.log('Gefundene Tours (raw):', tourRows);
 
@@ -1306,6 +2606,7 @@ app.get('/tours-detailed', async (req, res) => {
                         FROM event_categories ec
                                  JOIN events e ON e.id = ec.event_id
                         WHERE e.tour_id = $1
+                          AND ec.disability_support_for IS NULL
                     `,
                     [tour.id]
                 );
@@ -1582,27 +2883,87 @@ app.put('/tours/:id', upload.single('tour_image'), async (req, res) => {
 app.delete('/tours/:id', async (req, res) => {
     const tourId = req.params.id;
     try {
-        // 3a) hole tour_image Id
+        await client.query('BEGIN');
+
         const { rows } = await client.query(
             'SELECT tour_image FROM tours WHERE id = $1',
             [tourId]
         );
         if (rows.length === 0) {
+            await client.query('ROLLBACK');
             return res.status(404).json({ message: 'Tour nicht gefunden' });
         }
         const imageId = rows[0].tour_image;
 
-        // 3b) lösche Tour
-        await client.query('DELETE FROM tours WHERE id = $1', [tourId]);
+        const { rows: eventRows } = await client.query(
+            'SELECT id FROM events WHERE tour_id = $1',
+            [tourId]
+        );
 
-        // 3c) lösche zugehöriges Bild, falls vorhanden
+        for (const ev of eventRows) {
+            const { rows: t } = await client.query(
+                `SELECT 1
+                   FROM tickets t
+                        JOIN event_categories ec ON ec.id = t.event_category_id
+                  WHERE ec.event_id = $1
+                  LIMIT 1`,
+                [ev.id]
+            );
+            if (t.length > 0) {
+                await client.query('ROLLBACK');
+                return res
+                    .status(400)
+                    .json({ message: 'Tour kann nicht gelöscht werden, da Tickets für Events existieren.' });
+            }
+        }
+
+        for (const ev of eventRows) {
+            await client.query('DELETE FROM cart_items WHERE event_id = $1', [ev.id]);
+            await client.query('DELETE FROM checkout_items WHERE event_id = $1', [ev.id]);
+            await client.query(
+                `DELETE FROM order_tickets ot
+                 USING tickets t, event_categories ec
+                 WHERE ot.ticket_id = t.id
+                   AND t.event_category_id = ec.id
+                   AND ec.event_id = $1`,
+                [ev.id]
+            );
+            await client.query(
+                `DELETE FROM tickets t
+                 USING event_categories ec
+                 WHERE t.event_category_id = ec.id
+                   AND ec.event_id = $1`,
+                [ev.id]
+            );
+            await client.query(
+                `DELETE FROM event_venue_areas eva
+                 USING event_categories ec
+                 WHERE eva.category_id = ec.id
+                   AND ec.event_id = $1`,
+                [ev.id]
+            );
+            await client.query('DELETE FROM event_supporting_acts WHERE event_id = $1', [ev.id]);
+            await client.query('DELETE FROM event_categories WHERE event_id = $1', [ev.id]);
+            await client.query('DELETE FROM events WHERE id = $1', [ev.id]);
+        }
+
+        await client.query('DELETE FROM tour_artists WHERE tour_id = $1', [tourId]);
+        await client.query('DELETE FROM tour_subgenres WHERE tour_id = $1', [tourId]);
+        await client.query('DELETE FROM tour_genres WHERE tour_id = $1', [tourId]);
+
+        await client.query('DELETE FROM tours WHERE id = $1', [tourId]);
         if (imageId) {
             await client.query('DELETE FROM images WHERE id = $1', [imageId]);
         }
 
+        await client.query('COMMIT');
         return res.status(200).json({ message: 'Tour gelöscht' });
     } catch (err) {
+        await client.query('ROLLBACK');
         console.error('Delete‐Tour error:', err);
+        if (err.code === 'P0001') {
+            return res.status(400).json({ message: err.message });
+        }
         return res.status(500).json({ message: 'Serverfehler beim Löschen der Tour' });
     }
 });
@@ -1784,6 +3145,166 @@ app.get('/event-accessibility', async (req, res) => {
     }
 });
 
+// Liefert Detailinformationen zu einer Tour inklusive aller Events
+app.get('/tour-details/:id', async (req, res) => {
+    const tourId = req.params.id;
+    try {
+        const { rows: tourRows } = await client.query(
+            `SELECT id, title, subtitle, start_date, end_date, tour_image
+             FROM tours WHERE id = $1`,
+            [tourId]
+        );
+        if (tourRows.length === 0) {
+            return res.status(404).json({ message: 'Tour nicht gefunden' });
+        }
+
+        const tour = tourRows[0];
+
+        const { rows: countRows } = await client.query(
+            `SELECT COUNT(*) AS "eventCount" FROM events WHERE tour_id = $1`,
+            [tourId]
+        );
+        const eventCount = parseInt(countRows[0].eventCount, 10);
+
+        const { rows: cheapestRows } = await client.query(
+            `SELECT MIN(ec.price)::numeric(10,2) AS "cheapestPrice"
+               FROM event_categories ec
+                    JOIN events e ON e.id = ec.event_id
+              WHERE e.tour_id = $1
+                AND ec.disability_support_for IS NULL`,
+            [tourId]
+        );
+        const cheapestPrice = cheapestRows[0].cheapestPrice !== null
+            ? parseFloat(cheapestRows[0].cheapestPrice)
+            : null;
+
+        const { rows: allMarks } = await client.query(
+            `SELECT area_id, mark_code FROM disability_marks WHERE area_id IS NOT NULL`
+        );
+        const marksMap = {};
+        allMarks.forEach((row) => {
+            const aid = row.area_id;
+            const code = row.mark_code.trim();
+            if (!marksMap[aid]) marksMap[aid] = [];
+            if (!marksMap[aid].includes(code)) marksMap[aid].push(code);
+        });
+
+        const { rows: baseEvents } = await client.query(
+            `SELECT e.id,
+                    e.description,
+                    e.start_time,
+                    e.end_time,
+                    e.door_time,
+                    v.name AS "venueName",
+                    c.name AS "cityName"
+               FROM events e
+                    JOIN venues v ON v.id = e.venue_id
+                    JOIN cities c ON c.id = v.city_id
+              WHERE e.tour_id = $1
+              ORDER BY e.start_time`,
+            [tourId]
+        );
+
+        const events = await Promise.all(
+            baseEvents.map(async (ev) => {
+                const { rows: evaRows } = await client.query(
+                    `SELECT venue_area_id FROM event_venue_areas WHERE event_id = $1`,
+                    [ev.id]
+                );
+                const areaIds = [];
+                for (const eva of evaRows) {
+                    const { rows: vaRows } = await client.query(
+                        `SELECT area_id FROM venue_areas WHERE id = $1`,
+                        [eva.venue_area_id]
+                    );
+                    if (vaRows[0] && vaRows[0].area_id) areaIds.push(vaRows[0].area_id);
+                }
+                const collectedCodes = new Set();
+                areaIds.forEach((aid) => {
+                    if (marksMap[aid]) {
+                        marksMap[aid].forEach((c) => collectedCodes.add(c));
+                    }
+                });
+                const labels = Array.from(collectedCodes)
+                    .map((code) => {
+                        switch (code) {
+                            case 'G':
+                            case 'aG':
+                                return 'Rollstuhlplätze verfügbar';
+                            case 'Gl':
+                                return 'Gehörlosenplätze verfügbar';
+                            case 'Bl':
+                                return 'Blindenplätze verfügbar';
+                            default:
+                                return null;
+                        }
+                    })
+                    .filter((l) => l !== null);
+                return {
+                    id: ev.id,
+                    description: ev.description,
+                    cityName: ev.cityName,
+                    venueName: ev.venueName,
+                    start_time: ev.start_time,
+                    end_time: ev.end_time,
+                    door_time: ev.door_time,
+                    accessibility: Array.from(new Set(labels)),
+                };
+            })
+        );
+
+        const { rows: artistRows } = await client.query(
+            `SELECT a.id, a.name
+               FROM tour_artists ta
+                    JOIN artists a ON a.id = ta.artist_id
+              WHERE ta.tour_id = $1
+              ORDER BY a.name`,
+            [tourId]
+        );
+        const artistsList = artistRows.map((r) => r.name);
+        const artistIds = artistRows.map((r) => r.id);
+
+        const { rows: genreRows } = await client.query(
+            `SELECT g.id AS "genreId",
+                    g.name AS "genreName",
+                    COALESCE(json_agg(s.name) FILTER (WHERE s.id IS NOT NULL), '[]') AS "subgenreNames"
+               FROM tour_genres tg
+                    JOIN genres g ON g.id = tg.genre_id
+                    LEFT JOIN tour_subgenres ts ON ts.tour_id = tg.tour_id
+                    LEFT JOIN subgenres s ON s.id = ts.subgenre_id AND s.genre_id = tg.genre_id
+              WHERE tg.tour_id = $1
+              GROUP BY g.id, g.name
+              ORDER BY g.name`,
+            [tourId]
+        );
+        const genresWithSubs = genreRows.map((r) => ({
+            genreId: r.genreid,
+            genreName: r.genrename,
+            subgenreNames: r.subgenrenames || [],
+        }));
+
+        return res.status(200).json({
+            tour: {
+                id: tour.id,
+                title: tour.title,
+                subtitle: tour.subtitle,
+                start_date: tour.start_date,
+                end_date: tour.end_date,
+                tour_image: tour.tour_image,
+                eventCount,
+                cheapestPrice,
+                artistsList,
+                artistIds,
+                genresWithSubs,
+                events,
+            },
+        });
+    } catch (err) {
+        console.error('Error in /tour-details:', err);
+        return res.status(500).json({ message: 'Fehler beim Laden der Tour' });
+    }
+});
+
 // Liefert Detailinformationen zu einem Event inklusive Kategorien und zugehörigen Künstler-IDs
 app.get('/event-details/:id', async (req, res) => {
     const eventId = req.params.id;
@@ -1852,6 +3373,128 @@ app.get('/event-details/:id', async (req, res) => {
     }
 });
 
+// Liefert verbleibende Kapazitäten pro Kategorie eines Events
+app.get('/event-capacities/:id', async (req, res) => {
+    const eventId = req.params.id;
+    try {
+        const { rows: catRows } = await client.query(
+            `SELECT ec.id,
+                    ec.disability_support_for,
+                    COALESCE(SUM(eva.capacity),0) AS capacity
+             FROM event_categories ec
+                  LEFT JOIN event_venue_areas eva ON eva.category_id = ec.id
+             WHERE ec.event_id = $1
+             GROUP BY ec.id, ec.disability_support_for`,
+            [eventId]
+        );
+
+        const categories = [];
+        for (const r of catRows) {
+            const { rows: soldRows } = await client.query(
+                'SELECT COUNT(*) AS sold FROM tickets WHERE event_category_id = $1',
+                [r.id]
+            );
+            const sold = parseInt(soldRows[0].sold, 10) || 0;
+            const capacity = parseInt(r.capacity, 10) || 0;
+            categories.push({
+                id: r.id,
+                disability_support_for: r.disability_support_for,
+                capacity,
+                remaining: capacity - sold,
+            });
+        }
+
+        const totalCapacity = categories.reduce((s, c) => s + c.capacity, 0);
+        const totalRemaining = categories.reduce((s, c) => s + c.remaining, 0);
+
+        return res.json({ eventId, totalCapacity, totalRemaining, categories });
+    } catch (err) {
+        console.error('Error in /event-capacities:', err);
+        return res.status(500).json({ message: 'Fehler beim Laden der Kapazität' });
+    }
+});
+
+// PUT /events/:id – aktualisiert die Basisdaten eines Events
+app.put('/events/:id', async (req, res) => {
+    const eventId = req.params.id;
+    const { venueId, doorTime, startTime, endTime, description } = req.body;
+
+    try {
+        await client.query(
+            `UPDATE events
+                 SET venue_id   = $1,
+                     door_time  = $2,
+                     start_time = $3,
+                     end_time   = $4,
+                     description = $5,
+                     updated_at = NOW()
+               WHERE id = $6`,
+            [venueId || null, doorTime || null, startTime || null, endTime || null, description || null, eventId]
+        );
+
+        return res.status(200).json({ message: 'Event aktualisiert' });
+    } catch (err) {
+        console.error('Update-event error:', err);
+        return res.status(500).json({ message: 'Serverfehler beim Aktualisieren des Events' });
+    }
+});
+
+// DELETE /events/:id – entfernt ein Event, sofern keine Tickets existieren
+app.delete('/events/:id', async (req, res) => {
+    const eventId = req.params.id;
+    try {
+        const { rows: ticketCheck } = await client.query(
+            `SELECT 1
+             FROM tickets t
+                      JOIN event_categories ec ON ec.id = t.event_category_id
+             WHERE ec.event_id = $1
+             LIMIT 1`,
+            [eventId]
+        );
+        if (ticketCheck.length > 0) {
+            return res
+                .status(400)
+                .json({ message: 'Event kann nicht gelöscht werden, da Tickets existieren.' });
+        }
+
+        await client.query('BEGIN');
+        await client.query('DELETE FROM cart_items WHERE event_id = $1', [eventId]);
+        await client.query('DELETE FROM checkout_items WHERE event_id = $1', [eventId]);
+        await client.query(
+            `DELETE FROM order_tickets ot
+             USING tickets t, event_categories ec
+             WHERE ot.ticket_id = t.id
+               AND t.event_category_id = ec.id
+               AND ec.event_id = $1`,
+            [eventId]
+        );
+        await client.query(
+            `DELETE FROM tickets t
+             USING event_categories ec
+             WHERE t.event_category_id = ec.id
+               AND ec.event_id = $1`,
+            [eventId]
+        );
+        await client.query(
+            `DELETE FROM event_venue_areas eva
+             USING event_categories ec
+             WHERE eva.category_id = ec.id
+               AND ec.event_id = $1`,
+            [eventId]
+        );
+        await client.query('DELETE FROM event_supporting_acts WHERE event_id = $1', [eventId]);
+        await client.query('DELETE FROM event_categories WHERE event_id = $1', [eventId]);
+        await client.query('DELETE FROM events WHERE id = $1', [eventId]);
+        await client.query('COMMIT');
+
+        return res.status(200).json({ message: 'Event gelöscht' });
+    } catch (err) {
+        await client.query('ROLLBACK');
+        console.error('Delete-event error:', err);
+        return res.status(500).json({ message: 'Serverfehler beim Löschen des Events' });
+    }
+});
+
 // ── just after your session / client setup ──
 
 // Helper to find-or-create a cart
@@ -1874,34 +3517,40 @@ async function getOrCreateCart(userId) {
  * POST /cart-items
  * Body: { eventId, eventCategoryId, quantity, price }
  */
+// POST /cart-items
 app.post('/cart-items', async (req, res) => {
     const userId = req.session.userId;
     if (!userId) {
         return res.status(401).json({ message: 'Not logged in' });
     }
 
-    let { eventId, eventCategoryId, quantity, price } = req.body;
-    if (!eventId || !eventCategoryId || !quantity || !price) {
+    const { eventCategoryId, quantity, isAssistanceTicket } = req.body;
+    if (!eventCategoryId || quantity == null) {
         return res.status(400).json({ message: 'Missing parameters' });
     }
 
     try {
-        // ensure cart exists
+        // 1) ensure cart exists
         const cartId = await getOrCreateCart(userId);
 
-        // reject duplicate
-        const dup = await client.query(
-            `SELECT 1 FROM cart_items
-             WHERE cart_id = $1 AND event_category_id = $2`,
-            [cartId, eventCategoryId]
+        // 2) reject duplicate
+        const { rows: dup } = await client.query(
+            `SELECT 1
+             FROM cart_items
+             WHERE cart_id = $1
+               AND event_category_id = $2
+               AND is_assistance_ticket = $3`,
+            [cartId, eventCategoryId, !!isAssistanceTicket]
         );
-        if (dup.rows.length) {
+        if (dup.length) {
             return res.status(409).json({ message: 'Item already in cart' });
         }
 
-        // gather category info
+        // 3) fetch category info (including event_id and disability flag)
         const { rows: catInfo } = await client.query(
-            'SELECT event_id, disability_support_for FROM event_categories WHERE id = $1',
+            `SELECT event_id, disability_support_for
+             FROM event_categories
+             WHERE id = $1`,
             [eventCategoryId]
         );
         if (catInfo.length === 0) {
@@ -1910,54 +3559,63 @@ app.post('/cart-items', async (req, res) => {
         const catEventId = catInfo[0].event_id;
         const isDisabledCat = catInfo[0].disability_support_for !== null;
 
-        // verify eventId from body matches category's event_id
-        eventId = catEventId;
-
-        // quantity limits
         if (isDisabledCat) {
-            // only one disabled ticket per event across all categories
-            const { rows: dRows } = await client.query(
-                `SELECT COALESCE(SUM(ci.quantity),0) AS qty
-                 FROM cart_items ci
-                         JOIN event_categories ec ON ec.id = ci.event_category_id
-                 WHERE ci.cart_id = $1 AND ec.event_id = $2 AND ec.disability_support_for IS NOT NULL`,
-                [cartId, catEventId]
+            const { rows: uRows } = await client.query(
+                'SELECT is_currently_disabled, disability_card_expiry_date FROM users WHERE user_id = $1',
+                [userId]
             );
-            const disabledQty = Number(dRows[0].qty) || 0;
-            if (disabledQty >= 1) {
-                return res.status(400).json({ message: 'Disabled ticket already in cart' });
-            }
-            quantity = 1; // enforce
-        } else {
-            // total regular tickets across event may not exceed 8
-            const { rows: rRows } = await client.query(
-                `SELECT COALESCE(SUM(ci.quantity),0) AS qty
-                 FROM cart_items ci
-                         JOIN event_categories ec ON ec.id = ci.event_category_id
-                 WHERE ci.cart_id = $1 AND ec.event_id = $2 AND ec.disability_support_for IS NULL`,
-                [cartId, catEventId]
-            );
-            const regularQty = Number(rRows[0].qty) || 0;
-            if (regularQty + Number(quantity) > 8) {
-                return res.status(400).json({ message: 'Regular ticket limit exceeded' });
+            const u = uRows[0] || {};
+            const expiry = u.disability_card_expiry_date;
+            if (!u.is_currently_disabled || (expiry && new Date(expiry) < new Date())) {
+                return res.status(403).json({ message: 'Not eligible for disabled tickets' });
             }
         }
 
-        // insert and return the new id & quantity
+        if (!isAssistanceTicket) {
+
+            // 4) enforce quantity limits
+            if (isDisabledCat) {
+                // one disabled ticket per event max
+                const { rows: dRows } = await client.query(
+                    `SELECT COALESCE(SUM(ci.quantity),0) AS qty
+                 FROM cart_items ci
+                 JOIN event_categories ec ON ec.id = ci.event_category_id
+                 WHERE ci.cart_id = $1
+                   AND ec.event_id = $2
+                   AND ec.disability_support_for IS NOT NULL`,
+                    [cartId, catEventId]
+                );
+                if (Number(dRows[0].qty) >= 1 || quantity > 1) {
+                    return res.status(400).json({ message: 'Disabled ticket limit exceeded' });
+                }
+            } else {
+                // up to 8 regular tickets per event
+                const { rows: rRows } = await client.query(
+                    `SELECT COALESCE(SUM(ci.quantity),0) AS qty
+                 FROM cart_items ci
+                 JOIN event_categories ec ON ec.id = ci.event_category_id
+                 WHERE ci.cart_id = $1
+                   AND ec.event_id = $2
+                   AND ec.disability_support_for IS NULL`,
+                    [cartId, catEventId]
+                );
+                if (Number(rRows[0].qty) + Number(quantity) > 8) {
+                    return res.status(400).json({ message: 'Regular ticket limit exceeded' });
+                }
+            }
+        } // end quantity limits check
+
+        // 5) insert the new cart_item (no price column!)
         const { rows } = await client.query(
             `INSERT INTO cart_items
-         (id, cart_id, event_id, event_category_id, quantity, price)
-       VALUES
-         ($1, $2, $3, $4, $5, $6)
-       RETURNING id, quantity;`,
-            [uuidv4(), cartId, eventId, eventCategoryId, quantity, price]
+               (id, cart_id, event_id, event_category_id, quantity, is_assistance_ticket)
+             VALUES
+               ($1, $2, $3, $4, $5, $6)
+             RETURNING id, quantity`,
+            [uuidv4(), cartId, catEventId, eventCategoryId, quantity, !!isAssistanceTicket]
         );
 
-        const newItem = rows[0];
-        return res.status(201).json({
-            id: newItem.id,
-            quantity: newItem.quantity
-        });
+        return res.status(201).json(rows[0]);
     } catch (err) {
         console.error('Error adding to cart:', err);
         return res.status(500).json({ message: 'Server error' });
@@ -1965,14 +3623,19 @@ app.post('/cart-items', async (req, res) => {
 });
 
 // GET /cart-items
+// GET /cart-items
 app.get('/cart-items', async (req, res) => {
     const userId = req.session.userId;
-    if (!userId) return res.status(401).json({ message: 'Not logged in' });
+    if (!userId) {
+        return res.status(401).json({ message: 'Not logged in' });
+    }
 
     try {
-        // 1) Find existing cart
+        // 1) find existing cart
         const { rows: cartRows } = await client.query(
-            'SELECT id FROM carts WHERE user_id = $1',
+            `SELECT id
+             FROM carts
+             WHERE user_id = $1`,
             [userId]
         );
         if (cartRows.length === 0) {
@@ -1980,21 +3643,22 @@ app.get('/cart-items', async (req, res) => {
         }
         const cartId = cartRows[0].id;
 
-        // 2) Fetch items, ordered by the correct timestamp column
+        // 2) fetch items, pulling price from event_categories.price
         const { rows } = await client.query(
             `
                 SELECT
                     ci.id,
                     ci.event_id,
-                    ec.id      AS event_category_id,
+                    ec.id AS event_category_id,
                     ec.disability_support_for,
-                    t.title    AS title,
-                    ec.name    AS category,
+                    t.title AS title,
+                    ec.name AS category,
                     ci.quantity,
-                    ci.price
+                    ci.is_assistance_ticket,
+                    CASE WHEN ci.is_assistance_ticket THEN 0 ELSE ec.price END AS price
                 FROM cart_items ci
-                         JOIN events e            ON e.id = ci.event_id
-                         JOIN tours t             ON t.id = e.tour_id
+                         JOIN events e ON e.id = ci.event_id
+                         JOIN tours t ON t.id = e.tour_id
                          JOIN event_categories ec ON ec.id = ci.event_category_id
                 WHERE ci.cart_id = $1
                 ORDER BY ci.added_at
@@ -2009,9 +3673,6 @@ app.get('/cart-items', async (req, res) => {
     }
 });
 
-
-
-// PATCH /cart-items/:id
 app.patch('/cart-items/:id', async (req, res) => {
     const userId = req.session.userId;
     if (!userId) return res.status(401).json({ message: 'Not logged in' });
@@ -2028,7 +3689,7 @@ app.patch('/cart-items/:id', async (req, res) => {
 
         // get item details
         const { rows: itemRows } = await client.query(
-            `SELECT ci.quantity, ec.event_id, ec.disability_support_for
+            `SELECT ci.quantity, ci.is_assistance_ticket, ec.event_id, ec.disability_support_for
              FROM cart_items ci
                       JOIN event_categories ec ON ec.id = ci.event_category_id
              WHERE ci.id = $1 AND ci.cart_id = $2`,
@@ -2040,6 +3701,9 @@ app.patch('/cart-items/:id', async (req, res) => {
         const oldQty = itemRows[0].quantity;
         const eventId = itemRows[0].event_id;
         const isDisabled = itemRows[0].disability_support_for !== null;
+        if (itemRows[0].is_assistance_ticket) {
+            return res.status(400).json({ message: 'Cannot modify assistance ticket' });
+        }
 
         if (isDisabled) {
             if (quantity > 1) {
@@ -2083,7 +3747,7 @@ app.delete('/cart-items/:id', async (req, res) => {
     try {
         // 1) Fetch the cart_id for this item
         const { rows } = await client.query(
-            'SELECT cart_id FROM cart_items WHERE id = $1',
+            'SELECT cart_id, event_category_id, is_assistance_ticket FROM cart_items WHERE id = $1',
             [cartItemId]
         );
         if (rows.length === 0) {
@@ -2092,6 +3756,8 @@ app.delete('/cart-items/:id', async (req, res) => {
 
         // 2) Verify it belongs to the user
         const cartId = rows[0].cart_id;
+        const eventCategoryId = rows[0].event_category_id;
+        const isAssistance = rows[0].is_assistance_ticket;
         const { rows: ownerCheck } = await client.query(
             'SELECT 1 FROM carts WHERE id = $1 AND user_id = $2',
             [cartId, userId]
@@ -2100,11 +3766,31 @@ app.delete('/cart-items/:id', async (req, res) => {
             return res.status(403).json({ message: 'Forbidden' });
         }
 
+        if (isAssistance) {
+            return res.status(400).json({ message: 'Cannot delete assistance ticket directly' });
+        }
+
+        await client.query('BEGIN');
+
         // 3) Delete it
         await client.query(
             'DELETE FROM cart_items WHERE id = $1',
             [cartItemId]
         );
+
+        // 4) remove assistance ticket if no more regular items for category
+        const { rows: remaining } = await client.query(
+            `SELECT 1 FROM cart_items WHERE cart_id = $1 AND event_category_id = $2 AND is_assistance_ticket = false LIMIT 1`,
+            [cartId, eventCategoryId]
+        );
+        if (remaining.length === 0) {
+            await client.query(
+                'DELETE FROM cart_items WHERE cart_id = $1 AND event_category_id = $2 AND is_assistance_ticket = true',
+                [cartId, eventCategoryId]
+            );
+        }
+
+        await client.query('COMMIT');
 
         return res.status(200).json({ message: 'Deleted' });
     } catch (err) {
@@ -2113,16 +3799,588 @@ app.delete('/cart-items/:id', async (req, res) => {
     }
 });
 
+// helper: find existing checkout for this user
+async function getCheckoutIdForUser(userId) {
+    const { rows } = await client.query(
+        `SELECT id FROM checkouts WHERE user_id = $1`,
+        [userId]
+    );
+    return rows[0] && rows[0].id;
+}
 
-const client = new Client(credentials);
-client.connect()
-    .then(() => {
-        console.log('DB connected');            // ← did this print?
-        app.listen(4000, () => console.log('Server listening on http://localhost:4000'));
-    })
-    .catch(err => {
-        console.error('Failed to connect to DB, exiting.', err);
-        process.exit(1);
-    });
+// POST /checkout
+// – creates a checkout + copies all cart_items → checkout_items
+app.post('/checkout', async (req, res) => {
+    const userId = req.session.userId;
+    if (!userId) return res.status(401).json({ message: 'Not logged in' });
 
-app.listen(4000, () => console.log('Server on port 4000'));
+    try {
+        // 1) Guard: no double‐checkout
+        const existing = await getCheckoutIdForUser(userId);
+        if (existing) {
+            return res.status(409).json({ message: 'Checkout already exists' });
+        }
+
+        await client.query('BEGIN');
+
+        // 2) Create checkout
+        const checkoutId = uuidv4();
+        await client.query(
+            `INSERT INTO checkouts (id, user_id) VALUES ($1, $2)`,
+            [checkoutId, userId]
+        );
+
+        // 3) Grab all cart_items for user (with their current price)
+        const { rows: cartItems } = await client.query(
+            `
+      SELECT
+        ci.event_category_id,
+        ci.quantity,
+        ci.is_assistance_ticket,
+        CASE WHEN ci.is_assistance_ticket THEN 0 ELSE ec.price END AS price,
+        ec.event_id
+      FROM cart_items ci
+      JOIN carts c              ON ci.cart_id = c.id
+      JOIN event_categories ec  ON ci.event_category_id = ec.id
+      WHERE c.user_id = $1
+      `,
+            [userId]
+        );
+
+        // 4) Insert them into checkout_items
+        for (const item of cartItems) {
+            await client.query(
+                `INSERT INTO checkout_items
+           (id, checkout_id, event_category_id, quantity, price, event_id, is_assistance_ticket)
+         VALUES ($1,$2,$3,$4,$5,$6,$7)`,
+                [uuidv4(), checkoutId, item.event_category_id, item.quantity, item.price, item.event_id, item.is_assistance_ticket]
+            );
+        }
+
+        // 5) (optional) clear the cart now that items are in checkout:
+        await client.query(
+            `DELETE FROM cart_items
+         USING carts
+        WHERE cart_items.cart_id = carts.id
+          AND carts.user_id = $1`,
+            [userId]
+        );
+
+        await client.query('COMMIT');
+
+        req.session.checkout = {
+            id: checkoutId,
+            startedAt: Date.now(),
+            shippingInfo: null,
+        };
+
+        return res.status(201).json({ checkoutId });
+    } catch (err) {
+        await client.query('ROLLBACK');
+        console.error('Error creating checkout:', err);
+        return res.status(500).json({ message: 'Server error' });
+    }
+});
+
+// GET /checkout-items
+// – returns everything you need to render the checkout page
+app.get('/checkout-items', async (req, res) => {
+    const userId = req.session.userId;
+    if (!userId) {
+        return res.status(401).json({ message: 'Not logged in' });
+    }
+
+    const checkoutSession = req.session.checkout;
+    if (!checkoutSession || Date.now() - checkoutSession.startedAt > 15 * 60 * 1000) {
+        return res.status(404).json({ message: 'No active checkout' });
+    }
+
+    try {
+        // 1) find checkout for this user
+        const { rows: coRows } = await client.query(
+            'SELECT id, created_at FROM checkouts WHERE user_id = $1',
+            [userId]
+        );
+        if (coRows.length === 0) {
+            return res.status(404).json({ message: 'No active checkout' });
+        }
+        const { id: checkoutId, created_at } = coRows[0];
+
+        // 2) fetch items with all needed fields
+        const { rows: items } = await client.query(
+            `
+                SELECT
+                    ci.id,
+                    ci.event_id    AS "eventId",
+                    ec.name        AS category,
+                    t.title        AS "eventTitle",
+                    v.name         AS "eventVenue",
+                    c.name         AS "eventCity",
+                    e.start_time   AS "startTime",
+                    e.start_time::date AS "eventDate",
+                    e.start_time::time AS "eventStartTime",
+                    t.tour_image   AS image,
+                    ci.quantity,
+                    ci.price,
+                    ci.is_assistance_ticket
+                FROM checkout_items ci
+                         JOIN event_categories ec ON ec.id        = ci.event_category_id
+                         JOIN events            e  ON e.id         = ci.event_id
+                         JOIN tours             t  ON t.id         = e.tour_id
+                         JOIN venues            v  ON v.id         = e.venue_id
+                         JOIN cities            c  ON c.id         = v.city_id   
+                WHERE ci.checkout_id = $1
+                ORDER BY ci.added_at
+            `,
+            [checkoutId]
+        );
+
+        // 3) return createdAt + items array
+        return res.json({
+            createdAt: created_at,
+            items
+        });
+    } catch (err) {
+        console.error('Error fetching checkout items:', err);
+        return res.status(500).json({ message: 'Server error' });
+    }
+});
+
+app.delete('/checkout', async (req, res) => {
+    const userId = req.session.userId;
+    if (!userId) return res.status(401).json({ message: 'Not logged in' });
+
+    try {
+        // 1) find checkout
+        const { rows } = await client.query(
+            'SELECT id FROM checkouts WHERE user_id = $1',
+            [userId]
+        );
+        if (!rows.length) return res.status(404).json({ message: 'No checkout to delete' });
+        const checkoutId = rows[0].id;
+
+        // 2) delete in a transaction
+        await client.query('BEGIN');
+        await client.query('DELETE FROM checkout_items WHERE checkout_id = $1', [checkoutId]);
+        await client.query('DELETE FROM checkouts WHERE id = $1', [checkoutId]);
+        await client.query('COMMIT');
+        req.session.checkout = null;
+
+        return res.json({ message: 'Checkout cleared' });
+    } catch (err) {
+        await client.query('ROLLBACK');
+        console.error('Error deleting checkout:', err);
+        return res.status(500).json({ message: 'Server error' });
+    }
+});
+
+// DELETE /checkout-items/:id
+app.delete('/checkout-items/:id', async (req, res) => {
+    const userId = req.session.userId;
+    if (!userId) return res.status(401).json({ message: 'Not logged in' });
+
+    const itemId = req.params.id;
+    try {
+        // ensure this belongs to the user’s checkout
+        const result = await client.query(
+            `DELETE FROM checkout_items ci
+         USING checkouts co
+        WHERE ci.id = $1
+          AND ci.checkout_id = co.id
+          AND co.user_id = $2`,
+            [itemId, userId]
+        );
+
+        // rowCount===0 ⇒ not found or forbidden
+        if (result.rowCount === 0) {
+            return res.status(404).json({ message: 'Item not found' });
+        }
+
+        // check if any items remain for this user's checkout
+        const { rows: remaining } = await client.query(
+            `SELECT ci.id
+             FROM checkout_items ci
+             JOIN checkouts co ON ci.checkout_id = co.id
+             WHERE co.user_id = $1
+             LIMIT 1`,
+            [userId]
+        );
+        if (remaining.length === 0) {
+            await client.query('DELETE FROM checkouts WHERE user_id = $1', [userId]);
+            req.session.checkout = null;
+        }
+
+        return res.json({ message: 'Item removed' });
+    } catch (err) {
+        console.error('Error deleting checkout item:', err);
+        return res.status(500).json({ message: 'Server error' });
+    }
+});
+
+app.post('/orders', async (req, res) => {
+    const userId = req.session.userId;
+    if (!userId) return res.status(401).json({ message: 'Not logged in' });
+
+    const sessionCheckout = req.session.checkout;
+    if (!sessionCheckout || Date.now() - sessionCheckout.startedAt > 15 * 60 * 1000) {
+        req.session.checkout = null;
+        return res.status(400).json({ message: 'Checkout expired' });
+    }
+    if (!sessionCheckout.shippingInfo || !sessionCheckout.paymentMethod) {
+        return res.status(400).json({ message: 'Missing checkout info' });
+    }
+
+    try {
+        await client.query('BEGIN');
+
+        // find checkout record
+        const { rows: coRows } = await client.query(
+            'SELECT id FROM checkouts WHERE user_id = $1',
+            [userId]
+        );
+        if (coRows.length === 0) {
+            await client.query('ROLLBACK');
+            return res.status(400).json({ message: 'No active checkout' });
+        }
+        const checkoutId = coRows[0].id;
+
+        // Pull event_id as well so we can look up capacity for this category
+        const { rows: items } = await client.query(
+            `SELECT id,
+              event_id,
+              event_category_id,
+              quantity,
+              price,
+              is_assistance_ticket
+       FROM checkout_items
+       WHERE checkout_id = $1`,
+            [checkoutId]
+        );
+
+        // Insert order header
+        const info = sessionCheckout.shippingInfo.shippingInfo || {};
+        const paymentId = sessionCheckout.paymentMethod;
+        const orderId = uuidv4();
+        await client.query(
+            `INSERT INTO orders
+             (id, user_id, created_at,
+              street_address, postal_code, city, country,
+              is_paid, salutation, first_name, last_name, company,
+              payment_option_id)
+             VALUES
+                 ($1, $2, NOW(),
+                  $3, $4, $5, $6,
+                  false, $7, $8, $9, $10,
+                  $11)`,
+            [
+                orderId,
+                userId,
+                info.streetAddress || null,
+                info.postalCode    || null,
+                info.city          || null,
+                info.country       || null,
+                info.salutation    || null,
+                info.firstName     || null,
+                info.lastName      || null,
+                info.company       || null,
+                paymentId,
+            ]
+        );
+
+        // For each category in the cart, figure out seat numbers
+        for (const it of items) {
+            // 1) load capacity for this category (and event, if you want to enforce per-event)
+            const { rows: capRows } = await client.query(
+                `SELECT eva.capacity
+           FROM event_venue_areas eva
+          WHERE eva.category_id = $1
+            AND eva.event_id    = $2`,    // remove event_id filter if not needed
+                [it.event_category_id, it.event_id]
+            );
+            if (capRows.length === 0) {
+                throw new Error(`No seating defined for category ${it.event_category_id}`);
+            }
+            const capacity = capRows[0].capacity;
+
+            // 2) grab all already-taken seats for this category
+            const { rows: seatRows } = await client.query(
+                `SELECT seat_number
+           FROM tickets
+          WHERE event_category_id = $1`,
+                [it.event_category_id]
+            );
+            // parse to integers
+            const taken = new Set(seatRows.map(r => parseInt(r.seat_number, 10)));
+
+            // 3) for each ticket to mint, pick the lowest-numbered free seat
+            for (let i = 0; i < it.quantity; i++) {
+                let seatNum = null;
+                for (let n = 1; n <= capacity; n++) {
+                    if (!taken.has(n)) {
+                        seatNum = n;
+                        taken.add(n);
+                        break;
+                    }
+                }
+                if (!seatNum) {
+                    throw new Error(
+                        `Sold out: cannot assign ${it.quantity} tickets in category ${it.event_category_id}`
+                    );
+                }
+
+                const ticketId = uuidv4();
+                await client.query(
+                    `INSERT INTO tickets
+                     (id, order_id, event_category_id,
+                      seat_number, price, created_at,
+                      is_assistance_ticket)
+                     VALUES ($1,$2,$3,$4,$5,NOW(),$6)`,
+                    [
+                        ticketId,
+                        orderId,
+                        it.event_category_id,
+                        seatNum.toString(),
+                        it.price,
+                        it.is_assistance_ticket,
+                    ]
+                );
+                await client.query(
+                    `INSERT INTO order_tickets (id, order_id, ticket_id)
+           VALUES ($1, $2, $3)`,
+                    [uuidv4(), orderId, ticketId]
+                );
+            }
+        }
+
+        // Clean up
+        await client.query('DELETE FROM checkout_items WHERE checkout_id = $1', [checkoutId]);
+        await client.query('DELETE FROM checkouts      WHERE id          = $1', [checkoutId]);
+        await client.query('COMMIT');
+
+        req.session.checkout = null;
+        return res.status(201).json({ orderId });
+    } catch (err) {
+        await client.query('ROLLBACK');
+        console.error('Error creating order:', err);
+        return res.status(500).json({ message: err.message || 'Server error' });
+    }
+});
+app.get('/payment-options', async (req, res) => {
+    try {
+        const result = await client.query(
+            'SELECT id, label, description, icon_src FROM payment_options ORDER BY label'
+        );
+        res.status(200).json({ paymentOptions: result.rows });
+    } catch (error) {
+        console.error('Error fetching payment options:', error);
+        res.status(500).json({ message: 'Fehler beim Laden der Zahlungsarten' });
+    }
+});
+
+// Liefert alle Bestellungen des eingeloggten Users
+app.get('/orders', async (req, res) => {
+    const userId = req.session.userId;
+    if (!userId) return res.status(401).json({ message: 'Not logged in' });
+
+    try {
+        const { rows } = await client.query(
+            `SELECT
+                 o.id,
+                 o.created_at,
+                 COUNT(ot.ticket_id) AS ticket_count
+             FROM orders o
+                      LEFT JOIN order_tickets ot
+                                ON ot.order_id = o.id
+             WHERE o.user_id = $1
+             GROUP BY
+                 o.id,
+                 o.created_at
+             ORDER BY
+                 o.created_at DESC`,
+            [userId]
+        );
+        return res.json({ orders: rows });
+    } catch (err) {
+        console.error('Error fetching orders:', err);
+        return res.status(500).json({ message: 'Server error' });
+    }
+});
+
+// Liefert alle Events, für die der eingeloggte Nutzer Tickets besitzt
+app.get('/my-events', async (req, res) => {
+    const userId = req.session.userId;
+    if (!userId) return res.status(401).json({ message: 'Not logged in' });
+
+    try {
+        const { rows } = await client.query(
+            `SELECT
+                e.id         AS event_id,
+                e.start_time,
+                v.name       AS venue_name,
+                c.name       AS city_name,
+                t.id         AS tour_id,
+                t.title      AS tour_title,
+                t.tour_image,
+                (SELECT artist_id FROM tour_artists WHERE tour_id = t.id LIMIT 1) AS artist_id
+             FROM tickets tk
+                  JOIN orders o           ON o.id  = tk.order_id
+                  JOIN event_categories ec ON ec.id = tk.event_category_id
+                  JOIN events e           ON e.id  = ec.event_id
+                  JOIN tours t            ON t.id  = e.tour_id
+                  JOIN venues v           ON v.id  = e.venue_id
+                  JOIN cities c           ON c.id  = v.city_id
+             WHERE o.user_id = $1
+             GROUP BY e.id, e.start_time, v.name, c.name, t.id, t.title, t.tour_image
+             ORDER BY e.start_time`,
+            [userId]
+        );
+        return res.json({ events: rows });
+    } catch (err) {
+        console.error('Error fetching my events:', err);
+        return res.status(500).json({ message: 'Server error' });
+    }
+});
+
+// Liefert Details zu einer bestimmten Bestellung
+app.get('/orders/:id', async (req, res) => {
+    const userId = req.session.userId;
+    if (!userId) return res.status(401).json({ message: 'Not logged in' });
+    const orderId = req.params.id;
+
+    try {
+        const { rows: orderRows } = await client.query(
+            `SELECT id, created_at, street_address, postal_code, city, country,
+                    is_paid, salutation, first_name, last_name, company,
+                    payment_option_id
+               FROM orders
+              WHERE id = $1 AND user_id = $2
+              LIMIT 1`,
+            [orderId, userId]
+        );
+        if (!orderRows.length) {
+            return res.status(404).json({ message: 'Order not found' });
+        }
+        const order = orderRows[0];
+
+        const { rows: ticketRows } = await client.query(
+            `SELECT t.id,
+                    t.seat_number,
+                    t.is_assistance_ticket,
+                    ec.name  AS event_category,
+                    tu.title AS event_title
+               FROM tickets t
+                    JOIN event_categories ec ON ec.id = t.event_category_id
+                    JOIN events e          ON e.id  = ec.event_id
+                    JOIN tours  tu         ON tu.id = e.tour_id
+              WHERE t.order_id = $1
+              ORDER BY t.created_at`,
+            [orderId]
+        );
+
+        return res.json({ order, tickets: ticketRows });
+    } catch (err) {
+        console.error('Error fetching order detail:', err);
+        return res.status(500).json({ message: 'Server error' });
+    }
+});
+
+app.get(/.*/, (req, res) => {
+    res.redirect(301, 'http://localhost:3000');
+});
+
+async function startServer() {
+    while (true) {
+        try {
+            await db.query('SELECT 1');
+            console.log('DB connected');
+            break;
+        } catch (err) {
+            console.error('Failed to connect to DB, retrying in 5s...', err);
+            await new Promise(res => setTimeout(res, 5000));
+        }
+    }
+
+    app.listen(4000, () => console.log('Server listening on http://localhost:4000'));
+
+    // cleanup: remove expired checkouts and stale cart items every minute
+    setInterval(async () => {
+        try {
+            // drop cart items referencing removed events or categories
+            await db.query(`
+                DELETE FROM cart_items ci
+                WHERE NOT EXISTS (SELECT 1 FROM events e WHERE e.id = ci.event_id)
+                   OR NOT EXISTS (SELECT 1 FROM event_categories ec WHERE ec.id = ci.event_category_id)
+            `);
+
+            // remove past events and all dependent data
+            await db.query(`
+                DELETE FROM order_tickets ot
+                USING tickets t, event_categories ec, events e
+                WHERE ot.ticket_id = t.id
+                  AND t.event_category_id = ec.id
+                  AND ec.event_id = e.id
+                  AND e.end_time < NOW()
+            `);
+            await db.query(`
+                DELETE FROM tickets t
+                USING event_categories ec, events e
+                WHERE t.event_category_id = ec.id
+                  AND ec.event_id = e.id
+                  AND e.end_time < NOW()
+            `);
+            await db.query(`
+                DELETE FROM cart_items ci
+                USING events e
+                WHERE ci.event_id = e.id
+                  AND e.end_time < NOW()
+            `);
+            await db.query(`
+                DELETE FROM checkout_items ci
+                USING events e
+                WHERE ci.event_id = e.id
+                  AND e.end_time < NOW()
+            `);
+            await db.query(`
+                DELETE FROM event_venue_areas eva
+                USING event_categories ec, events e
+                WHERE eva.category_id = ec.id
+                  AND ec.event_id = e.id
+                  AND e.end_time < NOW()
+            `);
+            await db.query(`
+                DELETE FROM event_supporting_acts esa
+                USING events e
+                WHERE esa.event_id = e.id
+                  AND e.end_time < NOW()
+            `);
+            await db.query(`
+                DELETE FROM event_categories ec
+                USING events e
+                WHERE ec.event_id = e.id
+                  AND e.end_time < NOW()
+            `);
+            await db.query(`
+                DELETE FROM events
+                WHERE end_time < NOW()
+            `);
+
+            // delete checkout items older than 15 minutes
+            await db.query(`
+                DELETE FROM checkout_items ci
+                USING checkouts co
+                WHERE ci.checkout_id = co.id
+                  AND co.created_at < NOW() - INTERVAL '15 minutes'
+            `);
+
+            // delete the checkout records themselves
+            await db.query(`
+                DELETE FROM checkouts
+                WHERE created_at < NOW() - INTERVAL '15 minutes'
+            `);
+        } catch (err) {
+            console.error('Periodic cleanup error:', err);
+        }
+    }, 60 * 1000);
+}
+
+startServer();

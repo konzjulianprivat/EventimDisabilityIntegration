@@ -2,11 +2,14 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
+import { useValidation } from '../../../hooks/useValidation';
+import { useRequireAccess } from '../../../hooks/useRequireAccess';
+import { useRouter } from 'next/navigation';
+import { ADMIN_PERMISSIONS } from '../../../adminPermissions';
 
 export default function TourCreation() {
-    // --------------------------------------------------
-    // 1) State
-    // --------------------------------------------------
+    useRequireAccess(ADMIN_PERMISSIONS);
+    const router = useRouter();
     const [formData, setFormData] = useState({
         title: "",
         description: "",
@@ -15,9 +18,7 @@ export default function TourCreation() {
         tourImage: null,
     });
 
-    // Array von ausgewählten Künstler-IDs (strings), z.B. ["uuid1", "uuid2", …]
     const [tourArtists, setTourArtists] = useState([]);
-
     const [artists, setArtists] = useState([]);
     const [genres, setGenres] = useState([]);
     const [subgenresByGenre, setSubgenresByGenre] = useState({});
@@ -25,10 +26,8 @@ export default function TourCreation() {
 
     const [message, setMessage] = useState("");
     const [loading, setLoading] = useState(false);
+    const validation = useValidation({ title: '', startDate: '', endDate: '' });
 
-    // --------------------------------------------------
-    // 2) Hook: Künstler & Genres laden
-    // --------------------------------------------------
     useEffect(() => {
         fetch("http://localhost:4000/artists")
             .then((res) => res.json())
@@ -41,118 +40,74 @@ export default function TourCreation() {
             .catch((err) => console.error("Fehler beim Laden der Genres:", err));
     }, []);
 
-    // --------------------------------------------------
-    // 3) Helper-Funktionen
-    // --------------------------------------------------
-    // Einfacher onChange-Handler für Title, Description, Start-/Enddatum, Image
     const handleChange = (e) => {
         const { name, type, value, files } = e.target;
         if (type === "file") {
             setFormData((prev) => ({ ...prev, [name]: files[0] }));
         } else {
             setFormData((prev) => ({ ...prev, [name]: value }));
+            if (name === 'title') validation.validate('title', value, { required: true });
+            if (name === 'startDate') validation.validate('startDate', value, { required: true });
+            if (name === 'endDate') validation.validate('endDate', value, { required: true });
         }
     };
 
-    // Künstler-Blocks verwalten:
-    const addArtistBlock = () => {
-        setTourArtists((prev) => [...prev, ""]); // neuer leerer Eintrag
-    };
+    const addArtistBlock = () => setTourArtists((prev) => [...prev, ""]);
+    const removeArtistBlock = (i) => setTourArtists((prev) => prev.filter((_, idx) => idx !== i));
+    const updateArtistInBlock = (i, id) =>
+        setTourArtists((prev) => prev.map((aid, idx) => (idx === i ? id : aid)));
 
-    const removeArtistBlock = (index) => {
-        setTourArtists((prev) => prev.filter((_, idx) => idx !== index));
-    };
-    const updateArtistInBlock = (index, newArtistId) => {
-        setTourArtists((prev) =>
-            prev.map((aid, idx) => (idx === index ? newArtistId : aid))
-        );
-    };
-
-    // Genre-/Subgenre-Logik (unverändert von vorher):
-    const addGenreBlock = () => {
-        setTourGenres((prev) => [...prev, { genreId: "", subgenreIds: [] }]);
-    };
-
-    const removeGenreBlock = (blockIndex) => {
-        setTourGenres((prev) => prev.filter((_, idx) => idx !== blockIndex));
-    };
-
-    const updateGenreInBlock = async (blockIndex, newGenreId) => {
+    const addGenreBlock = () => setTourGenres((prev) => [...prev, { genreId: "", subgenreIds: [] }]);
+    const removeGenreBlock = (i) => setTourGenres((prev) => prev.filter((_, idx) => idx !== i));
+    const updateGenreInBlock = async (i, gid) => {
         setTourGenres((prev) =>
             prev.map((blk, idx) =>
-                idx === blockIndex
-                    ? { genreId: newGenreId, subgenreIds: [] }
-                    : blk
+                idx === i ? { genreId: gid, subgenreIds: [] } : blk
             )
         );
-
-        if (newGenreId && !subgenresByGenre[newGenreId]) {
+        if (gid && !subgenresByGenre[gid]) {
             try {
-                const res = await fetch(
-                    `http://localhost:4000/subgenres?genreId=${newGenreId}`
-                );
+                const res = await fetch(`http://localhost:4000/subgenres?genreId=${gid}`);
                 const data = await res.json();
-                setSubgenresByGenre((prev) => ({
-                    ...prev,
-                    [newGenreId]: data.subgenres,
-                }));
+                setSubgenresByGenre((p) => ({ ...p, [gid]: data.subgenres }));
             } catch (err) {
-                console.error(
-                    `Fehler beim Laden der Subgenres für Genre ${newGenreId}:`,
-                    err
-                );
+                console.error(`Fehler beim Laden der Subgenres für Genre ${gid}:`, err);
             }
         }
     };
-
-    const addSubgenreToBlock = (blockIndex) => {
+    const addSubgenreToBlock = (i) =>
         setTourGenres((prev) =>
             prev.map((blk, idx) =>
-                idx === blockIndex
-                    ? { ...blk, subgenreIds: [...blk.subgenreIds, ""] }
+                idx === i ? { ...blk, subgenreIds: [...blk.subgenreIds, ""] } : blk
+            )
+        );
+    const updateSubgenreInBlock = (bi, si, sid) =>
+        setTourGenres((prev) =>
+            prev.map((blk, idx) => {
+                if (idx === bi) {
+                    const subs = [...blk.subgenreIds];
+                    subs[si] = sid;
+                    return { ...blk, subgenreIds: subs };
+                }
+                return blk;
+            })
+        );
+    const removeSubgenreFromBlock = (bi, si) =>
+        setTourGenres((prev) =>
+            prev.map((blk, idx) =>
+                idx === bi
+                    ? { ...blk, subgenreIds: blk.subgenreIds.filter((_, j) => j !== si) }
                     : blk
             )
         );
-    };
 
-    const updateSubgenreInBlock = (blockIndex, subIndex, newSubId) => {
-        setTourGenres((prev) =>
-            prev.map((blk, idx) => {
-                if (idx === blockIndex) {
-                    const newSubs = [...blk.subgenreIds];
-                    newSubs[subIndex] = newSubId;
-                    return { ...blk, subgenreIds: newSubs };
-                }
-                return blk;
-            })
-        );
-    };
-
-    const removeSubgenreFromBlock = (blockIndex, subIndex) => {
-        setTourGenres((prev) =>
-            prev.map((blk, idx) => {
-                if (idx === blockIndex) {
-                    const filtered = blk.subgenreIds.filter((_, sIdx) => sIdx !== subIndex);
-                    return { ...blk, subgenreIds: filtered };
-                }
-                return blk;
-            })
-        );
-    };
-
-    // --------------------------------------------------
-    // 4) Submit-Handler
-    // --------------------------------------------------
     const handleSubmit = async (e) => {
         e.preventDefault();
         setLoading(true);
         setMessage("");
 
-        // Pflichtprüfungen:
         if (
-            !formData.title.trim() ||
-            !formData.startDate ||
-            !formData.endDate ||
+            !validation.isValid() ||
             tourArtists.length === 0 ||
             tourArtists.some((aid) => !aid)
         ) {
@@ -163,7 +118,6 @@ export default function TourCreation() {
             return;
         }
 
-        // Genre/Subgenre Validierung:
         for (let i = 0; i < tourGenres.length; i++) {
             const { genreId, subgenreIds } = tourGenres[i];
             if (!genreId) {
@@ -171,10 +125,8 @@ export default function TourCreation() {
                 setLoading(false);
                 return;
             }
-            if (!Array.isArray(subgenreIds) || subgenreIds.length === 0) {
-                setMessage(
-                    `Für Genre ${i + 1} muss mindestens ein Subgenre angegeben sein`
-                );
+            if (!subgenreIds.length) {
+                setMessage(`Für Genre ${i + 1} muss mindestens ein Subgenre angegeben sein`);
                 setLoading(false);
                 return;
             }
@@ -189,17 +141,13 @@ export default function TourCreation() {
             }
         }
 
-        //  FormData zusammenbauen:
         const fd = new FormData();
         fd.append("title", formData.title.trim());
         fd.append("description", formData.description || "");
         fd.append("startDate", formData.startDate);
         fd.append("endDate", formData.endDate);
-        // Künstler-IDs als JSON-String übertragen
         fd.append("artistIdsJson", JSON.stringify(tourArtists));
-        if (formData.tourImage) {
-            fd.append("tourImage", formData.tourImage);
-        }
+        if (formData.tourImage) fd.append("tourImage", formData.tourImage);
         fd.append("genres", JSON.stringify(tourGenres));
 
         try {
@@ -210,14 +158,7 @@ export default function TourCreation() {
             const data = await res.json();
             if (res.ok) {
                 setMessage(`Tour „${data.tour.title}“ erstellt`);
-                // Formular zurücksetzen
-                setFormData({
-                    title: "",
-                    description: "",
-                    startDate: "",
-                    endDate: "",
-                    tourImage: null,
-                });
+                setFormData({ title: "", description: "", startDate: "", endDate: "", tourImage: null });
                 setTourGenres([]);
                 setTourArtists([]);
             } else {
@@ -231,406 +172,179 @@ export default function TourCreation() {
         }
     };
 
-    // --------------------------------------------------
-    // 5) JSX-Render
-    // --------------------------------------------------
     return (
-        <div
-            className="registration-container"
-            style={{ maxWidth: "600px", margin: "0 auto", padding: "2rem" }}
-        >
-            <h1 style={{ color: "#002b55", marginBottom: "1.5rem" }}>
-                Neue Tour erstellen
-            </h1>
+        <div className="artist-container">
+            <h1>Neue Tour erstellen</h1>
 
             {message && (
-                <div
-                    style={{
-                        padding: "0.75rem",
-                        backgroundColor: message.includes("erstellt") ? "#d4edda" : "#f8d7da",
-                        color: message.includes("erstellt") ? "#155724" : "#721c24",
-                        borderRadius: "4px",
-                        marginBottom: "1rem",
-                    }}
-                >
+                <div className={`message ${message.includes("erstellt") ? 'message-success' : 'message-error'}`}>
                     {message}
                 </div>
             )}
 
             <form onSubmit={handleSubmit}>
-                {/* === Titel === */}
-                <div style={{ marginBottom: "1rem" }}>
-                    <label
-                        htmlFor="title"
-                        style={{
-                            display: "block",
-                            fontWeight: "bold",
-                            marginBottom: "0.5rem",
-                        }}
-                    >
-                        Titel *
-                    </label>
+                {/* Titel */}
+                <div className="form-group">
+                    <label htmlFor="title" className="form-label">Titel *</label>
                     <input
-                        type="text"
                         id="title"
                         name="title"
+                        type="text"
                         value={formData.title}
                         onChange={handleChange}
+                        className={`form-input ${validation.classFor('title', formData.title)}`}
                         required
-                        style={{
-                            width: "100%",
-                            padding: "0.5rem",
-                            borderRadius: "4px",
-                            border: "1px solid #ccc",
-                        }}
                     />
+                    {validation.errors.title && (
+                        <div className="validation-msg">{validation.errors.title}</div>
+                    )}
                 </div>
 
-                {/* === Beschreibung === */}
-                <div style={{ marginBottom: "1rem" }}>
-                    <label
-                        htmlFor="description"
-                        style={{
-                            display: "block",
-                            fontWeight: "bold",
-                            marginBottom: "0.5rem",
-                        }}
-                    >
-                        Beschreibung
-                    </label>
+                {/* Beschreibung */}
+                <div className="form-group">
+                    <label htmlFor="description" className="form-label">Beschreibung</label>
                     <textarea
                         id="description"
                         name="description"
                         value={formData.description}
                         onChange={handleChange}
                         rows={4}
-                        style={{
-                            width: "100%",
-                            padding: "0.5rem",
-                            borderRadius: "4px",
-                            border: "1px solid #ccc",
-                        }}
+                        className="form-textarea"
                     />
                 </div>
 
-                {/* === Start- & Enddatum === */}
-                <div style={{ marginBottom: "1rem", display: "flex", gap: "1rem" }}>
-                    <div style={{ flex: 1 }}>
-                        <label
-                            htmlFor="startDate"
-                            style={{
-                                display: "block",
-                                fontWeight: "bold",
-                                marginBottom: "0.5rem",
-                            }}
-                        >
-                            Startdatum *
-                        </label>
+                {/* Start- & Enddatum */}
+                <div className="form-group form-row">
+                    <div className="form-group">
+                        <label htmlFor="startDate" className="form-label">Startdatum *</label>
                         <input
-                            type="date"
                             id="startDate"
                             name="startDate"
+                            type="date"
                             value={formData.startDate}
                             onChange={handleChange}
+                            className={`form-input ${validation.classFor('startDate', formData.startDate)}`}
                             required
-                            style={{
-                                width: "100%",
-                                padding: "0.5rem",
-                                borderRadius: "4px",
-                                border: "1px solid #ccc",
-                            }}
                         />
+                        {validation.errors.startDate && (
+                            <div className="validation-msg">{validation.errors.startDate}</div>
+                        )}
                     </div>
-                    <div style={{ flex: 1 }}>
-                        <label
-                            htmlFor="endDate"
-                            style={{
-                                display: "block",
-                                fontWeight: "bold",
-                                marginBottom: "0.5rem",
-                            }}
-                        >
-                            Enddatum *
-                        </label>
+                    <div className="form-group">
+                        <label htmlFor="endDate" className="form-label">Enddatum *</label>
                         <input
-                            type="date"
                             id="endDate"
                             name="endDate"
+                            type="date"
                             value={formData.endDate}
                             onChange={handleChange}
+                            className={`form-input ${validation.classFor('endDate', formData.endDate)}`}
                             required
-                            style={{
-                                width: "100%",
-                                padding: "0.5rem",
-                                borderRadius: "4px",
-                                border: "1px solid #ccc",
-                            }}
                         />
+                        {validation.errors.endDate && (
+                            <div className="validation-msg">{validation.errors.endDate}</div>
+                        )}
                     </div>
                 </div>
 
-                {/* === Künstler hinzufügen === */}
-                <div style={{ marginBottom: "1rem" }}>
-                    <label
-                        style={{
-                            display: "block",
-                            fontWeight: "bold",
-                            marginBottom: "0.5rem",
-                        }}
-                    >
-                        Künstler hinzufügen
-                    </label>
-                    {tourArtists.map((artistId, idx) => (
-                        <div
-                            key={idx}
-                            style={{
-                                display: "flex",
-                                alignItems: "center",
-                                gap: "0.5rem",
-                                marginBottom: "0.75rem",
-                            }}
-                        >
+                {/* Künstler */}
+                <div className="form-group">
+                    <label className="form-label">Künstler hinzufügen</label>
+                    {tourArtists.map((aid, idx) => (
+                        <div key={idx} className="form-row">
                             <select
-                                value={artistId}
+                                value={aid}
                                 onChange={(e) => updateArtistInBlock(idx, e.target.value)}
                                 required
-                                style={{
-                                    flex: 1,
-                                    padding: "0.5rem",
-                                    border: "1px solid #ccc",
-                                    borderRadius: "4px",
-                                }}
+                                className="form-select"
                             >
                                 <option value="">Künstler wählen</option>
                                 {artists.map((a) => (
-                                    <option key={a.id} value={a.id}>
-                                        {a.name}
-                                    </option>
+                                    <option key={a.id} value={a.id}>{a.name}</option>
                                 ))}
                             </select>
                             <button
                                 type="button"
                                 onClick={() => removeArtistBlock(idx)}
-                                style={{
-                                    background: "transparent",
-                                    border: "none",
-                                    color: "#c00",
-                                    fontSize: "1.25rem",
-                                    cursor: "pointer",
-                                }}
+                                className="btn-remove"
                                 aria-label="Künstler entfernen"
                             >
                                 ✕
                             </button>
                         </div>
                     ))}
-
-                    <button
-                        type="button"
-                        onClick={addArtistBlock}
-                        style={{
-                            background: "#eee",
-                            border: "1px solid #ccc",
-                            padding: "0.5rem",
-                            borderRadius: "4px",
-                            cursor: "pointer",
-                        }}
-                    >
+                    <button type="button" onClick={addArtistBlock} className="btn-inline">
                         + Künstler hinzufügen
                     </button>
                 </div>
 
-                {/* === Tour-Bild hochladen === */}
-                <div style={{ marginBottom: "1rem" }}>
-                    <label
-                        htmlFor="tourImage"
-                        style={{
-                            display: "block",
-                            fontWeight: "bold",
-                            marginBottom: "0.5rem",
-                        }}
-                    >
-                        Tour-Bild hochladen
-                    </label>
+                {/* Tour-Bild */}
+                <div className="form-group">
+                    <label htmlFor="tourImage" className="form-label">Tour-Bild hochladen</label>
                     <input
-                        type="file"
                         id="tourImage"
                         name="tourImage"
+                        type="file"
                         accept="image/*"
                         onChange={handleChange}
-                        style={{
-                            width: "100%",
-                            padding: "0.5rem",
-                            borderRadius: "4px",
-                            border: "1px solid #ccc",
-                        }}
+                        className="form-file-input"
                     />
                 </div>
 
-                {/* === Genres & Subgenres === */}
-                <div style={{ marginBottom: "2rem" }}>
-                    <label
-                        style={{
-                            display: "block",
-                            fontWeight: "bold",
-                            marginBottom: "0.5rem",
-                        }}
-                    >
-                        Genres & Subgenres
-                    </label>
-
+                {/* Genres & Subgenres */}
+                <div className="form-group">
+                    <label className="form-label">Genres & Subgenres</label>
                     {tourGenres.map((blk, i) => {
-                        const optionsForThisGenre = subgenresByGenre[blk.genreId] || [];
+                        const opts = subgenresByGenre[blk.genreId] || [];
                         return (
-                            <div
-                                key={i}
-                                style={{
-                                    marginBottom: "1rem",
-                                    padding: "1rem",
-                                    border: "1px solid #ddd",
-                                    borderRadius: "4px",
-                                }}
-                            >
-                                <div
-                                    style={{
-                                        display: "flex",
-                                        justifyContent: "space-between",
-                                        marginBottom: "0.5rem",
-                                    }}
-                                >
+                            <div key={i} className="genre-block">
+                                <div className="form-row">
                                     <strong>Genre {i + 1}</strong>
-                                    <button
-                                        type="button"
-                                        onClick={() => removeGenreBlock(i)}
-                                        style={{
-                                            background: "transparent",
-                                            border: "none",
-                                            color: "#c00",
-                                            fontSize: "1.25rem",
-                                            cursor: "pointer",
-                                        }}
-                                        aria-label="Genre entfernen"
-                                    >
-                                        ✕
-                                    </button>
+                                    <button type="button" onClick={() => removeGenreBlock(i)} className="btn-remove" aria-label="Genre entfernen">✕</button>
                                 </div>
-
-                                <div style={{ marginBottom: "0.75rem" }}>
+                                <div className="form-group">
                                     <select
                                         value={blk.genreId}
                                         onChange={(e) => updateGenreInBlock(i, e.target.value)}
                                         required
-                                        style={{
-                                            width: "100%",
-                                            padding: "0.5rem",
-                                            border: "1px solid #ccc",
-                                            borderRadius: "4px",
-                                        }}
+                                        className="form-select"
                                     >
                                         <option value="">Genre wählen</option>
-                                        {genres.map((g) => (
-                                            <option key={g.id} value={g.id}>
-                                                {g.name}
-                                            </option>
-                                        ))}
+                                        {genres.map((g) => <option key={g.id} value={g.id}>{g.name}</option>)}
                                     </select>
                                 </div>
-
-                                {blk.subgenreIds.map((subId, subIdx) => (
-                                    <div
-                                        key={subIdx}
-                                        style={{
-                                            display: "flex",
-                                            gap: "1rem",
-                                            marginBottom: "0.5rem",
-                                        }}
-                                    >
+                                {blk.subgenreIds.map((subId, si) => (
+                                    <div key={si} className="form-row">
                                         <select
                                             value={subId}
-                                            onChange={(e) =>
-                                                updateSubgenreInBlock(i, subIdx, e.target.value)
-                                            }
+                                            onChange={(e) => updateSubgenreInBlock(i, si, e.target.value)}
                                             required
-                                            style={{
-                                                flex: 1,
-                                                padding: "0.5rem",
-                                                border: "1px solid #ccc",
-                                                borderRadius: "4px",
-                                            }}
+                                            className="form-select"
                                         >
                                             <option value="">Subgenre wählen</option>
-                                            {optionsForThisGenre.map((o) => (
-                                                <option key={o.id} value={o.id}>
-                                                    {o.name}
-                                                </option>
-                                            ))}
+                                            {opts.map((o) => <option key={o.id} value={o.id}>{o.name}</option>)}
                                         </select>
-                                        <button
-                                            type="button"
-                                            onClick={() => removeSubgenreFromBlock(i, subIdx)}
-                                            style={{
-                                                background: "transparent",
-                                                border: "none",
-                                                color: "#c00",
-                                                fontSize: "1.25rem",
-                                                cursor: "pointer",
-                                            }}
-                                            aria-label="Subgenre entfernen"
-                                        >
-                                            ✕
-                                        </button>
+                                        <button type="button" onClick={() => removeSubgenreFromBlock(i, si)} className="btn-remove" aria-label="Subgenre entfernen">✕</button>
                                     </div>
                                 ))}
-
-                                <button
-                                    type="button"
-                                    onClick={() => addSubgenreToBlock(i)}
-                                    disabled={!blk.genreId}
-                                    style={{
-                                        background: "#eee",
-                                        border: "1px solid #ccc",
-                                        padding: "0.5rem",
-                                        borderRadius: "4px",
-                                        cursor: blk.genreId ? "pointer" : "not-allowed",
-                                    }}
-                                >
+                                <button type="button" onClick={() => addSubgenreToBlock(i)} disabled={!blk.genreId} className="btn-inline">
                                     + Subgenre hinzufügen
                                 </button>
                             </div>
                         );
                     })}
-
-                    <button
-                        type="button"
-                        onClick={addGenreBlock}
-                        style={{
-                            background: "#eee",
-                            border: "1px solid #ccc",
-                            padding: "0.5rem",
-                            borderRadius: "4px",
-                            cursor: "pointer",
-                        }}
-                    >
+                    <button type="button" onClick={addGenreBlock} className="btn-inline">
                         + Genre hinzufügen
                     </button>
                 </div>
 
-                {/* === Submit-Button === */}
-                <button
-                    type="submit"
-                    disabled={loading}
-                    style={{
-                        backgroundColor: "#002b55",
-                        color: "white",
-                        padding: "0.75rem 1.5rem",
-                        border: "none",
-                        borderRadius: "4px",
-                        cursor: "pointer",
-                        width: "100%",
-                    }}
-                >
-                    {loading ? "Bitte warten..." : "Tour erstellen"}
-                </button>
+                {/* Actions */}
+                <div className="form-actions">
+                    <button type="button" onClick={() => router.back()} className="button button-back">Zurück</button>
+                    <button type="submit" disabled={loading || !validation.isValid()} className="button button-submit">
+                        {loading ? 'Bitte warten...' : 'Tour erstellen'}
+                    </button>
+                </div>
             </form>
         </div>
     );

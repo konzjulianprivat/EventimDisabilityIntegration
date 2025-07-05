@@ -131,6 +131,19 @@
     border: 1px solid #eee;
     border-radius: 4px;
 }
+
+.input-label-description {
+    display: inline-block;
+    width: 3ch;                 /* enough for “ISO” or “Code” */
+    margin-right: 0.5ch;        /* small gap before the input */
+    font-size: 0.875rem;        /* match your input’s 14px */
+    font-weight: 500;           /* semi-bold for clarity */
+    text-align: right;          /* aligns the text against the field */
+    color: #555;                /* subtle label color */
+    vertical-align: middle;     /* lines up with the input */
+    white-space: nowrap;        /* prevents wrapping */
+}
+
 .input-date {
     width: 100%;
     padding: 0.4rem;
@@ -200,7 +213,7 @@
 }
 .tour-meta {
     color: #555;
-    font-size: 0.9rem;
+    font-size: 1rem;
     margin-bottom: 0.5rem;
 }
 .tour-accessibility {
@@ -211,6 +224,7 @@
 }
 .header-right {
     text-align: right;
+    align-items: center;
 }
 .header-right .price {
     color: #333;
@@ -248,14 +262,21 @@
     justify-content: space-between;
     align-items: flex-start;
     padding: 1rem;
+    flex: 1 1 50%;
+}
+
+/* let the first child (your info block) take up all the remaining space */
+.tour-header > div:first-child {
+    flex: 1;
 }
 /* … rest of .tour-header styles unchanged … */
 
 /* Sub-event row */
 .sub-event-row {
     display: flex;
+    flex-direction: row;    /* ← add this */
     justify-content: space-between;
-    align-items: center;
+    align-items: flex-start;
     padding: 0.75rem 1rem;
     border-top: 1px solid #eee;
 }
@@ -271,6 +292,18 @@
 }
 .btn-tickets:hover {
     color: #003f7f;
+}
+
+.btn-delete-event {
+    background: none;
+    border: none;
+    color: #c00;
+    font-size: 1rem;
+    margin-left: 0.5rem;
+    cursor: pointer;
+}
+.btn-delete-event:hover {
+    color: #900;
 }
 
 /* “Alle X Events anzeigen” */
@@ -299,13 +332,14 @@
     display: flex;
     flex-direction: column;
 }
-.sub-event-row {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 0.75rem 1rem;
-    border-top: 1px solid #eee;
-}
+/*.sub-event-row {*/
+/*    display: flex;*/
+/*    justify-content: flex-start;*/
+/*    gap: 1rem;*/
+/*    align-items: center;*/
+/*    padding: 0.75rem 1rem;*/
+/*    border-top: 1px solid #eee;*/
+/*}*/
 .sub-event-info {
     display: flex;
     flex-direction: column;
@@ -325,11 +359,11 @@
 
 /* Accessibility badge */
 .access-label-small {
-    background: #005ea5;
-    color: #fff;
+    background: #ffc107;
+    color: rgba(0, 0, 0, 1);
     padding: 0.15rem 0.45rem;
     border-radius: 12px;
-    font-size: 0.75rem;
+    font-size: 0.9rem;
 }
 
 /* Tickets in sub-event */
@@ -368,3 +402,17 @@
 }
 
 /* Modal and other styles remain as before… */
+
+/* Event edit block */
+.event-edit-block {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    margin-top: 0.5rem;
+}
+.event-edit-label {
+    display: flex;
+    flex-direction: column;
+    font-size: 0.9rem;
+    color: #333;
+}

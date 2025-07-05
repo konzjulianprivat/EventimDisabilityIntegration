@@ -1,42 +1,61 @@
+"use client";
+
 import React, { useState, useEffect } from 'react';
+import { useValidation } from '../../../hooks/useValidation';
 import { useRouter } from 'next/router';
+import { useRequireAccess } from '../../../hooks/useRequireAccess';
+import { ADMIN_PERMISSIONS } from '../../../adminPermissions';
 
 export default function ArtistCreation() {
+    useRequireAccess(ADMIN_PERMISSIONS);
     const router = useRouter();
     const [formData, setFormData] = useState({
         name: '',
         biography: '',
         website: '',
-        artistImage: null
+        artistImage: null,
     });
     const [countries, setCountries] = useState([]);
     const [message, setMessage] = useState('');
     const [loading, setLoading] = useState(false);
+    const validation = useValidation({ name: '', website: '' });
 
     useEffect(() => {
-        // Länder-Daten für Dropdown laden
         fetch('http://localhost:4000/countries')
             .then(res => res.json())
             .then(data => setCountries(data.countries))
             .catch(err => console.error('Fehler beim Laden der Länder:', err));
     }, []);
 
-    const handleChange = (e) => {
+    const handleChange = e => {
         const { name, type, value, files } = e.target;
         if (type === 'file') {
             setFormData(prev => ({ ...prev, artistImage: files[0] }));
         } else {
             setFormData(prev => ({ ...prev, [name]: value }));
+            if (name === 'name') {
+                validation.validate('name', value, { required: true });
+            }
+            if (name === 'website') {
+                if (value) {
+                    validation.validate('website', value, {
+                        pattern: /^https?:\/\//i,
+                        message: 'Ungültige URL',
+                    });
+                } else {
+                    validation.validate('website', value);
+                }
+            }
         }
     };
 
-    const handleSubmit = async (e) => {
+    const handleSubmit = async e => {
         e.preventDefault();
         setLoading(true);
         setMessage('');
 
-        if (!formData.name.trim()) {
-            setMessage('Name des Künstlers ist erforderlich');
+        if (!validation.isValid()) {
+            setMessage('Bitte alle Pflichtfelder korrekt ausfüllen');
             setLoading(false);
             return;
         }
@@ -50,7 +69,7 @@ export default function ArtistCreation() {
 
             const response = await fetch('http://localhost:4000/create-artist', {
                 method: 'POST',
-                body: fd
+                body: fd,
             });
             const data = await response.json();
 
@@ -69,39 +88,42 @@ export default function ArtistCreation() {
     };
 
     return (
-        <div style={{ maxWidth: '600px', margin: '0 auto', padding: '2rem' }}>
-            <h1 style={{ marginBottom: '1rem' }}>Neuen Künstler erstellen</h1>
+        <div className="artist-container">
+            <h1>Neuen Künstler erstellen</h1>
 
             {message && (
-                <div style={{
-                    padding: '0.75rem',
-                    backgroundColor: message.includes('erfolgreich') ? '#d4edda' : '#f8d7da',
-                    color: message.includes('erfolgreich') ? '#155724' : '#721c24',
-                    borderRadius: '4px',
-                    marginBottom: '1rem'
-                }}>
+                <div
+                    className={`message ${
+                        message.includes('erfolgreich') ? 'message-success' : 'message-error'
+                    }`}
+                >
                     {message}
                 </div>
             )}
 
             <form onSubmit={handleSubmit}>
-                <div style={{ marginBottom: '1rem' }}>
-                    <label htmlFor="name" style={{ display: 'block', fontWeight: 'bold', marginBottom: '0.5rem' }}>
+                {/* Name */}
+                <div className="form-group">
+                    <label htmlFor="name" className="form-label">
                         Name *
                     </label>
                     <input
-                        type="text"
                         id="name"
                         name="name"
+                        type="text"
                         value={formData.name}
                         onChange={handleChange}
+                        className={`form-input ${validation.classFor('name', formData.name)}`}
                         required
-                        style={{ width: '100%', padding: '0.5rem', borderRadius: '4px', border: '1px solid #ccc' }}
                     />
+                    {validation.errors.name && (
+                        <div className="validation-msg">{validation.errors.name}</div>
+                    )}
                 </div>
 
-                <div style={{ marginBottom: '1rem' }}>
-                    <label htmlFor="biography" style={{ display: 'block', fontWeight: 'bold', marginBottom: '0.5rem' }}>
+                {/* Biografie */}
+                <div className="form-group">
+                    <label htmlFor="biography" className="form-label">
                         Biografie
                     </label>
                     <textarea
@@ -110,45 +132,60 @@ export default function ArtistCreation() {
                         value={formData.biography}
                         onChange={handleChange}
                         rows={4}
-                        style={{ width: '100%', padding: '0.5rem', borderRadius: '4px', border: '1px solid #ccc' }}
+                        className="form-textarea"
                     />
                 </div>
 
-                <div style={{ marginBottom: '1rem' }}>
-                    <label htmlFor="website" style={{ display: 'block', fontWeight: 'bold', marginBottom: '0.5rem' }}>
+                {/* Website */}
+                <div className="form-group">
+                    <label htmlFor="website" className="form-label">
                         Website
                     </label>
                     <input
-                        type="url"
                         id="website"
                         name="website"
+                        type="url"
                         value={formData.website}
                         onChange={handleChange}
                         placeholder="https://example.com"
-                        style={{ width: '100%', padding: '0.5rem', borderRadius: '4px', border: '1px solid #ccc' }}
+                        className={`form-input ${validation.classFor('website', formData.website)}`}
                     />
+                    {validation.errors.website && (
+                        <div className="validation-msg">{validation.errors.website}</div>
+                    )}
                 </div>
 
-                <div style={{ marginBottom: '1rem' }}>
-                    <label htmlFor="artistImage" style={{ display: 'block', fontWeight: 'bold', marginBottom: '0.5rem' }}>
+                {/* Künstlerbild */}
+                <div className="form-group">
+                    <label htmlFor="artistImage" className="form-label">
                         Künstlerbild hochladen
                     </label>
                     <input
-                        type="file"
                         id="artistImage"
                         name="artistImage"
+                        type="file"
                         onChange={handleChange}
-                        style={{ width: '100%', padding: '0.5rem', borderRadius: '4px', border: '1px solid #ccc' }}
+                        className="form-file-input"
                     />
                 </div>
 
-                <button
-                    type="submit"
-                    disabled={loading}
-                    style={{ width: '100%', padding: '0.75rem', backgroundColor: '#002b55', color: '#fff', border: 'none', borderRadius: '4px', cursor: 'pointer' }}
-                >
-                    {loading ? 'Bitte warten...' : 'Künstler erstellen'}
-                </button>
+                {/* Actions */}
+                <div className="form-actions">
+                    <button
+                        type="button"
+                        onClick={() => router.back()}
+                        className="button button-back"
+                    >
+                        Zurück
+                    </button>
+                    <button
+                        type="submit"
+                        disabled={loading || !validation.isValid()}
+                        className="button button-submit"
+                    >
+                        {loading ? 'Bitte warten...' : 'Künstler erstellen'}
+                    </button>
+                </div>
             </form>
         </div>
     );

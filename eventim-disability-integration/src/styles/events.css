@@ -15,10 +15,12 @@ body { font-family: Arial, sans-serif; color: #333; }
     color: #fff;
     display: flex;
     justify-content: space-between;
-    align-items: center;
-    padding: 24px 20px;
+    align-items: flex-start;
+    padding: 24px 10%;
+    gap: 3rem;
+    min-height: 7vh;
 }
-.header-info { display: flex; flex-direction: column; gap: 12px; margin-left: 10%}
+.header-info { display: flex; flex-direction: column; gap: 12px; flex: 1 1 0; min-width: 0; }
 .event-title { font-size: 2rem; color: white; }
 .event-meta { display: flex; flex-direction: column; gap: 6px; font-size: 1rem; }
 .meta-item { display: flex; align-items: center; gap: 6px; }
@@ -30,7 +32,7 @@ body { font-family: Arial, sans-serif; color: #333; }
     border-bottom: 1px solid rgba(255,255,255,0.5);
 }
 .venue-link:hover { border-color: #fff; }
-.event-hero {margin-right: 10%;}
+.event-hero { flex: 0 0 auto;}
 .event-hero img {
     height: 200px;
     width: 200px;
@@ -40,14 +42,13 @@ body { font-family: Arial, sans-serif; color: #333; }
 
 /* 4) Ticket section */
 .ticket-section {
-    padding: 24px 20px;
-    margin-left: 10%;
-    margin-right: 10%;
+    padding: 24px 10%;
 }
 /* 5) Card wrapper */
 .ticket-card {
     border: 1px solid #eee;
     border-radius: 8px;
+    margin-top: 1rem;
     overflow: hidden;
     background: #fff;
 }
@@ -70,6 +71,8 @@ body { font-family: Arial, sans-serif; color: #333; }
     display: flex;
     align-items: center;
     gap: 12px;
+    min-width: 144px;
+    justify-content: flex-end;
 }
 .row-control button {
     width: 40px;
@@ -88,7 +91,6 @@ body { font-family: Arial, sans-serif; color: #333; }
 }
 
 .qty-value {
-    width: 32px;
     text-align: center;
     font-size: 1.1rem;
 }
@@ -209,15 +211,27 @@ body { font-family: Arial, sans-serif; color: #333; }
 /* 12) Responsive tweaks */
 @media (max-width: 700px) {
     .event-header {
-        flex-direction: column;
+        flex-direction: row;
         align-items: flex-start;
         gap: 16px;
+        min-height: 7vh;
     }
     .event-hero img {
         width: 100%;
         max-width: 300px;
     }
-    .card-row,
+    .card-row {
+        display: flex;
+        /* entfernt space-between, damit gap wirkt */
+        justify-content: flex-start;
+        /* der magische Abstand */
+        gap: 7px;
+        /* Rest bleibt gleich */
+        align-items: center;
+        padding: 16px 20px;
+        border-bottom: 1px solid #eee;
+    }
+
     .action-row,
     .note {
         flex-direction: column;
@@ -246,4 +260,91 @@ body { font-family: Arial, sans-serif; color: #333; }
     padding: 0.5rem 1rem;
     border-radius: 4px;
     font-size: 0.9rem;
+}
+
+.info-message {
+    color: purple;
+    background: #fdcefd;
+    padding: 0.5rem;
+    border-radius: 4px;
+    font-size: 0.7rem;
+}
+
+/* ---- Toggle switch ---- */
+.toggle-container {
+    display: flex;
+    align-items: center;
+    margin-top: 1vh;
+    margin-bottom: 2vh;
+    gap: 12px;
+}
+.switch {
+    position: relative;
+    display: inline-block;
+    width: 50px;
+    height: 24px;
+}
+.switch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+.slider {
+    position: absolute;
+    cursor: pointer;
+    inset: 0;
+    background: #ccc;
+    transition: 0.4s;
+    border-radius: 24px;
+}
+.slider:before {
+    position: absolute;
+    content: "";
+    height: 18px;
+    width: 18px;
+    left: 3px;
+    bottom: 3px;
+    background: #fff;
+    transition: 0.4s;
+    border-radius: 50%;
+}
+.switch input:checked + .slider {
+    background: #007bb5; /* matches .total-button */
+}
+.switch input:checked + .slider:before {
+    transform: translateX(26px);
+}
+.toggle-label {
+    font-size: 1rem;
+    color: #333;
+}
+
+.availability-message {
+    font-size: 0.9rem;
+    color: #28a745;
+    background: #e6f4ea;
+    padding: 0.5rem 0.5rem;
+    border-radius: 4px;
+    margin-right: 1rem;
+    align-self: auto;
+}
+
+.availability-limited-message {
+    font-size: 0.9rem;
+    color: #a77f28;
+    background: #f4eee6;
+    padding: 0.5rem 0.5rem;
+    border-radius: 4px;
+    margin-right: 1rem;
+    align-self: auto;
+}
+
+.no-availability-message {
+    font-size: 0.9rem;
+    color: #a72828;
+    background: #f4e6e6;
+    padding: 0.5rem 0.5rem;
+    border-radius: 4px;
+    margin-right: 1rem;
+    align-self: auto;
 }

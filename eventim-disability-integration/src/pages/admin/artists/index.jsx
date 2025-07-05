@@ -1,8 +1,13 @@
 import React, { useEffect, useState } from 'react';
 import FilterBar from '../../../components/filter-bar';
 import { useRouter } from 'next/router';
+import { useAuth } from '../../../hooks/useAuth';
+import { useRequireAccess } from '../../../hooks/useRequireAccess';
+import { ADMIN_PERMISSIONS } from '../../../adminPermissions';
+import BackLink from '../../../components/back-link';
 
 export default function ArtistsContent() {
+    useRequireAccess(ADMIN_PERMISSIONS);
     const [artists, setArtists] = useState([]);
     const [filteredArtists, setFilteredArtists] = useState([]);
     const [editingId, setEditingId] = useState(null);
@@ -18,6 +23,7 @@ export default function ArtistsContent() {
     const [expandedIds, setExpandedIds] = useState(new Set());
 
     const router = useRouter();
+    const { user } = useAuth();
 
     const filterFields = [
         { key: 'name', label: 'Name', match: 'startsWith' },
@@ -106,7 +112,9 @@ export default function ArtistsContent() {
                 method: 'DELETE',
             });
             if (!response.ok) {
-                throw new Error('Server-Fehler beim Löschen');
+                const d = await response.json().catch(() => ({}));
+                alert(d.message || 'Server-Fehler beim Löschen');
+                return;
             }
             setConfirmDeleteId(null);
             fetchArtists();
@@ -126,14 +134,17 @@ export default function ArtistsContent() {
 
     return (
         <div className="artists-wrapper">
+            <BackLink />
             <div className="artists-header">
                 <h2 className="artists-title">Übersicht – Künstler</h2>
-                <button
-                    className="btn-create-entity"
-                    onClick={() => router.push(`/admin/artists/create`)}
-                >
-                    + Künstler erstellen
-                </button>
+                {user?.hasCreationAccess && (
+                    <button
+                        className="btn-create-entity"
+                        onClick={() => router.push(`/admin/artists/create`)}
+                    >
+                        + Künstler erstellen
+                    </button>
+                )}
             </div>
 
             <div className="filter-container">
@@ -174,13 +185,15 @@ export default function ArtistsContent() {
                                     💾
                                 </button>
                             ) : (
-                                <button
-                                    className="btn-edit"
-                                    onClick={() => handleEditToggle(artist)}
-                                    title="Bearbeiten"
-                                >
-                                    ✎
-                                </button>
+                                user?.hasEditingAccess && (
+                                    <button
+                                        className="btn-edit"
+                                        onClick={() => handleEditToggle(artist)}
+                                        title="Bearbeiten"
+                                    >
+                                        ✎
+                                    </button>
+                                )
                             )}
                         </div>
 
