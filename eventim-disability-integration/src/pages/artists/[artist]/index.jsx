@@ -29,7 +29,7 @@ export default function ArtistPage() {
     }, [artist, artistData]);
 
     const filterFields = [
-        { key: 'title', label: 'Titel', match: 'startsWith' },
+        { key: 'title', label: 'Titel', match: 'contains' }, // geändert zu "Contains" statt "StartsWith"
         { key: 'subtitle', label: 'Subtitle', match: 'contains' },
         { key: 'start_date', label: 'Startdatum', match: 'equals' },
         { key: 'end_date', label: 'Enddatum', match: 'equals' },
@@ -106,7 +106,7 @@ export default function ArtistPage() {
                     return eventDate >= s;
                 })
             );
-        }
+        } // Fix: Filter nach Event-Datum statt Tour-Startdatum - Events am gewählten Tag sollen angezeigt werden
 
         if (filterEndDate) {
             const e = new Date(filterEndDate);
@@ -117,7 +117,7 @@ export default function ArtistPage() {
                     return eventDate <= e;
                 })
             );
-        }
+        }// Fix: Filter nach Event-Datum statt Tour-Enddatum für korrekte Datumsfilterung
         if (filterVenue) {
             resArr = resArr.filter((t) =>
                 t.events?.some((ev) => ev.venueName === filterVenue)
