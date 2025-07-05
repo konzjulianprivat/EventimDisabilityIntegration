@@ -98,11 +98,25 @@ export default function ArtistPage() {
         let resArr = basicFilteredTours;
         if (filterStartDate) {
             const s = new Date(filterStartDate);
-            resArr = resArr.filter((t) => new Date(t.start_date) >= s);
+            s.setHours(0, 0, 0, 0); // Setze auf Tagesbeginn
+            resArr = resArr.filter((t) =>
+                t.events?.some((ev) => {
+                    const eventDate = new Date(ev.start_time);
+                    eventDate.setHours(0, 0, 0, 0); // Setze auf Tagesbeginn
+                    return eventDate >= s;
+                })
+            );
         }
+
         if (filterEndDate) {
             const e = new Date(filterEndDate);
-            resArr = resArr.filter((t) => new Date(t.end_date) <= e);
+            e.setHours(23, 59, 59, 999); // Setze auf Tagesende
+            resArr = resArr.filter((t) =>
+                t.events?.some((ev) => {
+                    const eventDate = new Date(ev.start_time);
+                    return eventDate <= e;
+                })
+            );
         }
         if (filterVenue) {
             resArr = resArr.filter((t) =>
