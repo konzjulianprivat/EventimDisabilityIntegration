@@ -14,7 +14,7 @@ export default function TourEventsPage() {
     const [events, setEvents] = useState([]);
     const [availability, setAvailability] = useState({});
 
-    // Redirect to 404 page if tour data could not be loaded within 3 seconds
+    // Redirect to 404 page if tour data could not be loadedithin 3 seconds
     useEffect(() => {
         if (!artist || !tour) return;
         const timer = setTimeout(() => {
@@ -90,7 +90,7 @@ export default function TourEventsPage() {
                             {new Date(tourData.end_date).toLocaleDateString('de-DE')}
                         </div>
                         <div className="meta-item">
-                            <span className="icon-location" /> {totalDistinctCityNames} Städte | {totalDistinctVenueNames} Arenen | {tourData.eventCount} Events
+                            <span className="icon-location" /> {totalDistinctCityNames} {totalDistinctCityNames === 1 ? 'Stadt' : 'Städte'} | {totalDistinctVenueNames} Arenen | {tourData.eventCount} Events
                         </div>
                     </div>
                 </div>
