@@ -1,4 +1,3 @@
-// pages/index.jsx
 "use client";
 
 import React, { useState, useEffect } from "react";
@@ -57,7 +56,6 @@ export default function HomePage() {
                     link: `/tour/${t.id}`,
                 }))}
             />
-
             <div className="highlights-section">
                 <h2>Highlights</h2>
                 <div className="small-tourCard-grid">

@@ -1,0 +1,119 @@
+/* footer.css */
+
+/* Footer wrapper */
+.footer {
+    background-color: #EDF0EF;
+    color: #4B5563;
+    padding: 10px 32px;
+    margin-top: auto;
+    font-size: 14px;
+    border-top: 1px solid #D1D5DB;
+}
+
+/* Footer grid layout */
+.footer-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1.5rem;
+    margin-bottom: 2.5rem;
+}
+@media (min-width: 768px) {
+    .footer-grid {
+        grid-template-columns: repeat(6, 1fr);
+    }
+}
+
+/* Section headings */
+.footer-heading {
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+    font-size: 15px;
+}
+
+/* Links lists */
+.footer-links {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    text-decoration: none;
+    color: inherit;
+}
+.footer-links li {
+    color: #3B82F6;
+    margin-bottom: 0.25rem;
+}
+
+/* Link hover state (for footer links) */
+.link-clean:hover {
+    color: #1e40af;
+}
+
+/* Footer bottom bar */
+.footer-bottom {
+    border-top: 1px solid #D1D5DB;
+    padding-top: 1.5rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    font-size: 12px;
+}
+@media (min-width: 768px) {
+    .footer-bottom {
+        flex-direction: row;
+        justify-content: space-between;
+    }
+}
+
+/* Social icons & app badges */
+.footer-social,
+.footer-apps {
+    display: flex;
+    flex-direction: column;
+    margin-bottom: 1rem;
+}
+.footer-icons-logo {
+    display: flex;
+    gap: 1rem;
+    margin-top: 0.5rem;
+    width: 40px;
+    height: 40px;
+    object-fit: cover;
+}
+.footer-icons-badges {
+    display: flex;
+    gap: 1rem;
+    margin-top: 0.5rem;
+}
+
+/* Footer labels & logo */
+.footer-label {
+    font-weight: 500;
+    font-size: 13px;
+}
+.footer-img {
+    width: 125px;
+    height: 45px;
+    object-fit: contain;
+}
+
+/* Hotline section */
+.footer-hotline {
+    /* container */
+}
+.footer-hotline-title {
+    font-size: 15px;
+    margin: 1px 0;
+}
+.footer-hotline-number {
+    font-size: 25px;
+    color: #3B82F6;
+    text-decoration: none;
+    margin: 1px 0;
+}
+.footer-hotline-number:hover {
+    color: #1e40af;
+}
+.footer-hotline-subtext {
+    font-size: 10px;
+    margin-top: 0;
+}

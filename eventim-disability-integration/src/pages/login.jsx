@@ -4,6 +4,7 @@ import { useRouter } from 'next/router';
 
 export default function LoginPage() {
     const router = useRouter();
+    const { redirect } = router.query;
     const [activeTab, setActiveTab] = useState('login');
 
     // Login‐Form
@@ -54,9 +55,11 @@ export default function LoginPage() {
                         email:     data.user.email,
                         firstName: data.user.firstName,
                         lastName:  data.user.lastName,
+                        disabilityCheck: data.user.disabilityCheck,
+                        disabilityMarks: data.user.disabilityMarks,
                     })
                 );
-                router.push('/').then(() => window.location.reload());
+                router.push(redirect || '/').then(() => window.location.reload());
             } else {
                 setLoginError(data.message || 'Ungültige Anmeldedaten.');
             }
@@ -83,7 +86,10 @@ export default function LoginPage() {
         }
         sessionStorage.setItem('preRegEmail', registerEmail.trim());
         sessionStorage.setItem('preRegPassword', registerPassword);
-        router.push('/registration');
+        const redirectParam = redirect
+            ? `?redirect=${encodeURIComponent(redirect)}`
+            : '';
+        router.push(`/registration${redirectParam}`);
     };
 
     return (
