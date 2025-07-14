@@ -714,7 +714,7 @@ export default function ToursContent() {
                                     'de-DE'
                                 )}
                             </span>
-                                                        <span>• {tour.eventCount} Events</span>
+                                                        <span> • {tour.eventCount} Events</span>
                                                     </div>
                                                     {tourAccess.length > 0 && (
                                                         <div className="tour-accessibility">
