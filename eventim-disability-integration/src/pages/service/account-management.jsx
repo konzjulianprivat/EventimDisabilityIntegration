@@ -82,6 +82,7 @@ export default function UserOverview() {
     const closeModal = () => {
         setSelectedUser(null);
         setSelectedOrders([]);
+        window.location.reload();
     };
 
     const formatDate = (d) => new Date(d).toLocaleDateString('de-DE', {

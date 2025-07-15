@@ -366,13 +366,13 @@ export default function ProfilePage() {
     };
 
     const deleteAccount = async () => {
-        if (deleteInput !== 'Löschen') return;
+        if (deleteConfirmInput !== 'Löschen') return;
         try {
             await fetch(`${API_BASE_URL}/users/${user.userId}`, {
                 method: 'DELETE',
                 credentials: 'include'
             });
-            window.location.href = '/';
+            // window.location.href = '/';
         } catch (err) {
             console.error('Error deleting account:', err);
         }
@@ -427,15 +427,15 @@ export default function ProfilePage() {
 
     // Slices for blue cards (Meine Events) and recommendations
     const blueCards = myEvents.slice(0, visibleCount);
-    const recommendCards = tours.slice(
-        carouselIndex,
-        carouselIndex + visibleCount
-    );
-
-    const closeModal = () => {
-        setQrTicketId(null);
-        setSelectedOrder(null);
-    };
+    // const recommendCards = tours.slice(
+    //     carouselIndex,
+    //     carouselIndex + visibleCount
+    // );
+    //
+    // const closeModal = () => {
+    //     setQrTicketId(null);
+    //     setSelectedOrder(null);
+    // };
 
     return (
         <div className="profile-container">
@@ -487,7 +487,9 @@ export default function ProfilePage() {
                                     <div className="blue-placeholder">
                                         <div className="cards-container">
                                             <div className="blue-cards">
-                                                {blueCards.map(ev => (
+                                                {blueCards
+                                                    .filter(ev => new Date(ev.start_time) > new Date())
+                                                    .map(ev => (
                                                     <SquareTourCard
                                                         key={ev.event_id}
                                                         imageId={ev.tour_image}
