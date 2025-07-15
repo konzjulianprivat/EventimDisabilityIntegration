@@ -47,8 +47,8 @@ export default function UserDetailModal({ user, orders, onClose, roles = [], can
                 body: JSON.stringify({ roleId: selectedRole }),
             });
             if (res.ok) {
-                const data = await res.json();
-                onRoleUpdated && onRoleUpdated(data.user, user.role);
+                // const data = await res.json();
+                // onRoleUpdated && onRoleUpdated(data.user, user.role);
                 setEditMode(false);
             }
         } catch (err) {

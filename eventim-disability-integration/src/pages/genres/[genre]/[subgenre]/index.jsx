@@ -37,7 +37,13 @@ export default function SubgenreEventsPage() {
                     );
                     if (match) {
                         (t.events || []).forEach((ev) => {
-                            evs.push({ ...ev, tourId: t.id, artistIds: t.artistIds });
+                            evs.push({
+                                ...ev,
+                                tourId: t.id,
+                                artistIds: t.artistIds,
+                                tourTitle: t.title,       // ← add this
+                                tourSubtitle: t.subtitle, // ← optional, if you want the subtitle too
+                            });
                         });
                     }
                 });
@@ -146,11 +152,11 @@ export default function SubgenreEventsPage() {
                                         >
                                             <div>
                                                 <h3 className="tour-title">
-                                                    {formatDate(ev.start_time)} | {ev.cityName}
+                                                    {ev.tourTitle}
                                                 </h3>
                                                 <div className="tour-meta">
                                                     <span>{formatTime(ev.start_time)}</span>
-                                                    <span> • {ev.venueName}</span>
+                                                    <span> • {ev.venueName} | {ev.cityName}</span>
                                                 </div>
                                                 {evAcc.length > 0 && (
                                                     <div className="tour-accessibility">

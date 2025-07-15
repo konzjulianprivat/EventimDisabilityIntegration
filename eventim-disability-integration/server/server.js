@@ -790,6 +790,43 @@ app.put('/countries/:id', async (req, res) => {
         res.status(500).json({ message: 'Serverfehler beim Aktualisieren des Landes' });
     }
 });
+app.delete('/users/:id', async (req, res) => {
+    const sessionUserId = req.session.userId;
+    const paramUserId   = req.params.id;
+
+    // Only allow a user to delete their own account
+    if (!sessionUserId) {
+        return res.status(401).json({ message: 'Not logged in' });
+    }
+    if (sessionUserId !== paramUserId) {
+        return res.status(403).json({ message: 'Forbidden' });
+    }
+
+    try {
+        // 1) Optionally: delete any dependent data first, e.g. user_disability_marks, images, etc.
+        await client.query('BEGIN');
+        await client.query('DELETE FROM user_disability_marks WHERE user_id = $1', [sessionUserId]);
+        await client.query('DELETE FROM images WHERE entity_type = \'user\' AND entity_id = $1', [sessionUserId]);
+        // 2) finally delete the user record
+        await client.query('DELETE FROM users WHERE user_id = $1', [sessionUserId]);
+        await client.query('COMMIT');
+
+        // 3) destroy session so they’re fully logged out
+        req.session.destroy(err => {
+            if (err) {
+                console.error('Session destroy error after account deletion:', err);
+                return res.status(500).json({ message: 'Error logging out after account deletion' });
+            }
+            res.clearCookie('sid');
+            return res.status(200).json({ message: 'Account deleted' });
+        });
+    } catch (err) {
+        await client.query('ROLLBACK');
+        console.error('Error deleting user account:', err);
+        return res.status(500).json({ message: 'Server error deleting account' });
+    }
+});
+
 
 // DELETE: remove country and its cities
 app.delete('/countries/:id', async (req, res) => {
