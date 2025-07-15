@@ -5,7 +5,6 @@ import { useValidation } from '../../../../hooks/useValidation';
 import { useRouter } from 'next/router';
 import { useRequireAccess } from '../../../../hooks/useRequireAccess';
 import { ADMIN_PERMISSIONS } from '../../../../adminPermissions';
-import BackLink from '../../../components/back-link';
 
 export default function EventCreation() {
     useRequireAccess(ADMIN_PERMISSIONS);
@@ -330,7 +329,6 @@ export default function EventCreation() {
             className="registration-container"
             style={{ maxWidth: '600px', margin: '0 auto', padding: '2rem' }}
         >
-            <BackLink />
             <h1 style={{ color: '#002b55', marginBottom: '1.5rem' }}>Neues Event erstellen</h1>
 
             {message && (
