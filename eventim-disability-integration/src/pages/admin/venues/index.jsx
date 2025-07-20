@@ -5,6 +5,7 @@ import { useAuth } from '../../../hooks/useAuth';
 import { useRequireAccess } from '../../../hooks/useRequireAccess';
 import { ADMIN_PERMISSIONS } from '../../../adminPermissions';
 import BackLink from '../../../components/back-link';
+import { toast } from 'react-toastify';
 
 export default function VenuesContent() {
     useRequireAccess(ADMIN_PERMISSIONS);
@@ -158,20 +159,24 @@ export default function VenuesContent() {
         }
     };
 
+    const [deleteError, setDeleteError] = useState('');
+
     const handleDelete = async (id) => {
         try {
             const response = await fetch(`http://localhost:4000/venues/${id}`, {
                 method: 'DELETE',
             });
             if (!response.ok) {
-                const d = await response.json().catch(() => ({}));
-                alert(d.message || 'Server-Fehler beim Löschen');
+                const errorData = await response.json().catch(() => ({}));
+                setDeleteError(errorData.message || 'Fehler beim Löschen des Venues. Möglicherweise ist dieses Venue mit einer Tour verbunden.');
                 return;
             }
             setConfirmDeleteId(null);
+            setDeleteError('');
             fetchVenues();
         } catch (err) {
             console.error('Fehler beim Löschen:', err);
+            setDeleteError('Fehler beim Löschen des Venues. Möglicherweise ist dieses Venue mit einer Tour verbunden.');
         }
     };
 
@@ -435,6 +440,11 @@ export default function VenuesContent() {
                     </div>
                 ))}
             </div>
+            {deleteError && (
+                <div className="error-message" style={{ color: 'red', marginTop: '1rem' }}>
+                    {deleteError}
+                </div>
+            )}
         </div>
     );
 }

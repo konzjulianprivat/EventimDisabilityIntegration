@@ -6,55 +6,51 @@ import { useRequireAccess } from '../../../hooks/useRequireAccess';
 import { ADMIN_PERMISSIONS } from '../../../adminPermissions';
 import BackLink from '../../../components/back-link';
 
-export default function GenresContent() {
+export default function CountriesContent() {
     useRequireAccess(ADMIN_PERMISSIONS);
-    const [genres, setGenres] = useState([]);
-    const [filteredGenres, setFilteredGenres] = useState([]);
-    const [deleteError, setDeleteError] = useState('');
+    const [countries, setCountries] = useState([]);
+    const [filteredCountries, setFilteredCountries] = useState([]);
     const [editingId, setEditingId] = useState(null);
     const [editedData, setEditedData] = useState({
         id: '',
         name: '',
-        subgenres: [],
+        code: '',
+        cities: [],
     });
     const [confirmDeleteId, setConfirmDeleteId] = useState(null);
-    const [errorMessage, setErrorMessage] = useState('');
 
     const router = useRouter();
     const { user } = useAuth();
 
     const filterFields = [{ key: 'name', label: 'Name', match: 'startsWith' }];
 
-    const clearErrorMessage = () => {
-        setErrorMessage('');
-    };
-
     useEffect(() => {
-        fetchGenres();
+        fetchCountries();
     }, []);
 
-    const fetchGenres = async () => {
+    const fetchCountries = async () => {
         try {
-            const res = await fetch(`${API_BASE_URL}/genres-with-subgenres`);
+            const res = await fetch(`${API_BASE_URL}/countries-with-cities`);
             if (!res.ok) throw new Error();
             const j = await res.json();
-            const arr = Array.isArray(j.genres) ? j.genres : [];
-            setGenres(arr);
-            setFilteredGenres(arr);
+            const arr = Array.isArray(j.countries) ? j.countries : [];
+            setCountries(arr);
+            setFilteredCountries(arr);
         } catch (err) {
-            console.error('Fehler beim Laden der Genres:', err);
-            setGenres([]);
-            setFilteredGenres([]);
+            console.error('Fehler beim Laden der Länder:', err);
+            setCountries([]);
+            setFilteredCountries([]);
         }
     };
 
-    const handleEditToggle = (genre) => {
-        setEditingId(genre.id);
+    const handleEditToggle = (country) => {
+        setEditingId(country.id);
         setEditedData({
-            id: genre.id,
-            name: genre.name || '',
-            subgenres: Array.isArray(genre.subgenres)
-                ? genre.subgenres.map((s) => ({ id: s.id, name: s.name }))
+            id: country.id,
+            name: country.name || '',
+            code: country.iso_code || '',
+            cities: Array.isArray(country.cities)
+                ? country.cities.map((c) => ({ id: c.id, name: c.name }))
                 : [],
         });
     };
@@ -64,57 +60,63 @@ export default function GenresContent() {
         setEditedData((prev) => ({ ...prev, [name]: value }));
     };
 
-    const addSub = () => {
+    const addCity = () => {
         setEditedData((prev) => ({
             ...prev,
-            subgenres: [...prev.subgenres, { id: null, name: '' }],
+            cities: [...prev.cities, { id: null, name: '' }],
         }));
     };
 
-    const updateSub = (idx, val) => {
+    const updateCity = (index, value) => {
         setEditedData((prev) => ({
             ...prev,
-            subgenres: prev.subgenres.map((s, i) => (i === idx ? { ...s, name: val } : s)),
+            cities: prev.cities.map((c, i) => (i === index ? { ...c, name: value } : c)),
         }));
     };
 
-    const removeSub = (idx) => {
+    const removeCity = (index) => {
         setEditedData((prev) => ({
             ...prev,
-            subgenres: prev.subgenres.filter((_, i) => i !== idx),
+            cities: prev.cities.filter((_, i) => i !== index),
         }));
     };
 
     const handleSave = async () => {
         try {
-            const payload = { name: editedData.name, subgenres: editedData.subgenres };
-            const response = await fetch(`${API_BASE_URL}/genres/${editedData.id}`, {
+            const payload = {
+                name: editedData.name,
+                code: editedData.code,
+                cities: editedData.cities,
+            };
+            const response = await fetch(`${API_BASE_URL}/countries/${editedData.id}`, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(payload),
             });
             if (!response.ok) throw new Error('Server-Fehler beim Speichern');
             setEditingId(null);
-            fetchGenres();
+            fetchCountries();
         } catch (err) {
             console.error('Fehler beim Speichern:', err);
         }
     };
 
+    const [deleteError, setDeleteError] = useState('');
+
     const handleDelete = async (id) => {
         try {
-            const res = await fetch(`${API_BASE_URL}/genres/${id}`, { method: 'DELETE' });
+            const res = await fetch(`${API_BASE_URL}/countries/${id}`, { method: 'DELETE' });
             if (!res.ok) {
                 const errorData = await res.json();
-                setDeleteError('Fehler beim Löschen des Genres. Möglicherweise ist dieses Genre mit einer Tour verbunden.');
+                setDeleteError(errorData.message || 'Fehler beim Löschen des Landes. Möglicherweise ist dieses Land mit einer Stadt verbunden.');
                 return;
             }
             setConfirmDeleteId(null);
             setDeleteError('');
-            fetchGenres();
+            fetchCountries();
         } catch (err) {
             console.error('Fehler beim Löschen:', err);
-            setDeleteError('Fehler beim Löschen des Genres. Möglicherweise ist dieses Genre mit einer Tour verbunden.');
+            setDeleteError('Fehler beim Löschen des Landes. Möglicherweise ist dieses Land mit einer Stadt verbunden.');
         }
     };
 
@@ -122,25 +124,25 @@ export default function GenresContent() {
         <div className="artists-wrapper">
             <BackLink />
             <div className="artists-header">
-                <h2 className="artists-title">Übersicht – Genres</h2>
+                <h2 className="artists-title">Übersicht – Länder</h2>
                 {user?.hasCreationAccess && (
                     <button
                         className="btn-create-entity"
-                        onClick={() => router.push('/admin/genres/create')}
+                        onClick={() => router.push('/admin/countries/create')}
                     >
-                        + Genre erstellen
+                        + Land erstellen
                     </button>
                 )}
             </div>
 
             <div className="artists-grid">
-                {filteredGenres.length === 0 && (
-                    <div className="no-artists">Keine Genres vorhanden.</div>
+                {filteredCountries.length === 0 && (
+                    <div className="no-artists">Keine Länder vorhanden.</div>
                 )}
-                {filteredGenres.map((genre) => (
-                    <div className="artist-card" key={genre.id}>
+                {filteredCountries.map((country) => (
+                    <div className="artist-card" key={country.id}>
                         <div className="card-header">
-                            {editingId === genre.id ? (
+                            {editingId === country.id ? (
                                 <input
                                     type="text"
                                     name="name"
@@ -149,10 +151,10 @@ export default function GenresContent() {
                                     className="input-name"
                                 />
                             ) : (
-                                <h3 className="artist-name">{genre.name}</h3>
+                                <h3 className="artist-name">{country.name}</h3>
                             )}
 
-                            {editingId === genre.id ? (
+                            {editingId === country.id ? (
                                 <button className="btn-save" onClick={handleSave} title="Speichern">
                                     💾
                                 </button>
@@ -160,7 +162,7 @@ export default function GenresContent() {
                                 user?.hasEditingAccess && (
                                     <button
                                         className="btn-edit"
-                                        onClick={() => handleEditToggle(genre)}
+                                        onClick={() => handleEditToggle(country)}
                                         title="Bearbeiten"
                                     >
                                         ✎
@@ -171,69 +173,79 @@ export default function GenresContent() {
 
                         <div className="card-body">
                             <div className="details-wrapper">
-                                {editingId === genre.id ? (
+                                {editingId === country.id ? (
                                     <>
-                                        <label className="input-label-description">Subgenres:</label>
-                                        {editedData.subgenres.map((s, i) => (
+                                        <label className="input-label-description">ISO-Code:</label>
+                                        <input
+                                            type="text"
+                                            name="code"
+                                            value={editedData.code}
+                                            onChange={handleInputChange}
+                                            placeholder="ISO-Code"
+                                            className="input-website"
+                                        />
+                                        <label className="input-label-description">Städte:</label>
+                                        {editedData.cities.map((c, i) => (
                                             <div
                                                 key={i}
-                                                style={{ display: 'flex', gap: '0.5rem', marginBottom: '0.25rem', marginLeft: '0.5rem' }}
+                                                style={{ display: 'flex', gap: '0.5rem', marginBottom: '0.25rem', marginLeft: '0.5rem'}}
                                             >
                                                 <input
                                                     type="text"
-                                                    value={s.name}
-                                                    onChange={(e) => updateSub(i, e.target.value)}
+                                                    value={c.name}
+                                                    onChange={(e) => updateCity(i, e.target.value)}
                                                     className="input-website"
                                                     style={{ flex: 1 }}
                                                 />
                                                 <button
                                                     type="button"
-                                                    onClick={() => removeSub(i)}
+                                                    onClick={() => removeCity(i)}
                                                     style={{ background: 'transparent', border: 'none', color: '#c00' }}
                                                 >
                                                     ✕
                                                 </button>
                                             </div>
                                         ))}
-                                        <button type="button" onClick={addSub} className="btn-create-entity">
-                                            + Subgenre hinzufügen
+                                        <button type="button" onClick={addCity} className="btn-create-entity">
+                                            + Stadt hinzufügen
                                         </button>
                                     </>
-                                ) : genre.subgenres && genre.subgenres.length > 0 ? (
+                                ) : country.cities && country.cities.length > 0 ? (
                                     <ul className="sub-list">
-                                        {genre.subgenres.map((s) => (
-                                            <li key={s.id} className="sub-item">
-                                                {s.name}
+                                        {country.cities.map((c) => (
+                                            <li key={c.id} className="sub-item">
+                                                {c.name}
                                             </li>
                                         ))}
                                     </ul>
                                 ) : (
-                                    <p className="artist-bio">Keine Subgenres vorhanden.</p>
+                                    <p className="artist-bio">Keine Städte vorhanden.</p>
                                 )}
                             </div>
                         </div>
 
-                        {editingId !== genre.id && user?.hasDeletionPermission && (
+                        {editingId !== country.id && user?.hasDeletionPermission && (
                             <button
-                                className="btn-edit"
+                                className={`btn-edit ${canDeleteCountry(country) ? '' : 'disabled'}`}
                                 style={{ marginLeft: 'auto', marginRight: '0.5rem' }}
-                                onClick={() => setConfirmDeleteId(genre.id)}
-                                title="Löschen"
+                                onClick={() => canDeleteCountry(country) && setConfirmDeleteId(country.id)}
+                                disabled={!canDeleteCountry(country)}
+                                title={canDeleteCountry(country) ? 'Löschen' : 'Löschen nicht möglich, da Städte in diesem Land noch Venues haben.'}
                             >
                                 🗑
                             </button>
                         )}
 
-                        {confirmDeleteId === genre.id && user?.hasDeletionPermission && (
+                        {confirmDeleteId === country.id && user?.hasDeletionPermission && (
                             <div className="modal-overlay">
                                 <div className="modal-box">
-                                    <p>Möchtest du dieses Genre wirklich löschen?</p>
+                                    <p>Möchtest du dieses Land wirklich löschen?</p>
                                     <div className="modal-actions">
-                                        <button className="btn btn-confirm" onClick={() => handleDelete(genre.id)}>
+                                        <button className="btn btn-confirm" onClick={() => handleDelete(country.id)}>
                                             Ja, löschen
                                         </button>
                                         <button className="btn btn-cancel" onClick={() => setConfirmDeleteId(null)}>
-                                            Abbrechen
+                                            Abbrechen 
                                         </button>
                                     </div>
                                 </div>
@@ -250,3 +262,8 @@ export default function GenresContent() {
         </div>
     );
 }
+
+const canDeleteCountry = (country) => {
+    // Check if any city in the country has associated venues
+    return country.cities.every(city => city.venueCount === 0);
+};
