@@ -4,6 +4,7 @@
 import React, { useState, useEffect } from "react";
 
 const ImageScroller = ({ tour }) => {
+    const placeholderImage = "/pictures/placeholder.png";
     // `tour` ist ein Array von { imageId, title, link }
     // Nur zweimal fuer Endlosschleife noetig
     const loopedTours = [...tour, ...tour];
@@ -60,15 +61,11 @@ const ImageScroller = ({ tour }) => {
                             target="_blank"
                             rel="noopener noreferrer"
                         >
-                            {imgUrl ? (
-                                <img
-                                    src={imgUrl}
-                                    alt={t.title || `img-${idx}`}
-                                    className="homepage-scroller-img"
-                                />
-                            ) : (
-                                <div className="homepage-scroller-img-placeholder" />
-                            )}
+                            <img
+                                src={imgUrl || placeholderImage}
+                                alt={t.title || `img-${idx}`}
+                                className="homepage-scroller-img"
+                            />
                         </a>
                     );
                 })}

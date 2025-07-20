@@ -4,15 +4,20 @@ import React, { useState, useEffect } from "react";
 
 const SmallTourCard = ({ imageId, title, link }) => {
     const [imageUrl, setImageUrl] = useState(null);
+    const placeholderImage = "/pictures/placeholder.png";
 
     useEffect(() => {
         let isMounted = true;
         async function fetchImage() {
-            if (!imageId) return;
+            if (!imageId) {
+                setImageUrl(placeholderImage);
+                return;
+            }
             try {
                 const res = await fetch(`http://localhost:4000/image/${imageId}`);
                 if (!res.ok) {
                     console.warn(`Tour-Bild ${imageId} nicht gefunden`);
+                    setImageUrl(placeholderImage);
                     return;
                 }
                 const blob = await res.blob();
@@ -20,23 +25,20 @@ const SmallTourCard = ({ imageId, title, link }) => {
                 if (isMounted) setImageUrl(url);
             } catch (err) {
                 console.error("Error fetching tour image:", err);
+                setImageUrl(placeholderImage);
             }
         }
         fetchImage();
         return () => {
             isMounted = false;
             // aufräumen: object URL freigeben
-            if (imageUrl) URL.revokeObjectURL(imageUrl);
+            if (imageUrl && imageUrl !== placeholderImage) URL.revokeObjectURL(imageUrl);
         };
     }, [imageId]);
 
     return (
         <div className="small-tourCard-class">
-            {imageUrl ? (
-                <img src={imageUrl} alt={title} className="small-tourCard-image" />
-            ) : (
-                <div className="small-tourCard-image-placeholder" />
-            )}
+            <img src={imageUrl || placeholderImage} alt={title} className="small-tourCard-image" />
             <div className="small-tour-info">
                 <h2 className="small-tourCard-title">{title}</h2>
                 <p>
