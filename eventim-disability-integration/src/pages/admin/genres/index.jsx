@@ -93,7 +93,7 @@ export default function GenresContent() {
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(payload),
             });
-            if (!response.ok) throw new Error('Server-Fehler beim Speichern');
+            if (!response.ok) setDeleteError('Fehler beim Löschen des Sub-Genres. Möglicherweise ist dieses Sub-Genre mit einer Tour verbunden.');;
             setEditingId(null);
             fetchGenres();
         } catch (err) {

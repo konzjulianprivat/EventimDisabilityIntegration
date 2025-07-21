@@ -818,8 +818,6 @@ export default function ToursContent() {
                                     )}
                                 </div>
                             </div>
-
-                            {/* Edit + Delete icons */}
                             {editingId !== tour.id && (
                                 <div className="card-footer-icons">
                                     {user?.hasEditingAccess && (
@@ -831,15 +829,18 @@ export default function ToursContent() {
                                             ✎
                                         </button>
                                     )}
-                                    {user?.hasDeletionPermission && (
-                                        <button
-                                            className="btn-edit delete-icon"
-                                            onClick={() => setConfirmDeleteId(tour.id)}
-                                            title="Löschen"
-                                        >
-                                            🗑
-                                        </button>
-                                    )}
+                                    {user?.hasDeletionPermission && 
+                                        // Only show delete button if no events in this tour have tickets
+                                        !(tour.events || []).some(event => eventTickets[event.id] === true) && (
+                                            <button
+                                                className="btn-edit delete-icon"
+                                                onClick={() => setConfirmDeleteId(tour.id)}
+                                                title="Löschen"
+                                            >
+                                                🗑
+                                            </button>
+                                        )
+                                    }
                                 </div>
                             )}
 

@@ -94,7 +94,7 @@ export default function CountriesContent() {
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(payload),
             });
-            if (!response.ok) throw new Error('Server-Fehler beim Speichern');
+            if (!response.ok) setDeleteError('Fehler beim Löschen da Städte dieses Landes in einem Stadion verwendet werden');
             setEditingId(null);
             fetchCountries();
         } catch (err) {

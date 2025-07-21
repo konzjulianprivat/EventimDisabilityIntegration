@@ -8,8 +8,11 @@ export default function DeleteAccountModal({
                                                onConfirm,
                                                inputValue,
                                                setInputValue,
+                                               myEvents,
+                                               deleteError = ''
                                            }) {
     if (!visible) return null;
+    if (myEvents.length > 0) deleteError = "Sie können Ihr Konto nicht löschen, da sie Tickets für Veranstaltungen haben, die noch nicht stattgefunden haben.";
 
     return (
         <div className="modal-overlay" onClick={onCancel}>
@@ -28,6 +31,7 @@ export default function DeleteAccountModal({
                     <button
                         className="profile__btn-cancel"
                         onClick={onConfirm}
+                        style={{ backgroundColor: deleteError == '' ? 'red' : '#ccc' }}
                         disabled={inputValue !== "Löschen"}
                     >
                         Bestätigen
@@ -40,6 +44,11 @@ export default function DeleteAccountModal({
                         Abbrechen
                     </button>
                 </div>
+                {deleteError && (
+                    <div className="error-message" style={{ color: 'red', marginTop: '1rem' }}>
+                        {deleteError}
+                    </div>
+                )}
             </div>
         </div>
     );

@@ -52,6 +52,7 @@ export default function ProfilePage() {
 
     const [showDeleteModal, setShowDeleteModal] = useState(false);
     const [deleteConfirmInput, setDeleteConfirmInput] = useState("");
+    const [deleteError, setDeleteError] = useState('');
 
     const { loading: authLoading, user } = useAuth();
 
@@ -372,7 +373,7 @@ export default function ProfilePage() {
                 method: 'DELETE',
                 credentials: 'include'
             });
-            // window.location.href = '/';
+            window.location.href = '/';
         } catch (err) {
             console.error('Error deleting account:', err);
         }
@@ -736,7 +737,7 @@ export default function ProfilePage() {
                                     <button
                                         type="button"
                                         className="profile__btn-cancel"
-                                        style={{ marginTop: '1rem', backgroundColor: 'red' }}
+                                        style={{ marginTop: '1rem', backgroundColor: myEvents.length === 0 ? 'grey' : 'red', color: '#fff' }}
                                         onClick={() => setShowDeleteModal(true)}
                                       >
                                         Account löschen
@@ -748,6 +749,7 @@ export default function ProfilePage() {
                                     visible={showDeleteModal}
                                     inputValue={deleteConfirmInput}
                                     setInputValue={setDeleteConfirmInput}
+                                    myEvents={myEvents}
                                     onCancel={() => {
                                       setShowDeleteModal(false);
                                       setDeleteConfirmInput("");

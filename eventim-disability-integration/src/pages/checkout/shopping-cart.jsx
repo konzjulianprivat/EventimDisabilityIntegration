@@ -188,13 +188,6 @@ export default function Checkout() {
                                     </div>
                                 </div>
                             </div>
-                            <button
-                                className="checkoutPage__delete-btn"
-                                onClick={() => handleDelete(id)}
-                                disabled={is_assistance_ticket}
-                                style={{color: is_assistance_ticket ? 'lightgray' : undefined}}
-                                aria-label="Ticket löschen"
-                            >×</button>
                             {
                                 // check the *original* items array for an assistance‐ticket
                                 items.some(other =>
