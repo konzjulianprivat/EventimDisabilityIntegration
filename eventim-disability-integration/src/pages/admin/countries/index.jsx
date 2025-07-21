@@ -10,6 +10,7 @@ export default function CountriesContent() {
     useRequireAccess(ADMIN_PERMISSIONS);
     const [countries, setCountries] = useState([]);
     const [filteredCountries, setFilteredCountries] = useState([]);
+    const [deleteError, setDeleteError] = useState('');
     const [editingId, setEditingId] = useState(null);
     const [editedData, setEditedData] = useState({
         id: '',
@@ -106,11 +107,17 @@ export default function CountriesContent() {
             const res = await fetch(`${API_BASE_URL}/countries/${id}`, {
                 method: 'DELETE',
             });
-            if (!res.ok) throw new Error('Server-Fehler beim Löschen');
+            if (!res.ok) {
+                const errorData = await res.json();
+                setDeleteError('Fehler beim Löschen da Städte dieses Landes in einem Stadion verwendet werden');
+                return;
+            }
             setConfirmDeleteId(null);
+            setDeleteError('');
             fetchCountries();
         } catch (err) {
             console.error('Fehler beim Löschen:', err);
+            setDeleteError('Fehler beim Löschen da Städte dieses Landes in einem Stadion verwendet werden');
         }
     };
 
@@ -247,6 +254,11 @@ export default function CountriesContent() {
                     </div>
                 ))}
             </div>
+            {deleteError && (
+                <div className="error-message" style={{ color: 'red', marginTop: '1rem' }}>
+                    {deleteError}
+                </div>
+            )}
         </div>
     );
 }
