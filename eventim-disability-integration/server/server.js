@@ -4243,6 +4243,32 @@ app.get('/orders', async (req, res) => {
     }
 });
 
+// Liefert die Anzahl bereits gekaufter Behinderten-Tickets für ein bestimmtes Event
+app.get('/event-disabled-ticket-count/:eventId', async (req, res) => {
+    const userId = req.session.userId;
+    if (!userId) return res.status(401).json({ message: 'Not logged in' });
+    const eventId = req.params.eventId;
+
+    try {
+        const { rows } = await client.query(
+            `SELECT COUNT(*) AS count
+             FROM tickets t
+                      JOIN event_categories ec ON ec.id = t.event_category_id
+                      JOIN orders o          ON o.id = t.order_id
+             WHERE o.user_id = $1
+               AND ec.event_id = $2
+               AND t.is_assistance_ticket = false
+               AND ec.disability_support_for IS NOT NULL`,
+            [userId, eventId]
+        );
+        const count = parseInt(rows[0].count, 10) || 0;
+        return res.json({ count });
+    } catch (err) {
+        console.error('Error fetching disabled ticket count:', err);
+        return res.status(500).json({ message: 'Server error' });
+    }
+});
+
 // Liefert alle Events, für die der eingeloggte Nutzer Tickets besitzt
 app.get('/my-events', async (req, res) => {
     const userId = req.session.userId;

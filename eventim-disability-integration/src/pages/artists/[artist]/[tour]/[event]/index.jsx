@@ -29,6 +29,7 @@ export default function EventPage() {
     const [lastClickedSection, setLastClickedSection] = useState(null);  // 'disabled' or 'regular'
     const [addDisabled, setAddDisabled] = useState(false);
     const [assistanceInCart, setAssistanceInCart] = useState(false);
+    const [disabledPurchased, setDisabledPurchased] = useState(0);
 
     // Redirect to 404 page if event data could not be loaded within 3 seconds
     useEffect(() => {
@@ -62,6 +63,29 @@ export default function EventPage() {
             setBookingForMe(false);
         }
     }, [assistanceInCart]);
+
+    useEffect(() => {
+        if (!loggedIn || !event) {
+            setDisabledPurchased(0);
+            return;
+        }
+        const load = async () => {
+            try {
+                const res = await fetch(`${API_BASE_URL}/event-disabled-ticket-count/${event}`, {
+                    credentials: 'include'
+                });
+                if (res.ok) {
+                    const data = await res.json();
+                    setDisabledPurchased(Number(data.count) || 0);
+                } else {
+                    setDisabledPurchased(0);
+                }
+            } catch {
+                setDisabledPurchased(0);
+            }
+        };
+        load();
+    }, [loggedIn, event]);
 
 
     useEffect(() => {
@@ -114,6 +138,7 @@ export default function EventPage() {
     );
 
     const eventCounts = counts[event] || { regular: 0, disabled: 0 };
+    const disabledAlreadyBought = disabledPurchased > 0;
 
     useEffect(() => {
         if (categories.length === 0) return;
@@ -201,9 +226,11 @@ export default function EventPage() {
         }
 
         // Otherwise (new item OR disabled), do POST
-        if (isDisabledCatSelected && eventCounts.disabled >= 1) {
+        if (isDisabledCatSelected && (eventCounts.disabled >= 1 || disabledAlreadyBought)) {
             setLastClickedSection('disabled');
-            setErrorMessage('Es kann nur ein Behinderten-Ticket gebucht werden.');
+            setErrorMessage(disabledAlreadyBought ?
+                'Du hast bereits ein Behinderten-Ticket für dieses Event gekauft.' :
+                'Es kann nur ein Behinderten-Ticket gebucht werden.');
             setTimeout(() => setErrorMessage(''), 3000);
             return;
         }
@@ -411,7 +438,8 @@ export default function EventPage() {
                                 disabled={
                                     !isDisabledCatSelected ||
                                     Boolean(inCartItems[selectedCat]) ||
-                                    eventCounts.disabled >= 1
+                                    eventCounts.disabled >= 1 ||
+                                    disabledAlreadyBought
                                 }
                                 onClick={handleAddToCart}
                             >
