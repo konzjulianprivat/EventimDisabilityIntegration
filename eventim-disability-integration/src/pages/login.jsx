@@ -3,11 +3,19 @@ import React, { useState, useEffect } from 'react';
 import { useValidation } from '../hooks/useValidation';
 import { useRouter } from 'next/router';
 import DisabilityExpiredModal from '../components/DisabilityExpiredModal';
+import { useAuth } from '../hooks/useAuth';
 
 export default function LoginPage() {
+    const { user } = useAuth();
     const router = useRouter();
     const { redirect } = router.query;
     const [activeTab, setActiveTab] = useState('login');
+
+    useEffect(() => {
+        if (user) {
+            router.replace(redirect || '/');
+        }
+    }, [user, redirect]);
 
     // Login‐Form
     const [loginEmail, setLoginEmail] = useState('');
@@ -146,6 +154,10 @@ export default function LoginPage() {
             : '';
         router.push(`/registration${redirectParam}`);
     };
+
+    if (user) {
+        return null;
+    }
 
     return (
         <div className="login-container">
