@@ -98,21 +98,35 @@ export default function Checkout() {
         try {
             const res = await fetch(`${API_BASE_URL}/checkout-items/${id}`, {
                 method: 'DELETE',
-                credentials: 'include'
+                credentials: 'include' 
             });
             if (res.ok) {
                 await fetchCheckout();
+
+                // Check if all non-assistance tickets have been deleted
+                const regularTickets = items.filter(item => !item.is_assistance_ticket);
+                if (regularTickets.length === 0) {
+                    // Delete checkout and redirect to homepage  
+                    await fetch(`${API_BASE_URL}/checkout`, {
+                        method: 'DELETE',
+                        credentials: 'include'
+                    });
+                    window.location.href = '/';
+                }
             } else {
                 alert('Fehler beim Löschen des Tickets.');
             }
         } catch (err) {
             console.error(err);
-            alert('Netzwerkfehler.');
+            alert('Netzwerkfehler.'); 
         }
     };
 
-    // guard against undefined
-    const subtotal = (items || []).reduce((sum, t) => sum + t.price * t.quantity, 0);
+    // get current non-assistance tickets
+    const regularTickets = items.filter(item => !item.is_assistance_ticket);
+
+    // calculate subtotal based on regularTickets
+    const subtotal = (regularTickets || []).reduce((sum, t) => sum + t.price * t.quantity, 0);
 
     const formatDate = (d) =>
         new Date(d).toLocaleDateString('de-DE', {
@@ -228,9 +242,7 @@ export default function Checkout() {
 
                 <div className="checkoutPage__order-summary">
                     <h3>Bestellübersicht</h3>
-                    {items
-                        .filter(t => !t.is_assistance_ticket)
-                        .map(t => (
+                    {regularTickets.map(t => (
                         <div key={t.id} className="checkoutPage__order-item">
                             <span>
                                 {t.quantity} × {t.eventTitle}

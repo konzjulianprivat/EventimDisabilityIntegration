@@ -593,6 +593,137 @@ app.get('/users/:id/disability', async (req, res) => {
     }
 });
 
+app.patch(
+  '/users/:id/disability',
+  upload.fields([
+    { name: 'disabilityCardImageFront', maxCount: 1 },
+    { name: 'disabilityCardImageBack',  maxCount: 1 }
+  ]),
+  async (req, res) => {
+    const sessionUserId = req.session.userId;
+    const paramUserId   = req.params.id;
+
+    if (!sessionUserId) {
+      return res.status(401).json({ message: 'Not logged in' });
+    }
+    if (sessionUserId !== paramUserId) {
+      return res.status(403).json({ message: 'Forbidden' });
+    }
+
+    const {
+      requestForDisability,
+      disabilityDegree,
+      disabilityCardExpiryDate,
+      disabilityMarks
+    } = req.body;
+
+    if (requestForDisability == null) {
+      return res.status(400).json({
+        message: 'Bitte übergeben Sie requestForDisability'
+      });
+    }
+
+    try {
+      await client.query('BEGIN');
+
+      // --- 1) Handle new uploaded images ---
+      let frontImageId = null;
+      let backImageId  = null;
+
+      if (req.files['disabilityCardImageFront']) {
+        const f = req.files['disabilityCardImageFront'][0];
+        frontImageId = uuidv4();
+        await client.query(
+          `INSERT INTO images
+             (id, image_data, image_type, entity_type, entity_id)
+           VALUES ($1,$2,$3,'user',$4)`,
+          [frontImageId, f.buffer, f.mimetype, sessionUserId]
+        );
+      }
+
+      if (req.files['disabilityCardImageBack']) {
+        const b = req.files['disabilityCardImageBack'][0];
+        backImageId = uuidv4();
+        await client.query(
+          `INSERT INTO images
+             (id, image_data, image_type, entity_type, entity_id)
+           VALUES ($1,$2,$3,'user',$4)`,
+          [backImageId, b.buffer, b.mimetype, sessionUserId]
+        );
+      }
+
+      // --- 2) Update users table ---
+      await client.query(
+        `
+        UPDATE users
+           SET request_for_disability      = $1,
+               disability_degree           = COALESCE($2, disability_degree),
+               disability_card_expiry_date = COALESCE($3, disability_card_expiry_date),
+               disability_card_image_front = COALESCE($4, disability_card_image_front),
+               disability_card_image_back  = COALESCE($5, disability_card_image_back),
+               is_currently_disabled         = false,
+               updated_at                  = NOW()
+         WHERE user_id = $6
+        `,
+        [
+          requestForDisability === 'true',
+          disabilityDegree ? parseInt(disabilityDegree, 10) : null,
+          disabilityCardExpiryDate || null,
+          frontImageId,
+          backImageId,
+          sessionUserId
+        ]
+      );
+
+      // --- 3) Rewrite the marks join‐table ---
+      if (disabilityMarks) {
+        let marksArray;
+        try {
+          marksArray = JSON.parse(disabilityMarks);
+        } catch {
+          marksArray = [];
+        }
+        // trim & dedupe
+        const uniqueMarks = Array.from(
+          new Set(
+            marksArray
+              .map(code => String(code || '').trim())
+              .filter(code => code.length > 0)
+          )
+        );
+
+        // delete old, then bulk‐insert only the unique ones
+        await client.query(
+          `DELETE FROM user_disability_marks WHERE user_id = $1`,
+          [sessionUserId]
+        );
+
+        if (uniqueMarks.length) {
+          const placeholders = uniqueMarks
+            .map((_, i) => `($1, $${i + 2})`)
+            .join(',');
+          await client.query(
+            `INSERT INTO user_disability_marks (user_id, mark_code)
+             VALUES ${placeholders}`,
+            [sessionUserId, ...uniqueMarks]
+          );
+        }
+      }
+
+      await client.query('COMMIT');
+      return res
+        .status(200)
+        .json({ message: 'Antrag auf Nachteilsausgleich gespeichert' });
+    } catch (err) {
+      await client.query('ROLLBACK');
+      console.error('Fehler beim PATCH /users/:id/disability', err);
+      return res
+        .status(500)
+        .json({ message: 'Serverfehler beim Speichern des Disability-Antrags' });
+    }
+  }
+);
+
 // Accept a disability request
 app.post('/disability-requests/:id/accept', async (req, res) => {
     const userId = req.params.id;
