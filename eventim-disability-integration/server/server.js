@@ -4251,14 +4251,18 @@ app.get('/event-disabled-ticket-count/:eventId', async (req, res) => {
 
     try {
         const { rows } = await client.query(
-            `SELECT COUNT(*) AS count
-             FROM tickets t
-                      JOIN event_categories ec ON ec.id = t.event_category_id
-                      JOIN orders o          ON o.id = t.order_id
-             WHERE o.user_id = $1
-               AND ec.event_id = $2
-               AND t.is_assistance_ticket = false
-               AND ec.disability_support_for IS NOT NULL`,
+            `SELECT
+                COUNT(*) AS count
+            FROM tickets t
+                JOIN event_categories ec ON ec.id         = t.event_category_id
+                JOIN orders          o  ON o.id           = t.order_id
+            WHERE
+                o.user_id    = $1
+                AND ec.event_id = $2
+                AND (
+                    (ec.disability_support_for IS NOT NULL
+                    AND t.is_assistance_ticket = FALSE)
+                OR t.is_assistance_ticket = TRUE)`,
             [userId, eventId]
         );
         const count = parseInt(rows[0].count, 10) || 0;
