@@ -1,22 +1,50 @@
+<link rel="stylesheet" href="./README.pdf.css" />
+
+<div class="title-page">
+  <h1>Eventim Disability Integration</h1>
+  <p><em>Barrierefreie Abwicklung von Ticketbestellungen &amp; Nachteilsausgleichsanträgen</em></p>
+  <p><em>Version 1.0 – 23. Juli 2025</em></p>
+</div>
+
+<div class="pagebreak"></div>
+
 # Eventim Disability Integration
 
 Dieses Repository enthält eine Next.js Anwendung samt Express Backend, mit der Eventim eine barrierefreie Abwicklung von Ticketbestellungen und eine Verwaltung von Nachteilsausgleichsanträgen ermöglicht. Das Projekt gliedert sich in ein Frontend und einen Node.js Server im Unterordner `eventim-disability-integration`.
 
 ## Inhaltsverzeichnis
-- [Setup](#setup)
-- [Architektur und eingesetzte Technologien](#technologien)
-- [Datenbank](#datenbank)
-- [Backend-Endpunkte](#backend-endpunkte)
-- [Seitenübersicht](#seitenübersicht)
-- [Rollen](#rollen)
-- [Komponenten und Hooks](#komponenten-hooks)
-- [Weiterführende Hinweise](#weiterfuehrende-hinweise)
-- [Projektstruktur](#projektstruktur)
-- [Security & Fehlertoleranz](#security-und-fehlertoleranz)
-- [Nächste Schritte](#next-steps)
 
-<a name="setup"></a>
+<!-- toc -->
+
+- [Setup](#setup)
+  * [Test 1](#test-1)
+  * [Test 2](#test-2)
+- [Architektur und eingesetzte Technologien](#architektur-und-eingesetzte-technologien)
+- [Datenbank](#datenbank)
+  * [Tabellen im Detail](#tabellen-im-detail)
+- [Backend-Endpunkte](#backend-endpunkte)
+- [Seitenübersicht](#seitenubersicht)
+- [Rollen](#rollen)
+- [Komponenten und Hooks](#komponenten-und-hooks)
+- [Weiterführende Hinweise](#weiterfuhrende-hinweise)
+- [Projektstruktur](#projektstruktur)
+- [Security & Fehlertoleranz](#security--fehlertoleranz)
+  * [Datenverschlüsselung und Zugriffsrechte](#datenverschlusselung-und-zugriffsrechte)
+  * [Rollen und Fähigkeiten](#rollen-und-fahigkeiten)
+  * [Fehlertoleranz des Backends](#fehlertoleranz-des-backends)
+  * [Potenzielle Verbesserungen](#potenzielle-verbesserungen)
+- [Nächste Schritte](#nachste-schritte)
+
+<!-- tocstop -->
+
 ## Setup
+
+### Test 1
+
+Test
+
+### Test 2
+
 1. **Repository klonen** und in das Projekt wechseln:
    ```bash
    git clone <repo-url>
@@ -38,13 +66,7 @@ Dieses Repository enthält eine Next.js Anwendung samt Express Backend, mit der 
       "sessionSecret": "example-secret"
    }
    ```
-4. **Datenbank anlegen**:
-   - PostgreSQL muss installiert sein.
-   - Das Schema finden Sie in `server/backup_script.sql` und kann z.B. mit `psql` eingespielt werden:
-     ```bash
-     psql -U dbuser -d eventim -f server/backup_script.sql
-     ```
-5. **Entwicklungsumgebung starten**:
+4. **Entwicklungsumgebung starten**:
    ```bash
    npm run dev
    ```
@@ -467,27 +489,6 @@ Die Komponenten sind so aufgebaut, dass sie in verschiedenen Seiten wiederverwen
 - Für Datei-Uploads wird `multer` verwendet. Bilder werden in der Tabelle `images` gespeichert und über `/image/:id` ausgeliefert.
 - Ein Cronjob im Server entfernt veraltete Warenkörbe und Checkouts alle 60 Sekunden.
 
-<a name="projektstruktur"></a>
-## Projektstruktur
-Das Repository besteht aus zwei Hauptebenen:
-
-- **eventim-disability-integration** – enthält die Next.js Anwendung inkl. Express-Server unter `server/`.
-- **README.md** und Konfigurationsdateien auf Root-Ebene dokumentieren das Gesamtprojekt.
-
-Wichtige Verzeichnisse innerhalb der App:
-
-- `server` – Backend mit REST-Endpunkten und Datenbankanbindung.
-- `src/pages` – Seiten des Frontends, vielfach mit dynamischen Routen.
-- `src/components` – Wiederverwendbare React-Komponenten.
-- `src/hooks` – Custom Hooks für Authentifizierung, Warenkorb usw.
-
-<a name="security-und-fehlertoleranz"></a>
-## Security & Fehlertoleranz
-### Datenverschlüsselung und Zugriffsrechte
-- Passwörter werden mit `bcrypt` gehasht und niemals im Klartext gespeichert.
-- Die Session verwendet ein Secret aus `credentials.json` und legt ein HTTP-only Cookie ab.
-- CORS ist auf die eigene Origin beschränkt; Uploads erfolgen über `multer` direkt in die Datenbank.
-
 ### Rollen und Fähigkeiten
 Die Tabelle `user_roles` definiert Berechtigungen. Aktuell existieren drei Rollen:
 
@@ -499,17 +500,13 @@ Die Tabelle `user_roles` definiert Berechtigungen. Aktuell existieren drei Rolle
 
 ### Fehlertoleranz des Backends
 - `server/db.js` überwacht die Datenbankverbindung und versucht bei Fehlern einen Reconnect. Ein Circuit-Breaker auf Basis von `opossum` verhindert Kaskadenfehler.
-- Ein Health-Check läuft alle 10 Sekunden, um Ausfälle früh zu erkennen.
 - `server/server.js` startet erst, wenn eine DB-Verbindung besteht, und führt regelmäßige Aufräumjobs aus.
 - Der Server wird mit **PM2** im Cluster-Modus betrieben und startet bei Fehlern automatisch neu.
-- Die PM2-Konfiguration liegt unter `server/ecosystem.config.js` und betreibt zwei Instanzen.
 - Ungefangene Fehler führen zu einem kontrollierten Exit, damit PM2 unmittelbar einen Neustart durchführen kann.
 
 ### Potenzielle Verbesserungen
-- Session-Secret und DB-Zugangsdaten als Umgebungsvariablen verwalten.
 - HTTPS/TLS für alle Verbindungen erzwingen.
 - Stärkere Validierung der Eingaben und Rate-Limiting für API-Calls.
-- Weitere Redundanz für die Datenbank (z.B. Replikation) einrichten.
 - Zentrales Logging (ELK-Stack o.Ä.) für die PM2-Prozesse einbinden.
 
 <a name="next-steps"></a>
