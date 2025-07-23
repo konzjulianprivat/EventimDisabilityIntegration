@@ -11,6 +11,9 @@ Dieses Repository enthält eine Next.js Anwendung samt Express Backend, mit der 
 - [Rollen](#rollen)
 - [Komponenten und Hooks](#komponenten-hooks)
 - [Weiterführende Hinweise](#weiterfuehrende-hinweise)
+- [Projektstruktur](#projektstruktur)
+- [Security & Fehlertoleranz](#security-und-fehlertoleranz)
+- [Nächste Schritte](#next-steps)
 
 <a name="setup"></a>
 ## Setup
@@ -464,4 +467,59 @@ Die Komponenten sind so aufgebaut, dass sie in verschiedenen Seiten wiederverwen
 - Für Datei-Uploads wird `multer` verwendet. Bilder werden in der Tabelle `images` gespeichert und über `/image/:id` ausgeliefert.
 - Ein Cronjob im Server entfernt veraltete Warenkörbe und Checkouts alle 60 Sekunden.
 - Tests sind zurzeit nicht eingerichtet. `npm test` startet zwar Jest, benötigt jedoch `react-scripts`.
+
+<a name="projektstruktur"></a>
+## Projektstruktur
+Das Repository besteht aus zwei Hauptebenen:
+
+- **eventim-disability-integration** – enthält die Next.js Anwendung inkl. Express-Server unter `server/`.
+- **README.md** und Konfigurationsdateien auf Root-Ebene dokumentieren das Gesamtprojekt.
+
+Wichtige Verzeichnisse innerhalb der App:
+
+- `server` – Backend mit REST-Endpunkten und Datenbankanbindung.
+- `src/pages` – Seiten des Frontends, vielfach mit dynamischen Routen.
+- `src/components` – Wiederverwendbare React-Komponenten.
+- `src/hooks` – Custom Hooks für Authentifizierung, Warenkorb usw.
+
+<a name="security-und-fehlertoleranz"></a>
+## Security & Fehlertoleranz
+### Datenverschlüsselung und Zugriffsrechte
+- Passwörter werden mit `bcrypt` gehasht und niemals im Klartext gespeichert.
+- Die Session verwendet ein Secret aus `credentials.json` und legt ein HTTP-only Cookie ab.
+- CORS ist auf die eigene Origin beschränkt; Uploads erfolgen über `multer` direkt in die Datenbank.
+
+### Rollen und Fähigkeiten
+Die Tabelle `user_roles` definiert Berechtigungen. Aktuell existieren drei Rollen:
+
+| ID | Name | Beschreibung | Edit | Create | Appoint Roles | Account Mgmt | Disability Approval | Delete |
+|----|------|--------------|------|--------|---------------|--------------|--------------------|--------|
+| `6877dd1e-c8cf-4574-87e7-5c60f0870716` | **user** | Regulärer Eventim Nutzer | false | false | false | false | false | false |
+| `edb5a910-edd8-4121-8737-6dfb7b192d17` | **service** | Service-Mitarbeiter von Eventim | false | false | false | true | true | false |
+| `d9dc9c90-d17e-447f-a704-5d39b6d1e086` | **admin** | Vollzugriff auf alle Funktionen | true | true | true | true | true | true |
+
+### Fehlertoleranz des Backends
+- `server/db.js` überwacht die Datenbankverbindung und versucht bei Fehlern einen Reconnect.
+- Ein Health-Check läuft alle 10 Sekunden, um Ausfälle früh zu erkennen.
+- `server/server.js` startet erst, wenn eine DB-Verbindung besteht, und führt regelmäßige Aufräumjobs aus.
+- Sollte der Prozess abstürzen, empfiehlt sich der Einsatz eines Prozessmanagers wie **PM2** oder systemd.
+
+### Potenzielle Verbesserungen
+- Session-Secret und DB-Zugangsdaten als Umgebungsvariablen verwalten.
+- HTTPS/TLS für alle Verbindungen erzwingen.
+- Stärkere Validierung der Eingaben und Rate-Limiting für API-Calls.
+- Weitere Redundanz für die Datenbank (z.B. Replikation) einrichten.
+
+<a name="next-steps"></a>
+## Nächste Schritte
+Das Grundgerüst funktioniert lokal stabil: Registrierung, Login, Rollenverwaltung und der Bestellprozess sind lauffähig. Das Projekt ist in Frontend und Backend klar getrennt und setzt auf PostgreSQL als persistente Datenbasis.
+
+Vor einer finalen Bereitstellung sollten noch folgende Punkte bearbeitet werden:
+
+1. **Testabdeckung erhöhen** – Unit- und Integrationstests für kritische Komponenten einrichten.
+2. **Konfiguration bereinigen** – Secrets in Umgebungsvariablen auslagern und Produktionsbuilds automatisieren.
+3. **Security prüfen** – HTTPS erzwingen, CORS-Regeln präzisieren und optionale 2FA vorsehen.
+4. **Fehlertoleranz optimieren** – Monitoring hinzufügen und automatische Neustarts des Servers konfigurieren.
+
+Bereits sehr gut funktionieren das Rollenmodell, die Bild-Uploads sowie die periodische Datenbereinigung im Backend.
 
