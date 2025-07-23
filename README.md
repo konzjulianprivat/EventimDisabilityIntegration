@@ -27,12 +27,12 @@ Dieses Repository enthält eine Next.js Anwendung samt Express Backend, mit der 
    Legen Sie im Verzeichnis `server` eine Datei `credentials.json` an. Beispiel:
    ```json
    {
-     "user": "dbuser",
-     "host": "localhost",
-     "database": "eventim",
-     "password": "geheim",
-     "port": 5432,
-     "sessionSecret": "eine-beliebige-session-id"
+      "host": "152.53.119.113",
+      "port": 5433,
+      "user": "postgres",
+      "password": "example",
+      "database": "db1",
+      "sessionSecret": "example-secret"
    }
    ```
 4. **Datenbank anlegen**:
