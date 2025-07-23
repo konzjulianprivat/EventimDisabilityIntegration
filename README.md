@@ -4,10 +4,12 @@ Dieses Repository enthält eine Next.js Anwendung samt Express Backend, mit der 
 
 ## Inhaltsverzeichnis
 - [Setup](#setup)
+- [Architektur und eingesetzte Technologien](#technologien)
 - [Datenbank](#datenbank)
 - [Backend-Endpunkte](#backend-endpunkte)
 - [Seitenübersicht](#seitenübersicht)
 - [Rollen](#rollen)
+- [Komponenten und Hooks](#komponenten-hooks)
 - [Weiterführende Hinweise](#weiterfuehrende-hinweise)
 
 <a name="setup"></a>
@@ -44,6 +46,22 @@ Dieses Repository enthält eine Next.js Anwendung samt Express Backend, mit der 
    npm run dev
    ```
    Damit starten sowohl das Next.js Frontend auf [http://localhost:3000](http://localhost:3000) als auch das Backend unter [http://localhost:4000](http://localhost:4000).
+
+<a name="technologien"></a>
+## Architektur und eingesetzte Technologien
+Die Anwendung besteht aus einem [Next.js](https://nextjs.org/) Frontend und einem
+[Express](https://expressjs.com/) Backend. Als Datenbank kommt
+[PostgreSQL](https://www.postgresql.org/) zum Einsatz. Die Wahl fiel auf diese
+Kombination, da sie leichtgewichtig, gut erweiterbar und auch ohne großen
+Konfigurationsaufwand lokal ausführbar ist. Next.js liefert die React basierte
+Oberfläche und kann sowohl statische Seiten als auch serverseitig gerenderte
+Inhalte bereitstellen. Express dient als schlanker REST‑API Server, der über die
+`server`‑Ordnerstruktur umgesetzt ist. Die Kommunikation zwischen Frontend und
+Backend erfolgt ausschließlich über JSON‑basierte HTTP‑Aufrufe. Alle
+Benutzerdaten werden in PostgreSQL gespeichert. Für Passwort‑Hashes wird
+[bcrypt](https://github.com/kelektiv/node.bcrypt.js) verwendet, Uploads werden
+mit [multer](https://github.com/expressjs/multer) direkt in der Datenbank
+gespeichert. In der Entwicklung laufen beide Dienste parallel über `npm run dev`.
 
 <a name="datenbank"></a>
 ## Datenbank
@@ -317,6 +335,44 @@ venue_areas          --> venues           : venue_id:id
 venues               --> cities           : city_id:id
 ```
 
+### Tabellen im Detail
+Nachfolgend eine kurze Beschreibung jeder Tabelle und ihrer Beziehungen.
+
+| Tabelle | Zweck / wichtige Spalten | Abhängigkeiten |
+|---------|--------------------------|---------------|
+| **countries** | Länder mit ISO‑Code. | – |
+| **cities** | Städte innerhalb eines Landes. | `countries` via `country_id` |
+| **user_roles** | Definiert Rechte einer Rolle. | – |
+| **users** | Registrierte Personen samt Adresse und optionalen Disability‑Angaben. | `user_roles` via `role` |
+| **artists** | Künstlerinformationen. | – |
+| **genres** / **subgenres** | Klassifikation von Touren. | `genres` via `genre_id` |
+| **tours** | Übergeordnete Tour einer Reihe von Events. | – |
+| **tour_artists** | Zuordnung Künstler ↔ Tour. | `artists`, `tours` |
+| **tour_genres** / **tour_subgenres** | Genre‑Verknüpfungen einer Tour. | `tours`, `genres`/`subgenres` |
+| **venues** | Veranstaltungsorte. | `cities` via `city_id` |
+| **areas** | Sitzplatz‑ bzw. Zugänglichkeitsbereiche. | – |
+| **venue_areas** | Bereiche innerhalb eines Venues. | `venues`, `areas` |
+| **events** | Konkrete Veranstaltungstermine. | `tours`, `venues` |
+| **event_categories** | Ticket‑Kategorien (Preis, Support für Behinderte). | `events` via `event_id` |
+| **event_supporting_acts** | Support‑Acts eines Events. | `events`, `artists` |
+| **event_venue_areas** | Zuordnung Event ↔ Bereich mit Kapazität. | `events`, `venue_areas`, `event_categories` |
+| **images** | Speicherung von hochgeladenen Bildern. | Beliebige Entität über `entity_type`/`entity_id` |
+| **carts** | Aktiver Warenkorb eines Nutzers. | `users` |
+| **cart_items** | Einzelne Artikel im Warenkorb. | `carts`, `events`, `event_categories` |
+| **checkouts** | Zwischenschritt zwischen Warenkorb und Bestellung. | `users` |
+| **checkout_items** | Positionen des Checkouts inkl. Preis. | `checkouts`, `events`, `event_categories` |
+| **payment_options** / **shipping_options** | Stammdaten für Zahlungs‑ und Versandarten. | – |
+| **orders** | Abgeschlossene Bestellungen. | `users`, `payment_options` |
+| **tickets** | Konkrete Ticketdatensätze. | `orders`, `event_categories` |
+| **order_tickets** | Relation zwischen Order und Ticket (1‑n). | `orders`, `tickets` |
+| **disability_marks** | Mögliche Merkmale auf Behindertenausweisen. | `areas` via `area_id` |
+| **user_disability_marks** | Zuordnung User ↔ Marks. | `users`, `disability_marks` |
+
+Die Fremdschlüssel schützen vor inkonsistenten Daten. Viele Tabellen nutzen
+UUIDs als Primärschlüssel. Preise werden als `NUMERIC(10,2)` gespeichert, was
+zwei Nachkommastellen erlaubt. Für einfache Lookups existieren diverse
+Join‑Tabellen (z. B. `tour_genres`).
+
 <a name="backend-endpunkte"></a>
 ## Backend-Endpunkte
 Die wichtigsten Routen des Express-Servers (siehe `server/server.js`) sind:
@@ -374,6 +430,33 @@ Es existieren drei grundlegende Benutzerrollen:
 | **Admin** | Umfasst sämtliche Rechte: Erstellung/Bearbeitung von Daten, Rollenvergabe und Zugriff auf alle Admin-Seiten. |
 
 Die Zuordnung der Rechte erfolgt über die Tabelle `user_roles`. Beim Registrieren erhält jeder Nutzer standardmäßig die Rolle **User**.
+
+<a name="komponenten-hooks"></a>
+## Komponenten und Hooks
+Der Quellcode unter `src` gliedert sich in wiederverwendbare React‑Komponenten
+und mehrere Custom Hooks:
+
+**Komponenten** (Auswahl)
+
+| Datei | Einsatz |
+|-------|--------|
+| `nav-bar.jsx` | Hauptnavigation mit Suche und Warenkorb-Anzeige |
+| `footer.jsx` | Gemeinsamer Seitenfuß |
+| `LoadingOverlay.jsx` | Überblendet die Seite während Daten geladen werden |
+| `DisabilityRequestModal.jsx` | Dialog zur Beantragung eines Nachteilsausgleichs |
+| `DeleteAccountModal.jsx` | Bestätigungsdialog zum Löschen des Accounts |
+| `smallArtistCard.jsx` / `smallTourCard.jsx` | Vorschaukarten auf der Startseite |
+
+**Hooks**
+
+| Hook | Zweck |
+|------|------|
+| `useAuth` | Kümmert sich um Login‑Status und hält Userdaten clientseitig vor |
+| `useCart` | Verwaltet den Warenkorb und lädt Items vom Server |
+| `useRequireAccess` | Leitet unberechtigte Nutzer auf die Login‑Seite um |
+| `useValidation` | Hilft bei Formularvalidierungen |
+
+Die Komponenten sind so aufgebaut, dass sie in verschiedenen Seiten wiederverwendet werden können. Die Hooks stellen gemeinsam genutzte Logik bereit und erleichtern die Anbindung an das Backend.
 
 <a name="weiterfuehrende-hinweise"></a>
 ## Weiterführende Hinweise
