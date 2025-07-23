@@ -5,6 +5,7 @@ import React, { useState, useEffect } from "react";
 
 const SquareTourCard = ({ imageId, title, bottomText, link }) => {
     const [imageUrl, setImageUrl] = useState(null);
+    const placeholderImage = "/pictures/placeholder.png";
 
     useEffect(() => {
         let isMounted = true;
@@ -38,15 +39,11 @@ const SquareTourCard = ({ imageId, title, bottomText, link }) => {
     return (
         <div className="square-tourCard-class">
             <div className="square-tourCard-image-wrapper">
-                {imageUrl ? (
-                    <img
-                        src={imageUrl}
-                        alt={title}
-                        className="square-tourCard-image"
-                    />
-                ) : (
-                    <div className="square-tourCard-image-placeholder" />
-                )}
+                <img
+                    src={imageUrl || placeholderImage}
+                    alt={title}
+                    className="square-tourCard-image"
+                />
             </div>
 
             <div className="square-tourCard-info">

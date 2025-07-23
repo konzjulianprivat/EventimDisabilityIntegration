@@ -5,6 +5,7 @@ import React, { useState, useEffect } from "react";
 
 const SmallArtistCard = ({ imageId, title, link }) => {
     const [imageUrl, setImageUrl] = useState(null);
+    const placeholderImage = "/pictures/placeholder.png";
 
     useEffect(() => {
         let isMounted = true;
@@ -32,11 +33,7 @@ const SmallArtistCard = ({ imageId, title, link }) => {
 
     return (
         <div className="small-tourCard-class">
-            {imageUrl ? (
-                <img src={imageUrl} alt={title} className="small-tourCard-image" />
-            ) : (
-                <div className="small-tourCard-image-placeholder" />
-            )}
+            <img src={imageUrl || placeholderImage} alt={title} className="small-tourCard-image" />
             <div className="small-tourCard-info">
                 <h2 className="small-tourCard-title">{title}</h2>
                 <p>
