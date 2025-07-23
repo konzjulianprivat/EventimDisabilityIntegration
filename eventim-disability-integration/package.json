@@ -14,6 +14,7 @@
     "multer": "^2.0.0",
     "next": "^15.3.2",
     "nodemon": "^3.1.10",
+    "opossum": "^5.0.1",
     "pg": "^8.16.0",
     "prop-types": "^15.8.1",
     "react": "^19.1.0",
@@ -32,7 +33,8 @@
     "eject": "react-scripts eject",
     "dev:next": "next dev",
     "dev:server": "nodemon server/server.js",
-    "dev": "concurrently \"npm run dev:next\" \"npm run dev:server\""
+    "dev:pm2": "pm2 start server/ecosystem.config.js --only eventim-backend --watch --no-daemon",
+    "dev": "concurrently \"npm run dev:next\" \"npm run dev:server\" \"npm run dev:pm2\""
   },
   "eslintConfig": {
     "extends": [

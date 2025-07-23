@@ -34,6 +34,15 @@ app.use(
     })
 );
 
+process.on('uncaughtException', err => {
+  console.error('UNCAUGHT EXCEPTION – process will exit!', err);
+  process.exit(1);
+});
+process.on('unhandledRejection', (reason, promise) => {
+  console.error('UNHANDLED REJECTION – process will exit!', reason);
+  process.exit(1);
+});
+
 // Serve /uploads as static
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 

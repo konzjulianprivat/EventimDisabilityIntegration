@@ -492,11 +492,11 @@ Wichtige Verzeichnisse innerhalb der App:
 ### Rollen und Fähigkeiten
 Die Tabelle `user_roles` definiert Berechtigungen. Aktuell existieren drei Rollen:
 
-| ID | Name | Beschreibung | Edit | Create | Appoint Roles | Account Mgmt | Disability Approval | Delete |
-|----|------|--------------|------|--------|---------------|--------------|--------------------|--------|
-| `6877dd1e-c8cf-4574-87e7-5c60f0870716` | **user** | Regulärer Eventim Nutzer | false | false | false | false | false | false |
-| `edb5a910-edd8-4121-8737-6dfb7b192d17` | **service** | Service-Mitarbeiter von Eventim | false | false | false | true | true | false |
-| `d9dc9c90-d17e-447f-a704-5d39b6d1e086` | **admin** | Vollzugriff auf alle Funktionen | true | true | true | true | true | true |
+| Rollenname | Beschreibung | Edit | Create | Appoint Roles | Account Mgmt | Disability Approval | Delete |
+|------|--------------|------|--------|---------------|--------------|--------------------|--------|
+| **user** | Regulärer Eventim Nutzer | false | false | false | false | false | false |
+| **service** | Service-Mitarbeiter von Eventim | false | false | false | true | true | false |
+| **admin** | Vollzugriff auf alle Funktionen | true | true | true | true | true | true |
 
 ### Fehlertoleranz des Backends
 - `server/db.js` überwacht die Datenbankverbindung und versucht bei Fehlern einen Reconnect.

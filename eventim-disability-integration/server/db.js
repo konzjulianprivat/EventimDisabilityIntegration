@@ -1,58 +1,60 @@
 const { Pool } = require('pg');
+const CircuitBreaker = require('opossum');
 const credentials = require('./credentials.json');
 
 let pool = new Pool(credentials);
+let reconnectAttempts = 0;
 
-pool.on('error', async (err) => {
-    console.error('Unexpected database error, reconnecting...', err.message);
-    await reconnect();
+// Exponential backoff reconnect logic
+async function reconnect() {
+  reconnectAttempts++;
+  const delay = Math.min(30000, 1000 * 2 ** reconnectAttempts);
+  console.warn(`Reconnecting in ${delay}ms…`);
+  await new Promise(res => setTimeout(res, delay));
+  try {
+    await pool.end();
+  } catch (e) {
+    // ignore errors on shutdown
+  }
+  pool = new Pool(credentials);
+}
+
+// Handle unexpected idle clients / fatal errors
+pool.on('error', err => {
+  console.error('Unexpected database error – will reconnect', err.message);
+  reconnect();
 });
 
-function isConnectionError(err) {
-    return [
-        'ECONNREFUSED',
-        'ECONNRESET',
-        'ECONNABORTED',
-        'EPIPE',
-        '57P01', // admin shutdown
-        '57P02', // crash shutdown
-        '57P03'
-    ].includes(err.code);
+// Raw DB query function
+async function rawQuery(text, params) {
+  return pool.query(text, params);
 }
 
-async function reconnect() {
-    try {
-        await pool.end();
-    } catch (_) {
-        // ignore errors on shutdown
-    }
-    pool = new Pool(credentials);
-}
+// Wrap queries in a circuit breaker to prevent cascading failures
+const breaker = new CircuitBreaker(rawQuery, {
+  timeout: 5000,               // if query takes >5s, fail
+  errorThresholdPercentage: 50, // if >50% of requests fail, open circuit
+  resetTimeout: 30000          // after 30s, try again
+});
 
+breaker.on('open',   () => console.error('DB CIRCUIT OPEN – reconnect forced'));
+breaker.on('halfOpen',() => console.log('DB CIRCUIT HALF-OPEN'));
+breaker.on('close',  () => console.log('DB CIRCUIT CLOSED'));
+
+// Exported query uses circuit breaker
 async function query(text, params) {
-    for (let attempt = 0; attempt < 2; attempt++) {
-        try {
-            return await pool.query(text, params);
-        } catch (err) {
-            if (attempt === 0 && isConnectionError(err)) {
-                console.error('Database query failed, reconnecting...', err.message);
-                await reconnect();
-                continue;
-            }
-            throw err;
-        }
-    }
+  return breaker.fire(text, params);
 }
 
+// Periodic health check
 async function healthCheck() {
-    try {
-        await pool.query('SELECT 1');
-    } catch (err) {
-        console.error('Database health check failed, attempting reconnect...', err.message);
-        await reconnect();
-    }
+  try {
+    await pool.query('SELECT 1');
+  } catch (err) {
+    console.error('Database health check failed, attempting reconnect...', err.message);
+    await reconnect();
+  }
 }
-
 setInterval(healthCheck, 10000);
 
 module.exports = { query };
