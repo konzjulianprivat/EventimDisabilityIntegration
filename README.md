@@ -466,7 +466,6 @@ Die Komponenten sind so aufgebaut, dass sie in verschiedenen Seiten wiederverwen
 - Das Frontend erwartet als API-Basis `NEXT_PUBLIC_API_URL` (Standard: `http://localhost:4000`).
 - Für Datei-Uploads wird `multer` verwendet. Bilder werden in der Tabelle `images` gespeichert und über `/image/:id` ausgeliefert.
 - Ein Cronjob im Server entfernt veraltete Warenkörbe und Checkouts alle 60 Sekunden.
-- Tests sind zurzeit nicht eingerichtet. `npm test` startet zwar Jest, benötigt jedoch `react-scripts`.
 
 <a name="projektstruktur"></a>
 ## Projektstruktur
@@ -499,16 +498,19 @@ Die Tabelle `user_roles` definiert Berechtigungen. Aktuell existieren drei Rolle
 | **admin** | Vollzugriff auf alle Funktionen | true | true | true | true | true | true |
 
 ### Fehlertoleranz des Backends
-- `server/db.js` überwacht die Datenbankverbindung und versucht bei Fehlern einen Reconnect.
+- `server/db.js` überwacht die Datenbankverbindung und versucht bei Fehlern einen Reconnect. Ein Circuit-Breaker auf Basis von `opossum` verhindert Kaskadenfehler.
 - Ein Health-Check läuft alle 10 Sekunden, um Ausfälle früh zu erkennen.
 - `server/server.js` startet erst, wenn eine DB-Verbindung besteht, und führt regelmäßige Aufräumjobs aus.
-- Sollte der Prozess abstürzen, empfiehlt sich der Einsatz eines Prozessmanagers wie **PM2** oder systemd.
+- Der Server wird mit **PM2** im Cluster-Modus betrieben und startet bei Fehlern automatisch neu.
+- Die PM2-Konfiguration liegt unter `server/ecosystem.config.js` und betreibt zwei Instanzen.
+- Ungefangene Fehler führen zu einem kontrollierten Exit, damit PM2 unmittelbar einen Neustart durchführen kann.
 
 ### Potenzielle Verbesserungen
 - Session-Secret und DB-Zugangsdaten als Umgebungsvariablen verwalten.
 - HTTPS/TLS für alle Verbindungen erzwingen.
 - Stärkere Validierung der Eingaben und Rate-Limiting für API-Calls.
 - Weitere Redundanz für die Datenbank (z.B. Replikation) einrichten.
+- Zentrales Logging (ELK-Stack o.Ä.) für die PM2-Prozesse einbinden.
 
 <a name="next-steps"></a>
 ## Nächste Schritte
@@ -516,10 +518,9 @@ Das Grundgerüst funktioniert lokal stabil: Registrierung, Login, Rollenverwaltu
 
 Vor einer finalen Bereitstellung sollten noch folgende Punkte bearbeitet werden:
 
-1. **Testabdeckung erhöhen** – Unit- und Integrationstests für kritische Komponenten einrichten.
-2. **Konfiguration bereinigen** – Secrets in Umgebungsvariablen auslagern und Produktionsbuilds automatisieren.
-3. **Security prüfen** – HTTPS erzwingen, CORS-Regeln präzisieren und optionale 2FA vorsehen.
-4. **Fehlertoleranz optimieren** – Monitoring hinzufügen und automatische Neustarts des Servers konfigurieren.
+1. **Konfiguration bereinigen** – Secrets in Umgebungsvariablen auslagern und Produktionsbuilds automatisieren.
+2. **Security prüfen** – HTTPS erzwingen, CORS-Regeln präzisieren und optionale 2FA vorsehen.
+3. **Fehlertoleranz weiter ausbauen** – zentrales Logging und Alerting einrichten.
 
 Bereits sehr gut funktionieren das Rollenmodell, die Bild-Uploads sowie die periodische Datenbereinigung im Backend.
 
