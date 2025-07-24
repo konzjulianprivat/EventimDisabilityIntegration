@@ -5,13 +5,13 @@ title Tour löschen
 skinparam linetype ortho
 start
 
-:<back:White>"/admin/tours" aufrufen;
-:<back:LightBlue>Bei einer Tour auf "Löschen" klicken;
+:"/admin/tours" aufrufen;
+:Bei einer Tour auf "Löschen" klicken;
 if (keine verkauften Tickets?) then (ja)
-  :<back:LightGreen>Bestätigungsdialog -> "Ja, löschen";
-  :<back:LightGreen>Tour wird entfernt und Liste neu geladen;
+  :Bestätigungsdialog -> "Ja, löschen";
+  :Tour wird entfernt und Liste neu geladen;
 else (nein)
-  :<back:LightCoral>Hinweis "Löschen nicht möglich" anzeigen;
+  :Hinweis "Löschen nicht möglich" anzeigen;
 endif
 
 stop

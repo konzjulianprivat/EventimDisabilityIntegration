@@ -5,12 +5,12 @@ title Antrag auf Nachteilsausgleich
 skinparam linetype ortho
 start
 
-:<back:White>"/profile" aufrufen;
-:<back:LightBlue>Bereich "Meine Daten" öffnen;
-:<back:LightBlue>Button "Antrag auf Nachteilsausgleich" wählen;
-:<back:LightGreen>Grad, Ablaufdatum, Merkzeichen und Ausweisbilder eingeben;
-:<back:LightBlue>"Antrag abschicken";
-:<back:LightGreen>Daten werden gespeichert und an den Service übermittelt;
+:"/profile" aufrufen;
+:Bereich "Meine Daten" öffnen;
+:Button "Antrag auf Nachteilsausgleich" wählen;
+:Grad, Ablaufdatum, Merkzeichen und Ausweisbilder eingeben;
+:"Antrag abschicken";
+:Daten werden gespeichert und an den Service übermittelt;
 
 stop
 @enduml

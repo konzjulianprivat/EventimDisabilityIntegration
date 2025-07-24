@@ -5,16 +5,16 @@ title Antrag auf Nachteilsausgleich annehmen oder ablehnen
 skinparam linetype ortho
 start
 
-:<back:White>"/service/compensation-for-disadvantages-requests" öffnen;
-:<back:LightBlue>Tabelle "Offene Anträge" durchsuchen;
-:<back:LightBlue>Eintrag anklicken -> Detailmodal erscheint;
-:<back:LightGreen>Daten und Ausweisfotos prüfen;
+:"/service/compensation-for-disadvantages-requests" öffnen;
+:Tabelle "Offene Anträge" durchsuchen;
+:Eintrag anklicken -> Detailmodal erscheint;
+:Daten und Ausweisfotos prüfen;
 if (Antrag korrekt?) then (ja)
-  :<back:LightGreen>"Annehmen" klicken;
+  :"Annehmen" klicken;
 else (nein)
-  :<back:LightPink>"Ablehnen" klicken;
+  :"Ablehnen" klicken;
 endif
-:<back:White>Liste aktualisiert sich;
+:Liste aktualisiert sich;
 
 stop
 @enduml

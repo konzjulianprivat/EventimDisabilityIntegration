@@ -5,15 +5,15 @@ title Konto löschen
 skinparam linetype ortho
 start
 
-:<back:White>"/profile" öffnen;
-:<back:LightBlue>"Account löschen" wählen;
-:<back:LightGreen>Dialog verlangt Eingabe "Löschen";
+:"/profile" öffnen;
+:"Account löschen" wählen;
+:"Dialog verlangt Eingabe "Löschen";
 if (noch offene Tickets?) then (ja)
-  :<back:LightCoral>Fehlermeldung anzeigen;
+  :"Fehlermeldung anzeigen;
 else (nein)
-  :<back:LightGreen>Eingabe bestätigen -> Konto wird entfernt;
-  :<back:LightCoral>Lokale Sessiondaten entfernen;
-  :<back:White>Weiterleitung zur Startseite;
+  :"Eingabe bestätigen -> Konto wird entfernt;
+  :"Lokale Sessiondaten entfernen;
+  :"Weiterleitung zur Startseite;
 endif
 
 stop

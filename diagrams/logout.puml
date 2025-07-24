@@ -5,11 +5,11 @@ title Abmelden
 skinparam linetype ortho
 start
 
-:<back:White>Dropdown in der Navigation öffnen;
-:<back:LightBlue>"Abmelden" klicken;
-:<back:LightGreen>POST "/logout" wird gesendet;
-:<back:LightCoral>Lokale Sessiondaten entfernen;
-:<back:LightBlue>Seite lädt neu und zeigt Login-Button;
+:Dropdown in der Navigation öffnen;
+:"Abmelden" klicken;
+:POST "/logout" wird gesendet;
+:Lokale Sessiondaten entfernen;
+:Seite lädt neu und zeigt Login-Button;
 
 stop
 @enduml

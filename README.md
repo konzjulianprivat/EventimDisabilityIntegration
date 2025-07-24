@@ -693,230 +693,66 @@ Der Prozess führt vom ersten Aufruf der Loginseite über die Registrierung bis
 zum erfolgreichen Login. Während der Registrierung kann direkt ein
 Behindertenausweis hochgeladen und die relevanten Merkzeichen angegeben werden.
 
-```plantuml
-@startuml
-!theme plain
-top to bottom direction
-skinparam linetype ortho
-start
-:"/login" öffnen;
-if (Neuer Kunde?) then (ja)
-  :Tab "Ich bin noch kein Kunde" wählen;
-  :Weiterleitung nach "/registration";
-  :Persönliche Daten, Passwort und Kontakt eingeben;
-  :Optional "Ich habe einen Behindertenausweis" aktivieren;
-  :Grad, Ablaufdatum, Merkzeichen und Ausweisfotos erfassen;
-  :Formular abschicken;
-  :System speichert Nutzer und leitet zu "/login" zurück;
-endif
-:E-Mail & Passwort eingeben;
-:Anmelden;
-if (Daten korrekt?) then (ja)
-  :Weiterleitung zur Startseite bzw. angegebenen Redirect-URL;
-else
-  :Fehlermeldung anzeigen;
-endif
-stop
-@enduml
-```
+![Registrierung / Anmelden](./diagrams/pictures/registration.svg)
 
 #### Ticketkauf als behinderte Person
 
 Nach erfolgreicher Anmeldung navigiert der Nutzende durch die Tour‐ und
 Eventseiten, fügt Tickets dem Warenkorb hinzu und schließt den Checkout ab.
 
-```plantuml
-@startuml
-!theme plain
-top to bottom direction
-skinparam linetype ortho
-start
-:Startseite oder "/artists" aufrufen;
-:Tour wählen -> "/artists/{artistId}/{tourId}";
-:Event auswählen -> "/artists/{artistId}/{tourId}/{eventId}";
-:Kategorie und Anzahl wählen;
-:"Zum Warenkorb" klicken;
-:Weiter zu "/checkout/shopping-cart";
-:Button "Weiter" -> "/checkout/shipping-information";
-:Lieferadresse prüfen/erfassen und Versandart wählen;
-:Weiter -> "/checkout/payment";
-:Zahlungsart auswählen und bestätigen;
-:System erstellt Bestellung -> "/checkout/success";
-stop
-@enduml
-```
+![Ticketkauf](./diagrams/pictures/buying_tickets.svg)
 
 #### Nachteilsausgleichsantrag im Profil stellen
 
 Im Profil kann jederzeit ein Antrag gestellt oder aktualisiert werden. Dazu
 werden Grad der Behinderung, Ausweisbilder und Merkzeichen hinterlegt.
 
-```plantuml
-@startuml
-!theme plain
-top to bottom direction
-skinparam linetype ortho
-start
-:"/profile" aufrufen;
-:Bereich "Meine Daten" öffnen;
-:Button "Antrag auf Nachteilsausgleich" wählen;
-:Grad, Ablaufdatum, Merkzeichen und Ausweisbilder eingeben;
-:"Antrag abschicken";
-:Daten werden gespeichert und an den Service übermittelt;
-stop
-@enduml
-```
+![Nachteilsausgleich stellen](./diagrams/pictures/request_for_disadvantages.svg)
 
 #### Nachteilsausgleichsantrag als Service-Mitarbeiter bearbeiten
 
 Service-User rufen die Übersicht der offenen Anträge auf, prüfen die Angaben und
 akzeptieren oder lehnen den Antrag ab.
 
-```plantuml
-@startuml
-!theme plain
-top to bottom direction
-skinparam linetype ortho
-start
-:"/service/compensation-for-disadvantages-requests" öffnen;
-:Tabelle "Offene Anträge" durchsuchen;
-:Eintrag anklicken -> Detailmodal erscheint;
-:Daten und Ausweisfotos prüfen;
-if (Antrag korrekt?) then (ja)
-  :"Annehmen" klicken;
-else
-  :"Ablehnen" klicken;
-endif
-:Liste aktualisiert sich;
-stop
-@enduml
-```
+![Nachteilsausgleich akzeptieren](./diagrams/pictures/accept_or_decline_rfd.svg)
 
 #### Rolle eines Nutzers ändern (Admin)
 
 Mit entsprechender Berechtigung können Service-Mitarbeitende die Rolle eines
 Accounts anpassen.
 
-```plantuml
-@startuml
-!theme plain
-top to bottom direction
-skinparam linetype ortho
-start
-:"/service/account-management" aufrufen;
-:Nutzer über Liste oder Suche auswählen;
-:Detailmodal öffnet sich;
-:"Rolle anpassen" wählen;
-:Neue Rolle im Dropdown setzen;
-:"Speichern" klicken;
-:System aktualisiert Rolle des Users;
-stop
-@enduml
-```
+![Nutzerrolle anpassen](./diagrams/pictures/change_user_role.svg)
 
 #### Tour samt Event anlegen
 
 Administratoren erstellen zunächst eine Tour und fügen anschließend Events
 hinzu.
 
-```plantuml
-@startuml
-!theme plain
-top to bottom direction
-skinparam linetype ortho
-start
-:"/admin/tours/create" aufrufen;
-:Titel, Zeitraum, Bild und Künstler auswählen;
-:Formular absenden -> Tour gespeichert;
-:"/admin/tours/events/create" öffnen;
-:Tour und Venue wählen, Zeiten und Kategorien erfassen;
-:Event speichern;
-stop
-@enduml
-```
+![Tour mit Event erstellen](./diagrams/pictures/create_event.svg)
 
 #### Tour löschen (erfolgreich oder nicht möglich)
 
 Eine Tour lässt sich nur entfernen, wenn für keine ihrer Events bereits Tickets
 verkauft wurden.
 
-```plantuml
-@startuml
-!theme plain
-top to bottom direction
-skinparam linetype ortho
-start
-:"/admin/tours" aufrufen;
-:Bei einer Tour auf "Löschen" klicken;
-if (keine verkauften Tickets?) then (ja)
-  :Bestätigungsdialog -> "Ja, löschen";
-  :Tour wird entfernt und Liste neu geladen;
-else
-  :Hinweis "Löschen nicht möglich" anzeigen;
-endif
-stop
-@enduml
-```
+![Tour löschen](./diagrams/pictures/delete_tour.svg)
 
 #### Benutzerkonto löschen
 
 Nutzer können ihr Konto im Profil endgültig entfernen, sofern keine zukünftigen
 Events mehr besucht werden müssen.
 
-```plantuml
-@startuml
-!theme plain
-top to bottom direction
-skinparam linetype ortho
-start
-:"/profile" öffnen;
-:"Account löschen" wählen;
-:Dialog verlangt Eingabe "Löschen";
-if (noch offene Tickets?) then (ja)
-  :Fehlermeldung anzeigen;
-else
-  :Eingabe bestätigen -> Konto wird entfernt;
-  :Weiterleitung zur Startseite;
-endif
-stop
-@enduml
-```
+![Account löschen](./diagrams/pictures/delete_account.svg)
 
 #### Abmelden
 
 Der Logout erfolgt über das Dropdown-Menü der Navigationsleiste.
 
-```plantuml
-@startuml
-!theme plain
-top to bottom direction
-skinparam linetype ortho
-start
-:Dropdown in der Navigation öffnen;
-:"Abmelden" klicken;
-:POST "/logout" wird gesendet;
-:Lokale Sessiondaten entfernen;
-:Seite lädt neu und zeigt Login-Button;
-stop
-@enduml
-```
+![Logout](./diagrams/pictures/logout.svg)
 
 #### Profildaten aktualisieren
 
 Persönliche Daten wie Adresse oder Telefonnummer lassen sich direkt im Profil
 anpassen.
 
-```plantuml
-@startuml
-!theme plain
-top to bottom direction
-skinparam linetype ortho
-start
-:"/profile" aufrufen;
-:Bereich "Meine Daten" -> Stiftsymbol anklicken;
-:Felder bearbeiten (Name, Adresse, Telefon ...);
-:"Speichern" drücken;
-:System aktualisiert die Daten;
-stop
-@enduml
-```
+![Profildaten anpassen](./diagrams/pictures/edit_profile_data.svg)

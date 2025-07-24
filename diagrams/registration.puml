@@ -5,19 +5,19 @@ title Registration Process
 skinparam linetype ortho
 start
 
-:<back:White>Öffne "/login";
+:Öffne "/login";
 if (Neuer Kunde?) then (ja)
-:<back:White>Weiterleitung auf "/register";
-:<back:LightGreen>Registrierungs-Formular öffnen & ausfüllen;
+:Weiterleitung auf "/register";
+:Registrierungs-Formular öffnen & ausfüllen;
   if (Behindertenausweis vorhanden?) then (ja)
-    :<back:LightGreen>Ausweis aktivieren & Fotos hochladen;
+    :Ausweis aktivieren & Fotos hochladen;
     else (nein)
-    :<back:LightGreen>Registrierung ohne Ausweis;
+    :Registrierung ohne Ausweis;
   endif
-  :<back:LightGreen>Formular abschicken;
-  :<back:White>Weiterleitung auf "/login";
+  :Formular abschicken;
+  :Weiterleitung auf "/login";
 else (nein)
-  :<back:LightBlue>E-Mail & Passwort eingeben & abschicken;
+  :E-Mail & Passwort eingeben & abschicken;
 endif
 
 if (Anmeldedaten korrekt?) then (ja)

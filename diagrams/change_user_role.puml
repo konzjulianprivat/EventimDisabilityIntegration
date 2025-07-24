@@ -5,13 +5,13 @@ title Benutzerrolle ändern
 skinparam linetype ortho
 start
 
-:<back:White>"/service/account-management" aufrufen;
-:<back:LightBlue>Nutzer über Liste oder Suche auswählen;
-:<back:LightBlue>Detailmodal öffnet sich;
-:<back:LightGreen>"Rolle anpassen" wählen;
-:<back:LightGreen>Neue Rolle im Dropdown setzen;
-:<back:LightGreen>"Speichern" klicken;
-:<back:White>System aktualisiert Rolle des Users;
+:"/service/account-management" aufrufen;
+:Nutzer über Liste oder Suche auswählen;
+:Detailmodal öffnet sich;
+:"Rolle anpassen" wählen;
+:Neue Rolle im Dropdown setzen;
+:"Speichern" klicken;
+:System aktualisiert Rolle des Users;
 
 stop
 @enduml

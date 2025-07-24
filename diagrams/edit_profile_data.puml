@@ -5,11 +5,11 @@ title Profildaten bearbeiten
 skinparam linetype ortho
 start
 
-:<back:White>"/profile" aufrufen;
-:<back:LightBlue>Bereich "Meine Daten" -> Stiftsymbol anklicken;
-:<back:LightGreen>Felder bearbeiten (Name, Adresse, Telefon ...);
-:<back:LightBlue>"Speichern" drücken;
-:<back:LightGreen>System aktualisiert die Daten;
+:"/profile" aufrufen;
+:Bereich "Meine Daten" -> Stiftsymbol anklicken;
+:Felder bearbeiten (Name, Adresse, Telefon ...);
+:"Speichern" drücken;
+:System aktualisiert die Daten;
 
 stop
 @enduml
