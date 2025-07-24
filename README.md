@@ -190,12 +190,11 @@ Die Next.js Anwendung befindet sich unter `src/pages` und nutzt dynamische Route
 | `/admin` | Einstieg in alle Admin-Unterseiten zur Pflege von Künstlern, Ländern, Genres, Touren und Veranstaltungsorten |
 | `/service` | Zugriffspunkt für Service-Mitarbeiter (u.a. Nachteilsausgleichsanträge und Account-Management) |
 
-Alle Seiten unter `/admin/*` und `/service/*` setzen entsprechende Berechtigungen voraus.
+Alle Seiten unter `/admin/*` und `/service/*` setzen entsprechende Berechtigungen voraus und sind nur Admin- bzw. Servicemitarbeitern gestattet. Falls ein Nutzer, welcher entweder nicht angemeldet ist oder nicht die notwendigen Berechtigungen besitzt auf diese Webseite geht, so wird dieser auf die Homepage zurückgewiesen.
 
 <a name="backend"></a>
 
 ### Backend
-
 
 Im Frontend der Applikation wurde ... genutzt, da .... Im Gegensatz zu ... ist ... besser in ...
 Alternative Umsetzung wären möglich mit ...
