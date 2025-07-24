@@ -1,0 +1,177 @@
+/* README.pdf.css – Eventim‑branded PDF styling */
+
+/* Brand color variables */
+:root {
+  /* Eventim corporate accents */
+  --eventim-blue:   #1D2D50;  /* dark navy blue from the logotype */
+  --eventim-yellow: #FFD300;  /* bright yellow from the sparkle icon */
+  --eventim-yellow-text: #d2a800; /* darker for link text */
+  --text-base:      #000000;
+  --text-muted:     #333333;
+  --bg-code:        #F0F0F0;
+  --border-light:   #CCCCCC;
+  --table-header:   #F5F5F5;
+}
+
+/* Page setup */
+@page {
+  size: A4;
+  margin: 20mm;
+}
+
+/* Base typography */
+body {
+  font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+  font-size: 12pt;
+  line-height: 1.5;
+  color: var(--text-base);
+  background-color: #ffffff;
+}
+
+/* Headings */
+h1 {
+  font-size: 28pt;
+  color: var(--eventim-blue);
+  margin-bottom: 0.5em;
+}
+h2 {
+  font-size: 22pt;
+  color: var(--eventim-blue);
+  border-bottom: 2px solid var(--eventim-yellow);
+  padding-bottom: 0.2em;
+  margin-top: 1em;
+  margin-bottom: 0.5em;
+}
+h3 {
+  font-size: 18pt;
+  color: var(--eventim-blue);
+  margin-top: 1em;
+  margin-bottom: 0.3em;
+}
+
+/* Paragraphs and lists */
+p, ul, ol, dl {
+  margin-bottom: 0.8em;
+}
+
+/* Links */
+a {
+  color: var(--eventim-yellow-text);
+  text-decoration: none;
+}
+a:hover {
+  text-decoration: underline;
+}
+
+/* Tables */
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 1em;
+}
+th, td {
+  border: 1px solid var(--border-light);
+  padding: 0.4em 0.6em;
+  vertical-align: top;
+}
+th {
+  background-color: var(--table-header);
+  font-weight: bold;
+}
+
+/* Code blocks and inline code */
+pre, code {
+  font-family: "Courier New", Courier, monospace;
+  font-size: 12pt;           /* same size as body text */
+  background-color: var(--bg-code);
+  color: var(--eventim-blue) !important;
+}
+pre {
+  padding: 0.8em;
+  overflow-x: auto;
+  margin-bottom: 1em;
+}
+code {
+  padding: 0.2em 0.4em;
+  border-radius: 3px;
+}
+
+/* Images */
+img {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  margin: 1em auto;
+}
+
+/* Title page */
+.title-page {
+  page-break-after: always;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  height: 100vh; /* fill the page */
+  text-align: center;
+}
+.title-page h1 {
+  font-size: 36pt;
+  margin-bottom: 0.5em;
+}
+.title-page p {
+  font-size: 14pt;
+  margin: 0.3em 0;
+  color: var(--text-muted);
+}
+.title-page p em {
+  color: var(--eventim-yellow);
+}
+
+/* Manual page breaks */
+.pagebreak {
+  page-break-after: always;
+}
+
+/* Footnotes / small print */
+.small {
+  font-size: 10pt;
+  color: #666666;
+}
+
+/* Blockquotes */
+blockquote {
+  border-left: 4px solid var(--eventim-yellow);
+  padding-left: 1em;
+  color: var(--text-muted);
+  margin: 1em 0;
+}
+
+/* Lists (custom bullets) */
+ul {
+  list-style-type: disc;
+  margin-left: 1.5em;
+}
+ol {
+  list-style-type: decimal;
+  margin-left: 1.5em;
+}
+
+/* Emphasis */
+strong {
+  color: #000000;
+}
+em {
+  color: var(--eventim-yellow-text);
+}
+
+/* Horizontal rule override for pagebreak if needed */
+hr.pagebreak {
+  border: none;
+  page-break-after: always;
+  margin: 0;
+}
+
+/* Ensure code fences don’t introduce extra margins */
+code[class*="language-"], pre[class*="language-"] {
+  background: var(--bg-code) !important;
+}
