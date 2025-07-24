@@ -920,14 +920,3 @@ start
 stop
 @enduml
 ```
-=======
-Add the workflows of the following processes here:
-- registering a disabled user // logging on
-- buying a ticket as a disabled person
-- sending a Nachteilsausgleichsantrag inside /profile
-- accepting a request for disadvantages request as a logged in service user
-- changing the role of an user as an admin
-- adding a tour to an artist as well as an event
-- deleting a tour (successful vs unsuccessful)
-- deleting a user account
-- more workflows which would be relevant to see

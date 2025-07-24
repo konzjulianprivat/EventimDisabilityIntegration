@@ -1,0 +1,16 @@
+@startuml
+title Event erstellen
+
+!theme plain
+skinparam linetype ortho
+start
+
+:<back:White>"/admin/tours/create" aufrufen;
+:<back:LightBlue>Titel, Zeitraum, Bild und Künstler auswählen;
+:<back:LightGreen>Formular absenden -> Tour gespeichert;
+:<back:White>"/admin/tours/events/create" öffnen;
+:<back:LightBlue>Tour und Venue wählen, Zeiten und Kategorien erfassen;
+:<back:LightGreen>Event speichern;
+
+stop
+@enduml
