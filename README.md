@@ -171,6 +171,9 @@ Backend erfolgt ausschließlich über JSON‑basierte HTTP‑Aufrufe.
 
 ### Frontend
 
+Im Frontend der Applikation wurde ... genutzt, da .... Im Gegensatz zu ... ist ... besser in ...
+Alternative Umsetzung wären möglich mit ...
+
 #### Seitenübersicht
 Die Next.js Anwendung befindet sich unter `src/pages` und nutzt dynamische Routen. Wichtige Seiten sind:
 
@@ -193,7 +196,11 @@ Alle Seiten unter `/admin/*` und `/service/*` setzen entsprechende Berechtigunge
 
 ### Backend
 
-Die wichtigsten Routen des Express-Servers (siehe `server/server.js`) sind:
+
+Im Frontend der Applikation wurde ... genutzt, da .... Im Gegensatz zu ... ist ... besser in ...
+Alternative Umsetzung wären möglich mit ...
+
+Im Folgenden sind die wichtigsten Routen des Express-Servers (siehe `server/server.js`) aufgeführt:
 
 | Methode | Pfad | Beschreibung |
 |---------|------|--------------|
@@ -218,7 +225,11 @@ Die wichtigsten Routen des Express-Servers (siehe `server/server.js`) sind:
 
 Dies ist nur ein Auszug. Weitere Endpunkte finden sich direkt im Quellcode von `server/server.js`.
 
+Die Endpunkte folgen den Best Practices von REST-API Schnittstellen und halten stets ... ein. Darüber hinaus wurde bei der Konstruktion der Endpunkter auf ... geachtet.
+
 ### Technologie‑Übersicht
+
+Neben den eingesetzten Frameworks wurden in diesem Projekt mehrere Libraries eingebunden, welche im Folgenden aufgelistet werden.
 
 | Komponente/Bibliothek | Kategorie | Zweck |
 |-----------------------|-----------|-------|
@@ -238,6 +249,8 @@ Dies ist nur ein Auszug. Weitere Endpunkte finden sich direkt im Quellcode von `
 | **uuid** | Library | Erzeugen eindeutiger IDs |
 | **Testing Library / Jest** | Testframeworks | Frontend‑Tests |
 
+Es wurde ... genutzt, um auf der Seite ... die ... umzusetzen. Darüber hinaus wurde ....
+
 <a name="datenbank"></a>
 
 ### Datenbank
@@ -245,6 +258,8 @@ Dies ist nur ein Auszug. Weitere Endpunkte finden sich direkt im Quellcode von `
 ![Datenbank-Schema](./pictures/ERM_database.png)
 
 Die Datenbank basiert auf PostgreSQL und wurde einmalig über `server/backup_script.sql` erstellt. Enthalten sind Tabellen für Benutzer, Rollen, Künstler, Touren, Events, Veranstaltungsorte sowie Tabellen zur Abwicklung von Bestellungen und zur Speicherung von Disability-Merkmalen. Hierbei wurde darauf geachtet, dass alle Metadaten ebenfalls in der Datenbank angepasst werden können, somit flexibel angepasst und erweitert werden können.
+
+Es wurde sich für eine PostgreSQL Datenbank entschieden, da diese ....
 
 #### Übersicht der Datenbanktabellen
 Nachfolgend eine kurze Beschreibung jeder Tabelle und ihrer Beziehungen.
@@ -282,11 +297,13 @@ Nachfolgend eine kurze Beschreibung jeder Tabelle und ihrer Beziehungen.
 Die Fremdschlüssel schützen vor inkonsistenten Daten. Viele Tabellen nutzen
 UUIDs als Primärschlüssel. Preise werden als `NUMERIC(10,2)` gespeichert, was
 zwei Nachkommastellen erlaubt. Für einfache Lookups existieren diverse
-Join‑Tabellen (z. B. `tour_genres`).
+Join‑Tabellen (z. B. `tour_genres`). Bei der Konstruktion des Datenbankmodells wurde stets darauf geachtet, dass die Datenbank in dritter Normalform vorliegt, somit Anomalien durch Löschen oder Anpassungen von Daten weitesgehend midigiert werden können.
 
 <a name="komponenten-hooks"></a>
 
 ### Komponenten und Hooks
+
+Eine Komponente im Kontext dieser Arbeit ist ..., wohingehend ein Hook.... Beide eignen sich dazu, ....
 
 Der Quellcode unter `src` gliedert sich in wiederverwendbare React‑Komponenten
 und mehrere Custom Hooks:
@@ -315,7 +332,15 @@ Die Komponenten sind so aufgebaut, dass sie in verschiedenen Seiten wiederverwen
 
 <a name="weiterfuehrende-hinweise"></a>
 
+## Schnittstellen zwischen Datenbank, Backend und Frontend
+
+### REST-Endpunkte
+
+### Trennnung von Geschäfts- und Applikationslogik
+
 ## Security & Fault Tolerance
+Um Userdaten
+
 - Das Frontend erwartet als API-Basis `NEXT_PUBLIC_API_URL` (Standard: `http://localhost:4000`).
 - Für Datei-Uploads wird `multer` verwendet. Bilder werden in der Tabelle `images` gespeichert und über `/image/:id` ausgeliefert.
 - Ein Cronjob im Server entfernt veraltete Warenkörbe und Checkouts alle 60 Sekunden.
@@ -329,13 +354,25 @@ Die Tabelle `user_roles` definiert Berechtigungen. Aktuell existieren drei Rolle
 | **service** | Service-Mitarbeiter von Eventim | false | false | false | true | true | false |
 | **admin** | Vollzugriff auf alle Funktionen | true | true | true | true | true | true |
 
-### Fehlertoleranz des Backends
+Um im Falle eines Datenbank und/oder Backend-Fehlers/-Aussetzens dem Nutzer ....
+
 - `server/db.js` überwacht die Datenbankverbindung und versucht bei Fehlern einen Reconnect. Ein Circuit-Breaker auf Basis von `opossum` verhindert Kaskadenfehler.
 - `server/server.js` startet erst, wenn eine DB-Verbindung besteht, und führt regelmäßige Aufräumjobs aus.
 - Der Server wird mit **PM2** im Cluster-Modus betrieben und startet bei Fehlern automatisch neu.
 - Ungefangene Fehler führen zu einem kontrollierten Exit, damit PM2 unmittelbar einen Neustart durchführen kann.
 
+Damit wird garantiert, dass ...
+
+### Doppelte Validierung zwischen Front- und Backend
+Fälle, in denen eine Anpassung/ein Löschen von Daten nicht zugelassen werden soll sind sowohl in Front- als auch im Backend abgefangen. Beim Versuch, eine Tour bzw. ein Event zu löschen validiert zunächst das Frontend, ob zu dieser Tour/ einem Event dieser Tour bereits Tickets existieren. Nur wenn keine Tickets in `orders` hinterlegt sind, erscheint die Möglichkeit das Event zu löschen.
+
+Sollte das Frontend in einen Fehler laufen und dennoch ein "Löschen"-Icon anzeigen wirft das Backend in `server/server.js` einen Fehler, dass diese Aktion nicht erlaubt ist, bevor dads Event auf der Datenbank gelöscht wird. Dieser wird vom Frontend entgegengenommen und in Form einer Fehlermeldung dem User angezeigt, dass die von ihm durchgeführte Aktion nicht möglich ist.
+
+Umgesetzt wird dies durch ...
+
 ## Testkonzept
+
+Zur Validierung der Ergebnisse aus der Applikation werden Tests durchgeführt, die .... Diese umfassen ...
 
 ### User-Tests
 
@@ -349,6 +386,9 @@ Ein weiterer Test zielte darauf ab, mehr Tickets zu bestellen, als tatsächlich 
 
 Beim Anlegen eines Events in einer Venue mit Behindertenbereich wurde geprüft, ob sich Sitzplätze – egal ob regulär oder für Schwerbehinderte – komplett weglassen lassen (TC13). Das System erlaubte dies nicht: Kategorien bzw. Sitzplätze müssen einen Wert größer null haben, womit gesetzliche Vorgaben eingehalten werden. Schließlich wurde getestet, ob mehrere Schwerbehindertentickets (etwa Sondertickets oder Gratis-Begleitpersonen) gleichzeitig gekauft werden können (TC14). Auch das war nicht möglich: Der „In den Warenkorb“-Button blieb ausgegraut und ließ sich nicht anklicken.
 
+### Backend-Tests
+
+...
 
 <a name="next-steps"></a>
 
