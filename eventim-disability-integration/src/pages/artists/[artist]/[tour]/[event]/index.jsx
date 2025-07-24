@@ -92,7 +92,7 @@ export default function EventPage() {
         if (!artist || !tour || !event) return;
         const load = async () => {
             try {
-                const res = await fetch(`${API_BASE_URL}/event-details/${event}`);
+                const res = await fetch(`${API_BASE_URL}/events/${event}`);
                 if (!res.ok) throw new Error('Fetch failed');
                 const data = await res.json();
 
@@ -336,7 +336,7 @@ export default function EventPage() {
                     <img
                         src={
                             eventData.tourImage
-                                ? `${API_BASE_URL}/image/${eventData.tourImage}`
+                                ? `${API_BASE_URL}/images/${eventData.tourImage}`
                                 : '/pictures/placeholder.png'
                         }
                         alt={eventData.tourTitle || 'Event'}

@@ -51,7 +51,7 @@ export default function GenrePage() {
     useEffect(() => {
         const fetchTours = async () => {
             try {
-                const res = await fetch(`${API_BASE_URL}/tours-detailed`);
+                const res = await fetch(`${API_BASE_URL}/tours/detailed`);
                 if (!res.ok) throw new Error();
                 const json = await res.json();
                 setTours(Array.isArray(json.tours) ? json.tours : []);
@@ -296,7 +296,7 @@ export default function GenrePage() {
                                                             <img
                                                                 src={
                                                                     ev.tourImage
-                                                                        ? `${API_BASE_URL}/image/${ev.tourImage}`
+                                                                        ? `${API_BASE_URL}/images/${ev.tourImage}`
                                                                         : '/pictures/placeholder.png'
                                                                 }
                                                                 alt={ev.tourTitle || 'Tour'}

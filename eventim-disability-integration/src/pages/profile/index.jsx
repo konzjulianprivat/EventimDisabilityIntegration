@@ -12,7 +12,7 @@ import { useValidation } from "../../hooks/useValidation";
 export async function getServerSideProps({ req }) {
     const cookie = req.headers.cookie || "";
     try {
-        const res = await fetch(`${API_BASE_URL}/session-status`, {
+        const res = await fetch(`${API_BASE_URL}/session`, {
             headers: { cookie },
         });
         const data = await res.json();
@@ -162,7 +162,7 @@ export default function ProfilePage() {
             const query = marks && marks.length > 0
                 ? `?marks=${encodeURIComponent(marks.join(','))}`
                 : '';
-            const res = await fetch(`${API_BASE_URL}/tours-detailed${query}`);
+            const res = await fetch(`${API_BASE_URL}/tours/detailed${query}`);
             if (res.ok) {
                 const data = await res.json();
                 setTours(Array.isArray(data.tours) ? data.tours : []);
@@ -192,8 +192,8 @@ export default function ProfilePage() {
     const fetchProfileData = async () => {
         try {
             const [sessionRes, addrRes] = await Promise.all([
-                fetch(`${API_BASE_URL}/session-status`, { credentials: 'include' }),
-                fetch(`${API_BASE_URL}/user-address`,   { credentials: 'include' })
+                fetch(`${API_BASE_URL}/session`, { credentials: 'include' }),
+                fetch(`${API_BASE_URL}/users/me/address`,   { credentials: 'include' })
             ]);
 
             if (sessionRes.ok) {

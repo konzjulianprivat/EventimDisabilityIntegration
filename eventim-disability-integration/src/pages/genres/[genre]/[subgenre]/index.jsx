@@ -26,7 +26,7 @@ export default function SubgenreEventsPage() {
                 if (!sg) throw new Error();
                 setSubgenreData({ id: sg.id, name: sg.name, genreName: g.name });
 
-                const toursRes = await fetch(`${API_BASE_URL}/tours-detailed`);
+                const toursRes = await fetch(`${API_BASE_URL}/tours/detailed`);
                 if (!toursRes.ok) throw new Error();
                 const toursJson = await toursRes.json();
                 const tours = Array.isArray(toursJson.tours) ? toursJson.tours : [];

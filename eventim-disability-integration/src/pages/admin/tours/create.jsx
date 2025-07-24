@@ -151,7 +151,7 @@ export default function TourCreation() {
         fd.append("genres", JSON.stringify(tourGenres));
 
         try {
-            const res = await fetch("http://localhost:4000/create-tour", {
+const res = await fetch("http://localhost:4000/tours", {
                 method: "POST",
                 body: fd,
             });

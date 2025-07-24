@@ -44,7 +44,7 @@ export default function VenuesContent() {
 
     const fetchVenues = async () => {
         try {
-            const res = await fetch('http://localhost:4000/venues-detailed');
+            const res = await fetch('http://localhost:4000/venues/detailed');
             const json = await res.json();
             const arr = Array.isArray(json.venues) ? json.venues : [];
             setVenues(arr);
@@ -271,7 +271,7 @@ export default function VenuesContent() {
                                         editedData.venue_image instanceof File
                                             ? URL.createObjectURL(editedData.venue_image)
                                             : venue.venue_image
-                                                ? `http://localhost:4000/image/${venue.venue_image}`
+                                                ? `http://localhost:4000/images/${venue.venue_image}`
                                                 : '/pictures/placeholder.png'
                                     }
                                     alt={venue.name || 'Unbekanntes Venue'}

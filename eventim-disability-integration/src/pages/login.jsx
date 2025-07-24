@@ -76,7 +76,7 @@ export default function LoginPage() {
         }
 
         try {
-            const res = await fetch('http://localhost:4000/login-user', {
+            const res = await fetch('http://localhost:4000/sessions', {
                 method: 'POST',
                 credentials: 'include',              // ← Cookie einschließen
                 headers: { 'Content-Type': 'application/json' },

@@ -101,7 +101,7 @@ export default function VenueCreation() {
             fd.append('venueAreas', JSON.stringify(venueAreas));
             if (formData.venueImage) fd.append('venueImage', formData.venueImage);
 
-            const res = await fetch('http://localhost:4000/create-venue', {
+ const res = await fetch('http://localhost:4000/venues', {
                 method: 'POST',
                 body: fd,
             });

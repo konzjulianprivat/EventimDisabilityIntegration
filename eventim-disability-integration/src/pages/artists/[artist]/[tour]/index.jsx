@@ -27,7 +27,7 @@ export default function TourEventsPage() {
         if (!tour) return;
         const load = async () => {
             try {
-                const res = await fetch(`${API_BASE_URL}/tour-details/${tour}`);
+              const res = await fetch(`${API_BASE_URL}/tours/${tour}`);
                 if (!res.ok) throw new Error();
                 const data = await res.json();
                 setTourData(data.tour);
@@ -98,7 +98,7 @@ export default function TourEventsPage() {
                     <img
                         src={
                             tourData.tour_image
-                                ? `${API_BASE_URL}/image/${tourData.tour_image}`
+                                ? `${API_BASE_URL}/images/${tourData.tour_image}`
                                 : '/pictures/placeholder.png'
                         }
                         alt={tourData.title || 'Tour'}

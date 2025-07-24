@@ -14,7 +14,7 @@ const SmallTourCard = ({ imageId, title, link }) => {
                 return;
             }
             try {
-                const res = await fetch(`http://localhost:4000/image/${imageId}`);
+                const res = await fetch(`http://localhost:4000/images/${imageId}`);
                 if (!res.ok) {
                     console.warn(`Tour-Bild ${imageId} nicht gefunden`);
                     setImageUrl(placeholderImage);
