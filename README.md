@@ -171,8 +171,8 @@ Backend erfolgt ausschließlich über JSON‑basierte HTTP‑Aufrufe.
 
 ### Frontend
 
-Im Frontend der Applikation wurde ... genutzt, da .... Im Gegensatz zu ... ist ... besser in ...
-Alternative Umsetzung wären möglich mit ...
+Im Frontend der Applikation wurde Next.js in Kombination mit React eingesetzt, weil diese Lösung serverseitiges Rendering ermöglicht und eine klare Komponentenstruktur vorgibt. Im Gegensatz zu einer klassischen Client-only-Umsetzung mit Create React App profitieren wir so von besseren Ladezeiten und SEO.
+Alternative Umsetzungen wären etwa mit Vue.js/Nuxt oder Angular möglich gewesen, jedoch besitzt das Team bereits umfangreiche Erfahrung mit React, was die Wartung vereinfacht.
 
 #### Seitenübersicht
 Die Next.js Anwendung befindet sich unter `src/pages` und nutzt dynamische Routen. Wichtige Seiten sind:
@@ -196,8 +196,8 @@ Alle Seiten unter `/admin/*` und `/service/*` setzen entsprechende Berechtigunge
 
 ### Backend
 
-Im Frontend der Applikation wurde ... genutzt, da .... Im Gegensatz zu ... ist ... besser in ...
-Alternative Umsetzung wären möglich mit ...
+Im Backend der Applikation wurde Express als leichtgewichtiges Framework eingesetzt, da es eine minimalistische Struktur besitzt und Middleware sehr flexibel eingebunden werden kann. Im Gegensatz zu komplexeren Lösungen wie NestJS ermöglicht Express einen schnellen Einstieg und volle Kontrolle über den Request-Flow.
+Alternative Umsetzungen wären mit NestJS oder Fastify möglich gewesen, doch Express ist in der Node.js-Community weit verbreitet und dementsprechend ausgezeichnet dokumentiert.
 
 Im Folgenden sind die wichtigsten Routen des Express-Servers (siehe `server/server.js`) aufgeführt:
 
@@ -224,7 +224,7 @@ Im Folgenden sind die wichtigsten Routen des Express-Servers (siehe `server/serv
 
 Dies ist nur ein Auszug. Weitere Endpunkte finden sich direkt im Quellcode von `server/server.js`.
 
-Die Endpunkte folgen den Best Practices von REST-API Schnittstellen und halten stets ... ein. Darüber hinaus wurde bei der Konstruktion der Endpunkter auf ... geachtet.
+Die Endpunkte folgen den Best Practices von REST-API-Schnittstellen und halten konsequent Ressourcenorientierung, sprechende URLs sowie eindeutige HTTP-Statuscodes ein. Darüber hinaus wurde bei der Konstruktion der Endpunkte auf eine einheitliche Fehlerbehandlung und eine klare Trennung zwischen Daten- und Geschäftslogik geachtet.
 
 ### Technologie‑Übersicht
 
@@ -248,7 +248,7 @@ Neben den eingesetzten Frameworks wurden in diesem Projekt mehrere Libraries ein
 | **uuid** | Library | Erzeugen eindeutiger IDs |
 | **Testing Library / Jest** | Testframeworks | Frontend‑Tests |
 
-Es wurde ... genutzt, um auf der Seite ... die ... umzusetzen. Darüber hinaus wurde ....
+Es wurde insbesondere `react-toastify` genutzt, um auf der Seite ein konsistentes Benachrichtigungssystem umzusetzen. Darüber hinaus sorgen `opossum` und `PM2` für eine resiliente Fehlerbehandlung im Backend und einen stabilen Betrieb.
 
 <a name="datenbank"></a>
 
@@ -258,7 +258,7 @@ Es wurde ... genutzt, um auf der Seite ... die ... umzusetzen. Darüber hinaus w
 
 Die Datenbank basiert auf PostgreSQL und wurde einmalig über `server/backup_script.sql` erstellt. Enthalten sind Tabellen für Benutzer, Rollen, Künstler, Touren, Events, Veranstaltungsorte sowie Tabellen zur Abwicklung von Bestellungen und zur Speicherung von Disability-Merkmalen. Hierbei wurde darauf geachtet, dass alle Metadaten ebenfalls in der Datenbank angepasst werden können, somit flexibel angepasst und erweitert werden können.
 
-Es wurde sich für eine PostgreSQL Datenbank entschieden, da diese ....
+Es wurde sich für eine PostgreSQL Datenbank entschieden, da diese ACID-konforme Transaktionen sowie eine ausgereifte Query-Engine bietet und gleichzeitig JSON-Datenstrukturen unterstützt. Alternativen wie MySQL oder MongoDB wurden geprüft, jedoch erschien PostgreSQL aufgrund der breiten Community-Unterstützung und der stabilen Erweiterbarkeit am sinnvollsten.
 
 #### Übersicht der Datenbanktabellen
 Nachfolgend eine kurze Beschreibung jeder Tabelle und ihrer Beziehungen.
@@ -302,7 +302,7 @@ Join‑Tabellen (z. B. `tour_genres`). Bei der Konstruktion des Datenbankmodel
 
 ### Komponenten und Hooks
 
-Eine Komponente im Kontext dieser Arbeit ist ..., wohingehend ein Hook.... Beide eignen sich dazu, ....
+Eine Komponente im Kontext dieser Arbeit ist ein kapselbarer UI-Baustein auf React-Basis, wohingegen ein Hook wiederverwendbare Logik wie Zustandsverwaltung oder Seiteneffekte abbildet. Beide Konzepte eignen sich dazu, komplexe Abläufe zu abstrahieren und die Wiederverwendbarkeit des Codes signifikant zu erhöhen.
 
 Der Quellcode unter `src` gliedert sich in wiederverwendbare React‑Komponenten
 und mehrere Custom Hooks:
@@ -334,11 +334,13 @@ Die Komponenten sind so aufgebaut, dass sie in verschiedenen Seiten wiederverwen
 ## Schnittstellen zwischen Datenbank, Backend und Frontend
 
 ### REST-Endpunkte
+Die Kommunikation zwischen Frontend und Backend erfolgt ausschließlich über klar definierte REST-Endpunkte, die einheitliche JSON-Strukturen zur Verfügung stellen.
 
-### Trennnung von Geschäfts- und Applikationslogik
+### Trennung von Geschäfts- und Applikationslogik
+Die Geschäftslogik befindet sich hauptsächlich im Backend, während das Frontend primär für die Darstellung und Benutzerinteraktion zuständig ist. Dadurch bleibt der Client schlank und die Kernprozesse lassen sich unabhängig testen.
 
 ## Security & Fault Tolerance
-Um Userdaten
+Um Userdaten bestmöglich zu schützen, werden alle API-Aufrufe über HTTPS gesichert und Sessions serverseitig verwaltet.
 
 - Das Frontend erwartet als API-Basis `NEXT_PUBLIC_API_URL` (Standard: `http://localhost:4000`).
 - Für Datei-Uploads wird `multer` verwendet. Bilder werden in der Tabelle `images` gespeichert und über `/image/:id` ausgeliefert.
@@ -353,31 +355,31 @@ Die Tabelle `user_roles` definiert Berechtigungen. Aktuell existieren drei Rolle
 | **service** | Service-Mitarbeiter von Eventim | false | false | false | true | true | false |
 | **admin** | Vollzugriff auf alle Funktionen | true | true | true | true | true | true |
 
-Um im Falle eines Datenbank und/oder Backend-Fehlers/-Aussetzens dem Nutzer ....
+Um im Falle eines Datenbank- oder Backend-Fehlers dem Nutzer weiterhin ein funktionsfähiges System zu bieten, werden Fehlerzustände serverseitig abgefangen und dem Frontend in strukturierter Form gemeldet.
 
 - `server/db.js` überwacht die Datenbankverbindung und versucht bei Fehlern einen Reconnect. Ein Circuit-Breaker auf Basis von `opossum` verhindert Kaskadenfehler.
 - `server/server.js` startet erst, wenn eine DB-Verbindung besteht, und führt regelmäßige Aufräumjobs aus.
 - Der Server wird mit **PM2** im Cluster-Modus betrieben und startet bei Fehlern automatisch neu.
 - Ungefangene Fehler führen zu einem kontrollierten Exit, damit PM2 unmittelbar einen Neustart durchführen kann.
 
-Damit wird garantiert, dass ...
+Damit wird garantiert, dass auch bei temporären Ausfällen keine inkonsistenten Daten geschrieben werden und der Dienst sich automatisch erholt.
 
 ### Doppelte Validierung zwischen Front- und Backend
 Fälle, in denen eine Anpassung/ein Löschen von Daten nicht zugelassen werden soll sind sowohl in Front- als auch im Backend abgefangen. Beim Versuch, eine Tour bzw. ein Event zu löschen validiert zunächst das Frontend, ob zu dieser Tour/ einem Event dieser Tour bereits Tickets existieren. Nur wenn keine Tickets in `orders` hinterlegt sind, erscheint die Möglichkeit das Event zu löschen.
 
 Sollte das Frontend in einen Fehler laufen und dennoch ein "Löschen"-Icon anzeigen wirft das Backend in `server/server.js` einen Fehler, dass diese Aktion nicht erlaubt ist, bevor dads Event auf der Datenbank gelöscht wird. Dieser wird vom Frontend entgegengenommen und in Form einer Fehlermeldung dem User angezeigt, dass die von ihm durchgeführte Aktion nicht möglich ist.
 
-Umgesetzt wird dies durch ...
+Umgesetzt wird dies durch ein Zusammenspiel aus clientseitigen Guards und serverseitiger Validierung, welche jede Manipulation der Daten prüft.
 
 ## Testkonzept
 
-Zur Validierung der Ergebnisse aus der Applikation werden Tests durchgeführt, die .... Diese umfassen ...
+Zur Validierung der Ergebnisse aus der Applikation werden Tests durchgeführt, die sowohl Unit- als auch Integrationstestfälle umfassen. Geprüft werden hierbei die REST-Endpunkte des Backends, die Funktionsweise der React-Komponenten sowie komplette Nutzerflüsse mittels End-to-End-Tests.
 
 ### User-Tests
 
 ![User-Testfälle](./pictures/test_cases.png)
 
-Als Normalnutzer wurde zunächst versucht, durch direkte Eingabe der URL „/admin/...“ auf den Admin-Bereich zuzugreifen (TC01). Das System leitete jedoch konsequent auf die Anmeldeseite um. Anschließend folgte eine Reihe von Löschtests: Beim Versuch, eine Stadt zu entfernen, in der bereits ein Event existiert (TC02), erschien ein Popup mit dem Hinweis, dass das Löschen fehlschlug, weil Städte dieses Landes in einem Stadion verwendet werden. Gleiches geschah beim Löschen einer Venue mit bestehendem Event (TC03); hier meldete das System, die Venue könne nicht entfernt werden, da Tickets für Events existieren. Auch das Löschen eines Landes, in dem Events stattfinden (TC04), wurde mit einem entsprechenden Fehler-Popup verhindert, das erneut auf verwendete Städte verwies.
+Als Normalnutzer wurde zunächst versucht, durch direkte Eingabe der URL „/admin/<unterseite>“ auf den Admin-Bereich zuzugreifen (TC01). Das System leitete jedoch konsequent auf die Anmeldeseite um. Anschließend folgte eine Reihe von Löschtests: Beim Versuch, eine Stadt zu entfernen, in der bereits ein Event existiert (TC02), erschien ein Popup mit dem Hinweis, dass das Löschen fehlschlug, weil Städte dieses Landes in einem Stadion verwendet werden. Gleiches geschah beim Löschen einer Venue mit bestehendem Event (TC03); hier meldete das System, die Venue könne nicht entfernt werden, da Tickets für Events existieren. Auch das Löschen eines Landes, in dem Events stattfinden (TC04), wurde mit einem entsprechenden Fehler-Popup verhindert, das erneut auf verwendete Städte verwies.
 
 Der Versuch, einen Nutzer direkt über die Benutzeroberfläche zu löschen, obwohl noch Buchungen für zukünftige Veranstaltungen bestehen (TC05), scheiterte ebenfalls: Unterhalb der Darstellung erschien der Text, das Konto könne nicht gelöscht werden, solange Tickets für noch nicht stattgefundene Events vorhanden sind. Ein Event mit bereits verkauften Tickets zu löschen (TC06) war gar nicht erst vorgesehen – die Option existierte schlicht nicht; dasselbe galt für das Entfernen einer Tour, die Events mit verkauften Tickets enthält (TC07). Artists ließen sich generell nicht löschen (TC08). Beim Versuch, ein Genre zu entfernen, für das bereits Tickets eines Events existieren (TC09), zeigte das System ein Popup, das einen Fehler beim Löschen meldete und als mögliche Ursache eine Tour-Verknüpfung nannte. Identisch verhielt es sich beim Sub-Genre (TC10): Auch hier verhinderte ein Fehlerhinweis das Löschen und verwies auf eine mögliche Verbindung zu einer Tour.
 
@@ -386,8 +388,8 @@ Ein weiterer Test zielte darauf ab, mehr Tickets zu bestellen, als tatsächlich 
 Beim Anlegen eines Events in einer Venue mit Behindertenbereich wurde geprüft, ob sich Sitzplätze – egal ob regulär oder für Schwerbehinderte – komplett weglassen lassen (TC13). Das System erlaubte dies nicht: Kategorien bzw. Sitzplätze müssen einen Wert größer null haben, womit gesetzliche Vorgaben eingehalten werden. Schließlich wurde getestet, ob mehrere Schwerbehindertentickets (etwa Sondertickets oder Gratis-Begleitpersonen) gleichzeitig gekauft werden können (TC14). Auch das war nicht möglich: Der „In den Warenkorb“-Button blieb ausgegraut und ließ sich nicht anklicken.
 
 ### Backend-Tests
-
-...
+Die automatisierten Backend-Tests nutzen Jest und prüfen alle API-Routen auf korrekte Antwortcodes sowie auf die Validierung der Eingabedaten. Hierbei wird eine isolierte Testdatenbank verwendet, damit produktive Daten nicht beeinflusst werden.
+Zusätzlich existieren Integrationstests, welche das Zusammenspiel zwischen Backend, Datenbank und Frontend simulieren.
 
 <a name="next-steps"></a>
 
