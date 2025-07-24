@@ -66,6 +66,26 @@ Benutzerdaten werden in PostgreSQL gespeichert. Für Passwort‑Hashes wird
 mit [multer](https://github.com/expressjs/multer) direkt in der Datenbank
 gespeichert. In der Entwicklung laufen beide Dienste parallel über `npm run dev`.
 
+### Technologie‑Übersicht
+
+| Komponente/Bibliothek | Kategorie | Zweck |
+|-----------------------|-----------|-------|
+| **Node.js** | Runtime | Ausführung von Backend und Next.js |
+| **Next.js** | Framework | React-basiertes Frontend mit Server Side Rendering |
+| **React** | Library | UI-Komponenten im Browser |
+| **Express** | Backend Framework | REST‑API und Routing |
+| **PostgreSQL** | Datenbank | Persistente Speicherung aller Daten |
+| **pg** | Library | Zugriff auf PostgreSQL im Backend |
+| **bcrypt** | Library | Hashing von Passwörtern |
+| **multer** | Library | Datei‑Uploads in die Datenbank |
+| **react-router-dom** | Library | Clientseitige Navigation |
+| **react-toastify** | Library | Anzeigen von Toast‑Benachrichtigungen |
+| **opossum** | Library | Circuit‑Breaker für Fehlerbehandlung |
+| **PM2** | Tool | Prozessmanager für den Server |
+| **nodemon** | Tool | Automatischer Neustart im Entwicklungsmodus |
+| **uuid** | Library | Erzeugen eindeutiger IDs |
+| **Testing Library / Jest** | Testframeworks | Frontend‑Tests |
+
 <a name="datenbank"></a>
 ## Datenbank
 Die Datenbank basiert auf PostgreSQL und wird komplett über `server/backup_script.sql` erstellt. Enthalten sind Tabellen für Benutzer, Rollen, Künstler, Touren, Events, Veranstaltungsorte sowie Tabellen zur Abwicklung von Bestellungen und zur Speicherung von Disability-Merkmalen. Das Schema ist in der folgenden Mermaid-Grafik visualisiert.
@@ -481,6 +501,18 @@ Wichtige Verzeichnisse innerhalb der App:
 - `src/components` – Wiederverwendbare React-Komponenten.
 - `src/hooks` – Custom Hooks für Authentifizierung, Warenkorb usw.
 
+### Frontend-Entwicklung und Struktur
+
+Das Frontend folgt der üblichen Next.js-Ordnerstruktur. Unter `src/pages` liegen
+alle Routen der Anwendung. Verschachtelte Ordner wie `artists/[artist]/[tour]`
+bilden dynamische Parameter ab. Wiederverwendbare Bausteine sind in
+`src/components` gekapselt und greifen auf eigene Styles unter `src/styles`
+zurück. Geteilte Logik findet sich in `src/hooks`. Für automatisierte Tests
+existiert der Ordner `src/__tests__` mit Tests auf Basis der Testing Library.
+Statische Dateien liegen unter `public`, allgemeine Einstellungen in `config.js`.
+Die Seiten laden jeweils nur die benötigten Komponenten und Hooks, wodurch die
+Struktur leicht zu erweitern bleibt.
+
 <a name="security-und-fehlertoleranz"></a>
 ## Security & Fehlertoleranz
 ### Datenverschlüsselung und Zugriffsrechte
@@ -523,4 +555,46 @@ Vor einer finalen Bereitstellung sollten noch folgende Punkte bearbeitet werden:
 3. **Fehlertoleranz weiter ausbauen** – zentrales Logging und Alerting einrichten.
 
 Bereits sehr gut funktionieren das Rollenmodell, die Bild-Uploads sowie die periodische Datenbereinigung im Backend.
+
+<a name="appendix"></a>
+## Anhang: Abhängigkeiten und Versionen
+
+Die folgenden Tabellen listen alle im Projekt genutzten Pakete samt Version auf. Die Angaben stammen aus `package.json`.
+
+### Runtime- und Bibliotheksabhängigkeiten
+
+| Paket | Version |
+|-------|---------|
+| `@testing-library/dom` | ^10.4.0 |
+| `@testing-library/jest-dom` | ^6.6.3 |
+| `@testing-library/react` | ^16.3.0 |
+| `@testing-library/user-event` | ^13.5.0 |
+| `bcrypt` | ^6.0.0 |
+| `cors` | ^2.8.5 |
+| `express` | ^5.1.0 |
+| `express-session` | ^1.18.1 |
+| `multer` | ^2.0.0 |
+| `next` | ^15.3.2 |
+| `nodemon` | ^3.1.10 |
+| `opossum` | ^5.0.1 |
+| `pg` | ^8.16.0 |
+| `prop-types` | ^15.8.1 |
+| `react` | ^19.1.0 |
+| `react-dom` | ^19.1.0 |
+| `react-router-dom` | ^7.6.1 |
+| `react-scripts` | ^0.0.0 |
+| `react-toastify` | ^11.0.5 |
+| `toastify` | ^2.0.1 |
+| `uuid` | ^11.1.0 |
+| `web-vitals` | ^2.1.4 |
+
+### Entwicklungsabhängigkeiten
+
+| Paket | Version |
+|-------|---------|
+| `@types/node` | 22.15.21 |
+| `@types/react` | 19.1.5 |
+| `concurrently` | ^9.1.2 |
+
+Die Anwendung wurde zuletzt mit Node.js v22 getestet. Eine aktuelle Node-Version wird empfohlen, um alle Features von Next.js nutzen zu können.
 
