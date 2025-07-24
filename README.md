@@ -26,6 +26,7 @@ Dieses Repository enthält eine Next.js Anwendung samt Express Backend, mit der 
   * [Interne Stakeholder](#interne-stakeholder)
 - [Projektübersicht (Soheil)](#projektubersicht-soheil)
 - [Setup](#setup)
+- [Projektstruktur](#projektstruktur)
 - [Architektur und eingesetzte Technologien](#architektur-und-eingesetzte-technologien)
   * [Frontend](#frontend)
   * [Backend](#backend)
@@ -152,6 +153,23 @@ Kernfunktionalitäten:
    npm run dev
    ```
    Damit starten sowohl das Next.js Frontend auf [http://localhost:3000](http://localhost:3000), das Backend unter [http://localhost:4000](http://localhost:4000) sowie P2M zur Überwachung der Datenbank- und Backendverbindung.
+
+<a name="projektstruktur"></a>
+
+## Projektstruktur
+
+Der gesamte Quellcode liegt im Unterordner `eventim-disability-integration`. Nachfolgende Tabelle bietet einen schnellen Überblick über die wichtigsten Verzeichnisse:
+
+| Pfad | Inhalt |
+|------|-------|
+| `src/pages/` | Sämtliche Next.js Seiten. Unterordner wie `admin/` oder `artists/` bilden dynamische Routen ab. |
+| `src/components/` | Wiederverwendbare UI-Bausteine (Modals, Navigationsleisten, Karten usw.) |
+| `src/hooks/` | Custom Hooks wie `useAuth` oder `useCart`, die zentrale Logik kapseln |
+| `src/__tests__/` | Kleine Jest-Tests zur Absicherung wichtiger Backend-Funktionen |
+| `server/` | Express‑Backend (`server.js`), DB-Anbindung (`db.js`), `backup_script.sql` und PM2-Konfiguration |
+| `public/` | Statische Dateien, die unverändert von Next.js bereitgestellt werden |
+
+In der Repository-Wurzel befinden sich zudem `diagrams/` und `pictures/` mit den PlantUML‑Quellen und exportierten SVG-Grafiken des Designs.
 
 <a name="technologien"></a>
 
