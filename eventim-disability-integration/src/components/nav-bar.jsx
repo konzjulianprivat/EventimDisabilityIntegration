@@ -44,7 +44,7 @@ export default function NavBar() {
         const timeout = setTimeout(async () => {
             try {
                 const res = await fetch(
-                    `${API_BASE_URL}/search-tours?q=${encodeURIComponent(q)}`,
+ `${API_BASE_URL}/tours/search?q=${encodeURIComponent(q)}`,
                     { signal: controller.signal }
                 );
                 if (res.ok) {
@@ -409,8 +409,8 @@ export default function NavBar() {
                                     type="button"
                                     className="login-button dropdown-logout"
                                     onClick={async () => {
-                                        await fetch(`${API_BASE_URL}/logout`, {
-                                            method: 'POST',
+                                        await fetch(`${API_BASE_URL}/session`, {
+                                            method: 'DELETE',
                                             credentials: 'include',
                                         });
                                         localStorage.removeItem('user');

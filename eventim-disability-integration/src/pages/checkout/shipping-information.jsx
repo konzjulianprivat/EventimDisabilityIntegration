@@ -34,7 +34,7 @@ export default function ShippingInformation() {
     // Fetch user data
     const fetchAddress = async () => {
         try {
-            const res = await fetch(`${API_BASE_URL}/user-address`, { credentials: 'include' });
+          const res = await fetch(`${API_BASE_URL}/users/me/address`, { credentials: 'include' });
             if (res.ok) {
                 const data = await res.json();
                 if (data.address) {
@@ -75,7 +75,7 @@ export default function ShippingInformation() {
 
     const fetchSessionShipping = async () => {
         try {
-            const res = await fetch(`${API_BASE_URL}/checkout-shipping`, { credentials: 'include' });
+            const res = await fetch(`${API_BASE_URL}/checkout/shipping`, { credentials: 'include' });
             if (res.ok) {
                 const data = await res.json();
                 if (data.shippingInfo) {
@@ -166,7 +166,7 @@ export default function ShippingInformation() {
 
     // persist changes in session
     useEffect(() => {
-        fetch(`${API_BASE_URL}/checkout-shipping`, {
+        fetch(`${API_BASE_URL}/checkout/shipping`, {
             method: 'POST',
             credentials: 'include',
             headers: { 'Content-Type': 'application/json' },
@@ -176,7 +176,7 @@ export default function ShippingInformation() {
 
     const handleSubmit = async () => {
         try {
-            await fetch(`${API_BASE_URL}/checkout-shipping`, {
+            await fetch(`${API_BASE_URL}/checkout/shipping`, {
                 method: 'POST',
                 credentials: 'include',
                 headers: { 'Content-Type': 'application/json' },

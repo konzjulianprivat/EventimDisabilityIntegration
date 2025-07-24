@@ -66,7 +66,7 @@ export default function Payment() {
     // After shipping options loaded, load selection from session
     useEffect(() => {
         if (!shippingOptions.length) return;
-        fetch(`${API_BASE_URL}/checkout-shipping`, { credentials: "include" })
+        fetch(`${API_BASE_URL}/checkout/shipping`, { credentials: "include" })
             .then((res) => (res.ok ? res.json() : null))
             .then((data) => {
                 if (data && data.shippingInfo && data.shippingInfo.shippingMethod) {
@@ -82,7 +82,7 @@ export default function Payment() {
     // After payment options loaded, check if session stored a method
     useEffect(() => {
         if (!paymentOptions.length) return;
-        fetch(`${API_BASE_URL}/checkout-payment`, { credentials: "include" })
+        fetch(`${API_BASE_URL}/checkout/payment`, { credentials: "include" })
             .then((res) => (res.ok ? res.json() : null))
             .then((data) => {
                 if (data && data.paymentMethod) {
@@ -96,7 +96,7 @@ export default function Payment() {
     // Persist selection in session whenever it changes
     useEffect(() => {
         if (!selectedPayment) return;
-        fetch(`${API_BASE_URL}/checkout-payment`, {
+        fetch(`${API_BASE_URL}/checkout/payment`, {
             method: "POST",
             credentials: "include",
             headers: { "Content-Type": "application/json" },
@@ -171,7 +171,7 @@ export default function Payment() {
     const handleSubmit = async () => {
         if (!selectedPayment) return;
         try {
-            await fetch(`${API_BASE_URL}/checkout-payment`, {
+            await fetch(`${API_BASE_URL}/checkout/payment`, {
                 method: "POST",
                 credentials: "include",
                 headers: { "Content-Type": "application/json" },

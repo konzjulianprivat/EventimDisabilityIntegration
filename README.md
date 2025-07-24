@@ -197,21 +197,21 @@ Die wichtigsten Routen des Express-Servers (siehe `server/server.js`) sind:
 
 | Methode | Pfad | Beschreibung |
 |---------|------|--------------|
-| `POST`  | `/register-user` | Registrierung eines neuen Nutzers inkl. optionaler Behindertenausweis-Daten |
-| `POST`  | `/login-user` | Benutzeranmeldung, legt Session-Cookie an |
-| `GET`   | `/session-status` | Prüft, ob ein Nutzer eingeloggt ist und liefert Profilinformationen |
-| `POST`  | `/logout` | Beendet die aktuelle Session |
-| `GET`   | `/user-address` | Liefert die hinterlegte Anschrift des eingeloggten Nutzers |
+| `POST`  | `/users` | Registrierung eines neuen Nutzers inkl. optionaler Behindertenausweis-Daten |
+| `POST`  | `/sessions` | Benutzeranmeldung, legt Session-Cookie an |
+| `GET`   | `/session` | Prüft, ob ein Nutzer eingeloggt ist und liefert Profilinformationen |
+| `DELETE` | `/session` | Beendet die aktuelle Session |
+| `GET`   | `/users/me/address` | Liefert die hinterlegte Anschrift des eingeloggten Nutzers |
 | `GET`   | `/disability-marks` | Auflistung möglicher Markierungen des Behindertenausweises |
-| `GET`   | `/pending-disability-requests` | Offene Anträge auf Nachteilsausgleich für den Service-Bereich |
-| `POST`  | `/disability-requests/:id/accept` | Antrag eines Nutzers akzeptieren |
-| `POST`  | `/disability-requests/:id/decline` | Antrag eines Nutzers ablehnen |
+| `GET`   | `/disability-requests/pending` | Offene Anträge auf Nachteilsausgleich für den Service-Bereich |
+| `PATCH` | `/disability-requests/:id/accepted` | Antrag eines Nutzers akzeptieren |
+| `PATCH` | `/disability-requests/:id/declined` | Antrag eines Nutzers ablehnen |
 | `GET`   | `/artists` | Auflistung aller Künstler |
-| `POST`  | `/create-artist` | Neuen Künstler anlegen |
-| `GET`   | `/tours-detailed` | Touren inkl. Events und Zugänglichkeitsdaten |
-| `POST`  | `/create-tour` | Neue Tour anlegen |
-| `GET`   | `/venues-detailed` | Liste aller Veranstaltungsorte mit Areas |
-| `POST`  | `/create-venue` | Neuen Veranstaltungsort anlegen |
+| `POST`  | `/artists` | Neuen Künstler anlegen |
+| `GET`   | `/tours/detailed` | Touren inkl. Events und Zugänglichkeitsdaten |
+| `POST`  | `/tours` | Neue Tour anlegen |
+| `GET`   | `/venues/detailed` | Liste aller Veranstaltungsorte mit Areas |
+| `POST`  | `/venues` | Neuen Veranstaltungsort anlegen |
 | `POST`  | `/cart-items` | Ticket zur Warenkorb-Session hinzufügen |
 | `GET`   | `/checkout` | Aktuellen Checkout laden |
 | `POST`  | `/orders` | Bestellung aus abgeschlossenem Checkout erzeugen |

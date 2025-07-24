@@ -48,7 +48,7 @@ app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 // Use memory storage for multer to get a Buffer for DB
 const upload = multer({ storage: multer.memoryStorage() });
-app.post('/upload-image', upload.single('image'), async (req, res) => {
+app.post('/images', upload.single('image'), async (req, res) => {
     const id = Number(req.body.id);
     const imageBuffer = req.file.buffer;
     const mimeType = req.file.mimetype;
@@ -65,7 +65,7 @@ app.post('/upload-image', upload.single('image'), async (req, res) => {
     }
 });
 
-app.get('/image/:id', async (req, res) => {
+app.get('/images/:id', async (req, res) => {
     try {
         const { rows } = await client.query(
             'SELECT image_data, image_type FROM images WHERE id = $1',
@@ -85,7 +85,7 @@ app.get('/image/:id', async (req, res) => {
 //     const multer = require('multer');
 //     const upload = multer({ storage: multer.memoryStorage() });
 
-app.post('/register-user', upload.fields([
+app.post('/users', upload.fields([
     { name: 'disabilityCardImageFront', maxCount: 1 },
     { name: 'disabilityCardImageBack', maxCount: 1 }
 ]), async (req, res) => {
@@ -263,7 +263,7 @@ app.post('/register-user', upload.fields([
     }
 });
 
-app.post('/login-user', async (req, res) => {
+app.post('/sessions', async (req, res) => {
     try {
         const { email, password } = req.body;
 
@@ -383,8 +383,8 @@ app.post('/login-user', async (req, res) => {
     }
 });
 
-// 4) GET /session-status – prüft, ob req.session.userId existiert
-app.get('/session-status', async (req, res) => {
+// 4) GET /session – prüft, ob req.session.userId existiert
+app.get('/session', async (req, res) => {
     if (!req.session.userId) {
         // Keine gültige Session → nicht eingeloggt
         return res.status(200).json({ loggedIn: false });
@@ -486,13 +486,13 @@ app.get('/session-status', async (req, res) => {
             },
         });
     } catch (err) {
-        console.error('Error in /session-status:', err);
+        console.error('Error in /session:', err);
         return res.status(500).json({ loggedIn: false });
     }
 });
 
-// 5) GET /logout – um die Session zu zerstören
-app.post('/logout', (req, res) => {
+// 5) DELETE /session – beendet die Session
+app.delete('/session', (req, res) => {
     req.session.destroy((err) => {
         if (err) {
             console.error('Session destroy error:', err);
@@ -505,7 +505,7 @@ app.post('/logout', (req, res) => {
 });
 
 // Liefert die in der Nutzertabelle hinterlegte Standardadresse
-app.get('/user-address', async (req, res) => {
+app.get('/users/me/address', async (req, res) => {
     if (!req.session.userId) {
         return res.status(401).json({ message: 'Not logged in' });
     }
@@ -527,7 +527,7 @@ app.get('/user-address', async (req, res) => {
 });
 
 // Liefert alle offenen Anträge auf Nachteilsausgleich
-app.get('/pending-disability-requests', async (req, res) => {
+app.get('/disability-requests/pending', async (req, res) => {
     try {
         const { rows } = await client.query(
             `SELECT user_id, visible_user_id, birth_date, updated_at
@@ -544,7 +544,7 @@ app.get('/pending-disability-requests', async (req, res) => {
 });
 
 // Liefert akzeptierte Anträge der letzten 30 Tage
-app.get('/accepted-disability-requests', async (req, res) => {
+app.get('/disability-requests/accepted', async (req, res) => {
     try {
         const { rows } = await client.query(
             `SELECT user_id, visible_user_id, birth_date, updated_at
@@ -734,7 +734,7 @@ app.patch(
 );
 
 // Accept a disability request
-app.post('/disability-requests/:id/accept', async (req, res) => {
+app.patch('/disability-requests/:id/accepted', async (req, res) => {
     const userId = req.params.id;
     try {
         await client.query(
@@ -752,7 +752,7 @@ app.post('/disability-requests/:id/accept', async (req, res) => {
 });
 
 // Decline a disability request
-app.post('/disability-requests/:id/decline', async (req, res) => {
+app.patch('/disability-requests/:id/declined', async (req, res) => {
     const userId = req.params.id;
     try {
         await client.query(
@@ -770,7 +770,7 @@ app.post('/disability-requests/:id/decline', async (req, res) => {
 });
 
 // Temporäres Speichern der Versandinformationen in der Session (wird später in der DB gespeichert)
-app.post('/checkout-shipping', (req, res) => {
+app.post('/checkout/shipping', (req, res) => {
     if (!req.session.userId) {
         return res.status(401).json({ message: 'Not logged in' });
     }
@@ -789,7 +789,7 @@ app.post('/checkout-shipping', (req, res) => {
 });
 
 // Liefert die aktuell in der Checkout-Session gespeicherten Lieferinformationen
-app.get('/checkout-shipping', (req, res) => {
+app.get('/checkout/shipping', (req, res) => {
     if (!req.session.userId) {
         return res.status(401).json({ message: 'Not logged in' });
     }
@@ -806,7 +806,7 @@ app.get('/checkout-shipping', (req, res) => {
     return res.json({ shippingInfo: req.session.checkout.shippingInfo || null });
 });
 // Temporäres Speichern der Zahlungsart in der Session
-app.post('/checkout-payment', (req, res) => {
+app.post('/checkout/payment', (req, res) => {
     if (!req.session.userId) {
         return res.status(401).json({ message: 'Not logged in' });
     }
@@ -825,7 +825,7 @@ app.post('/checkout-payment', (req, res) => {
 });
 
 // Liefert die aktuell gespeicherte Zahlungsart
-app.get('/checkout-payment', (req, res) => {
+app.get('/checkout/payment', (req, res) => {
     if (!req.session.userId) {
         return res.status(401).json({ message: 'Not logged in' });
     }
@@ -841,7 +841,7 @@ app.get('/checkout-payment', (req, res) => {
 
     return res.json({ paymentMethod: req.session.checkout.paymentMethod || null });
 });
-app.post('/create-country', async (req, res) => {
+app.post('/countries', async (req, res) => {
     try {
         const { name, code } = req.body;
         if (!name || !name.trim()) {
@@ -1429,7 +1429,7 @@ app.get('/shipping-options', async (req, res) => {
         res.status(500).json({ message: 'Serverfehler beim Laden der Versandoptionen' });
     }
 });
-app.post('/create-artist', upload.single('artistImage'), async (req, res) => {
+app.post('/artists', upload.single('artistImage'), async (req, res) => {
     try {
         const { name, biography, website } = req.body;
 
@@ -1473,7 +1473,7 @@ app.get('/artists', async (req, res) => {
     }
 });
 
-app.get('/artist-details/:id', async (req, res) => {
+app.get('/artists/:id', async (req, res) => {
     const artistId = req.params.id;
     try {
         const { rows } = await client.query(
@@ -1494,7 +1494,7 @@ app.get('/artist-details/:id', async (req, res) => {
         }
         return res.status(200).json({ artist: rows[0] });
     } catch (err) {
-        console.error('Error in /artist-details:', err);
+        console.error('Error in /artists/:id:', err);
         return res.status(500).json({ message: 'Fehler beim Laden des Künstlers' });
     }
 });
@@ -1536,7 +1536,7 @@ app.get('/subgenres', async (req, res) => {
         res.status(500).json({ message: 'Fehler beim Laden der Subgenres' });
     }
 });
-app.post('/create-tour', upload.single('tourImage'), async (req, res) => {
+app.post('/tours', upload.single('tourImage'), async (req, res) => {
     try {
         // 1) Aus dem Body lesen
         const {
@@ -1700,7 +1700,7 @@ app.post('/create-tour', upload.single('tourImage'), async (req, res) => {
     }
 });
 
-app.post('/create-city', express.json(), async (req, res) => {
+app.post('/cities', express.json(), async (req, res) => {
     try {
         const { name, countryId } = req.body;
         if (!name || !name.trim() || !countryId) {
@@ -1767,7 +1767,7 @@ app.get('/areas', async (req, res) => {
 });
 
 // POST: Venue erstellen (inkl. area capacities)
-app.post('/create-venue', upload.single('venueImage'), async (req, res) => {
+app.post('/venues', upload.single('venueImage'), async (req, res) => {
     const {
         name,
         address,
@@ -1881,7 +1881,7 @@ app.get('/venue-areas', async (req, res) => {
 });
 
 // GET: Detailed venues with city information
-app.get('/venues-detailed', async (req, res) => {
+app.get('/venues/detailed', async (req, res) => {
     try {
         const { rows } = await client.query(
             `SELECT v.id,
@@ -2054,7 +2054,7 @@ app.delete('/venues/:id', async (req, res) => {
         res.status(500).json({ message: 'Serverfehler beim Löschen des Venues' });
     }
 });
-app.post('/create-event', express.json(), async (req, res) => {
+app.post('/events', express.json(), async (req, res) => {
     const {
         tourId,
         venueId,
@@ -2175,7 +2175,7 @@ app.post('/create-event', express.json(), async (req, res) => {
     }
 });
 
-app.post('/create-genre', async (req, res) => {
+app.post('/genres', async (req, res) => {
     const { name, subgenres = [] } = req.body;
 
     if (!name || !name.trim()) {
@@ -2420,7 +2420,7 @@ app.get('/cities-with-venues', async (req, res) => {
     }
 });
 
-app.get("/tours-with-images", async (req, res) => {
+app.get("/tours/with-images", async (req, res) => {
     try {
         const { rows } = await client.query(
             `
@@ -2446,7 +2446,7 @@ app.get("/tours-with-images", async (req, res) => {
     }
 });
 
-app.get("/artists-with-images", async (req, res) => {
+app.get("/artists/with-images", async (req, res) => {
     try {
         const { rows } = await client.query(
             `
@@ -2520,7 +2520,7 @@ async function loadToursSearchCache() {
     toursSearchCache = { data: Object.values(map), timestamp: Date.now() };
 }
 
-app.get('/search-tours', async (req, res) => {
+app.get('/tours/search', async (req, res) => {
     const query = (req.query.q || '').toLowerCase();
     if (!toursSearchCache.data || Date.now() - toursSearchCache.timestamp > SEARCH_CACHE_TTL) {
         try {
@@ -2537,7 +2537,7 @@ app.get('/search-tours', async (req, res) => {
     res.json({ tours: result.slice(0, 10) });
 });
 
-app.post('/create-area', async (req, res) => {
+app.post('/areas', async (req, res) => {
     try {
         const { name, description } = req.body;
 
@@ -2717,7 +2717,7 @@ app.delete('/artists/:id', async (req, res) => {
 
 // server.js (vollständiger Endpoint)
 
-app.get('/tours-detailed', async (req, res) => {
+app.get('/tours/detailed', async (req, res) => {
     try {
         const marks = (req.query.marks || '')
             .split(',')
@@ -2941,7 +2941,7 @@ app.get('/tours-detailed', async (req, res) => {
         console.log('detailedTours insgesamt:', detailedTours);
         return res.status(200).json({ tours: detailedTours });
     } catch (err) {
-        console.error('Error in /tours-detailed:', err);
+        console.error('Error in /tours/detailed:', err);
         return res.status(500).json({ message: 'Fehler beim Laden der Touren' });
     }
 });
@@ -3244,7 +3244,7 @@ const mapMarkCodeToLabel = (mark_code) => {
 };
 
 // 2) Neuer Endpoint: Liefert pro Event einer Tour dessen Basis-Daten + accessibility-Labels
-app.get('/events-with-accessibility', async (req, res) => {
+app.get('/events/with-accessibility', async (req, res) => {
     const { tourId } = req.query;
     if (!tourId) {
         return res.status(400).json({ message: 'tourId als Query-Parameter ist erforderlich' });
@@ -3287,15 +3287,15 @@ app.get('/events-with-accessibility', async (req, res) => {
 
         return res.status(200).json({ events: result });
     } catch (error) {
-        console.error('Error in /events-with-accessibility:', error);
+        console.error('Error in /events/with-accessibility:', error);
         return res.status(500).json({ message: 'Serverfehler beim Laden der Events' });
     }
 });
 
-app.get('/event-accessibility', async (req, res) => {
-    const eventId = req.query.eventId;
+app.get('/events/:eventId/accessibility', async (req, res) => {
+    const eventId = req.params.eventId;
     if (!eventId) {
-        return res.status(400).json({ message: 'eventId als Query-Parameter ist erforderlich.' });
+        return res.status(400).json({ message: 'eventId als Parameter ist erforderlich.' });
     }
 
     try {
@@ -3317,13 +3317,13 @@ app.get('/event-accessibility', async (req, res) => {
 
         return res.status(200).json({ accessibilityLabels: uniqueLabels });
     } catch (err) {
-        console.error('Error in /event-accessibility:', err);
+        console.error('Error in /events/:eventId/accessibility:', err);
         return res.status(500).json({ message: 'Fehler beim Abrufen der Accessibility-Labels' });
     }
 });
 
 // Liefert Detailinformationen zu einer Tour inklusive aller Events
-app.get('/tour-details/:id', async (req, res) => {
+app.get('/tours/:id', async (req, res) => {
     const tourId = req.params.id;
     try {
         const { rows: tourRows } = await client.query(
@@ -3477,13 +3477,13 @@ app.get('/tour-details/:id', async (req, res) => {
             },
         });
     } catch (err) {
-        console.error('Error in /tour-details:', err);
+        console.error('Error in /tours/:id:', err);
         return res.status(500).json({ message: 'Fehler beim Laden der Tour' });
     }
 });
 
 // Liefert Detailinformationen zu einem Event inklusive Kategorien und zugehörigen Künstler-IDs
-app.get('/event-details/:id', async (req, res) => {
+app.get('/events/:id', async (req, res) => {
     const eventId = req.params.id;
     try {
         const { rows } = await client.query(
@@ -3545,7 +3545,7 @@ app.get('/event-details/:id', async (req, res) => {
 
         return res.status(200).json({ event, categories, artistIds });
     } catch (err) {
-        console.error('Error in /event-details:', err);
+        console.error('Error in /events/:id:', err);
         return res.status(500).json({ message: 'Fehler beim Laden des Events' });
     }
 });

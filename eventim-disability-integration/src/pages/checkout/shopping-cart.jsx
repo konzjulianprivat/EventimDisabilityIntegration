@@ -166,7 +166,7 @@ export default function Checkout() {
                                 <img
                                     src={
                                         image
-                                            ? `${API_BASE_URL}/image/${image}`
+                                            ? `${API_BASE_URL}/images/${image}`
                                             : '/images/placeholder.jpg'
                                     }
                                     alt={eventTitle}

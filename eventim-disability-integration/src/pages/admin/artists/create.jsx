@@ -67,7 +67,7 @@ export default function ArtistCreation() {
             fd.append('website', formData.website);
             if (formData.artistImage) fd.append('artistImage', formData.artistImage);
 
-            const response = await fetch('http://localhost:4000/create-artist', {
+ const response = await fetch('http://localhost:4000/artists', {
                 method: 'POST',
                 body: fd,
             });

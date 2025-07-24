@@ -46,7 +46,7 @@ export function useAuth() {
         // 2) Parallel die echte Session beim Server prüfen
         async function checkSession() {
             try {
-                const res = await fetch('http://localhost:4000/session-status', {
+                const res = await fetch('http://localhost:4000/session', {
                     method: 'GET',
                     credentials: 'include',
                 });

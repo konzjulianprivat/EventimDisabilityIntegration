@@ -43,7 +43,7 @@ export default function CityCreation() {
         }
 
         try {
-            const response = await fetch('http://localhost:4000/create-city', {
+          const response = await fetch('http://localhost:4000/cities', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(formData)

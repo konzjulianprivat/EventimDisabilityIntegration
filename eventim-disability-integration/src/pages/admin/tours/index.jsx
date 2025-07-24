@@ -85,7 +85,7 @@ export default function ToursContent() {
     }, []);
     const fetchTours = async () => {
         try {
-            const res = await fetch(`${API_BASE_URL}/tours-detailed`);
+            const res = await fetch(`${API_BASE_URL}/tours/detailed`);
             if (!res.ok) throw new Error();
             const json = await res.json();
             const arr = Array.isArray(json.tours) ? json.tours : [];
@@ -227,7 +227,7 @@ export default function ToursContent() {
         // Event-Details laden
         try {
             const promises = (tour.events || []).map((ev) =>
-                fetch(`${API_BASE_URL}/event-details/${ev.id}`).then((r) =>
+                fetch(`${API_BASE_URL}/events/${ev.id}`).then((r) =>
                     r.ok ? r.json() : null
                 )
             );
@@ -447,7 +447,7 @@ export default function ToursContent() {
                                             editedData.tour_image instanceof File
                                                 ? URL.createObjectURL(editedData.tour_image)
                                                 : tour.tour_image
-                                                    ? `${API_BASE_URL}/image/${tour.tour_image}`
+                                                    ? `${API_BASE_URL}/images/${tour.tour_image}`
                                                     : '/placeholder-tour.png'
                                         }
                                         alt={tour.title || 'Unbekannte Tour'}

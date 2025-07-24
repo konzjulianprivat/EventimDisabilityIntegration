@@ -13,7 +13,7 @@ const SquareTourCard = ({ imageId, title, bottomText, link }) => {
         async function fetchImage() {
             if (!imageId) return;
             try {
-                const res = await fetch(`http://localhost:4000/image/${imageId}`);
+                const res = await fetch(`http://localhost:4000/images/${imageId}`);
                 if (!res.ok) {
                     console.warn(`Tour-Bild ${imageId} nicht gefunden`);
                     return;

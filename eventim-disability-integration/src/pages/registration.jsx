@@ -208,7 +208,7 @@ export default function Registration() {
             // (Server will parse JSON.parse(req.body.disabilityMarks))
             payload.append('disabilityMarks', JSON.stringify(selectedMarks));
 
-            const response = await fetch('http://localhost:4000/register-user', {
+            const response = await fetch('http://localhost:4000/users', {
                 method: 'POST',
                 body: payload,
             });

@@ -206,7 +206,7 @@ export default function ArtistsContent() {
                                         editedData.artist_image instanceof File
                                             ? URL.createObjectURL(editedData.artist_image)
                                             : artist.artist_image
-                                                ? `http://localhost:4000/image/${artist.artist_image}`
+                                                ? `http://localhost:4000/images/${artist.artist_image}`
                                                 : '/placeholder-artist.png'
                                     }
                                     alt={artist.name || 'Unbekannter Künstler'}

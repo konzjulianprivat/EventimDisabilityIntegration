@@ -25,7 +25,7 @@ export default function VenueEventsPage() {
                 if (!c || !v) throw new Error();
                 setVenueData({ id: v.id, name: v.name, cityName: c.name });
 
-                const toursRes = await fetch(`${API_BASE_URL}/tours-detailed`);
+                const toursRes = await fetch(`${API_BASE_URL}/tours/detailed`);
                 if (!toursRes.ok) throw new Error();
                 const toursJson = await toursRes.json();
                 const tours = Array.isArray(toursJson.tours) ? toursJson.tours : [];
@@ -150,7 +150,7 @@ export default function VenueEventsPage() {
                                                 className="artist-image"
                                                 src={
                                                     ev.tourImage
-                                                        ? `${API_BASE_URL}/image/${ev.tourImage}`
+                                                        ? `${API_BASE_URL}/images/${ev.tourImage}`
                                                         : '/pictures/placeholder.png'
                                                 }
                                                 alt={ev.tourTitle || 'Tour'}

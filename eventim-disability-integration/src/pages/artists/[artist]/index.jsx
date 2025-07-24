@@ -39,7 +39,7 @@ export default function ArtistPage() {
         if (!artist) return;
         const loadArtist = async () => {
             try {
-                const res = await fetch(`${API_BASE_URL}/artist-details/${artist}`);
+       const res = await fetch(`${API_BASE_URL}/artists/${artist}`);
                 if (!res.ok) throw new Error();
                 const data = await res.json();
                 setArtistData(data.artist);
@@ -54,7 +54,7 @@ export default function ArtistPage() {
     useEffect(() => {
         const fetchTours = async () => {
             try {
-                const res = await fetch(`${API_BASE_URL}/tours-detailed`);
+                const res = await fetch(`${API_BASE_URL}/tours/detailed`);
                 if (!res.ok) throw new Error();
                 const json = await res.json();
                 const arr = Array.isArray(json.tours) ? json.tours : [];
@@ -149,7 +149,7 @@ export default function ArtistPage() {
     if (!artistData) return <div>Loading …</div>;
 
     const artistImage = artistData.artist_image
-        ? `${API_BASE_URL}/image/${artistData.artist_image}`
+        ? `${API_BASE_URL}/images/${artistData.artist_image}`
         : '/pictures/placeholder.png';
 
     const totalEventCount = filteredTours.reduce((total, tour) => total + tour.eventCount, 0);
@@ -175,7 +175,7 @@ export default function ArtistPage() {
                     <img
                         src={
                             artistData.artist_image
-                                ? `${API_BASE_URL}/image/${artistData.artist_image}`
+                                ? `${API_BASE_URL}/images/${artistData.artist_image}`
                                 : '/pictures/placeholder.png'
                         }
                         alt={artistData.name || 'Artist'}
@@ -228,7 +228,7 @@ export default function ArtistPage() {
                                             className="artist-image"
                                             src={
                                                 tour.tour_image
-                                                    ? `${API_BASE_URL}/image/${tour.tour_image}`
+                                                    ? `${API_BASE_URL}/images/${tour.tour_image}`
                                                     : '/pictures/placeholder.png'
                                             }
                                             alt={tour.title || 'Unbekannte Tour'}
