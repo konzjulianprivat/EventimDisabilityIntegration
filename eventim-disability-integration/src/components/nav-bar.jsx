@@ -45,7 +45,7 @@ export default function NavBar() {
             try {
                 const res = await fetch(
                     `${API_BASE_URL}/search-tours?q=${encodeURIComponent(q)}`,
-                    { signal: controller.signal }
+                    { signal: controller.signal, credentials: 'include' }
                 );
                 if (res.ok) {
                     const data = await res.json();

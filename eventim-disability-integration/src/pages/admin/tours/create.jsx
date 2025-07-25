@@ -29,12 +29,12 @@ export default function TourCreation() {
     const validation = useValidation({ title: '', startDate: '', endDate: '' });
 
     useEffect(() => {
-        fetch("http://localhost:4000/artists")
+        fetch("http://localhost:4000/artists", { credentials: 'include' })
             .then((res) => res.json())
             .then((data) => setArtists(data.artists))
             .catch((err) => console.error("Fehler beim Laden der Künstler:", err));
 
-        fetch("http://localhost:4000/genres")
+        fetch("http://localhost:4000/genres", { credentials: 'include' })
             .then((res) => res.json())
             .then((data) => setGenres(data.genres))
             .catch((err) => console.error("Fehler beim Laden der Genres:", err));
@@ -67,7 +67,9 @@ export default function TourCreation() {
         );
         if (gid && !subgenresByGenre[gid]) {
             try {
-                const res = await fetch(`http://localhost:4000/subgenres?genreId=${gid}`);
+                const res = await fetch(`http://localhost:4000/subgenres?genreId=${gid}`, {
+                    credentials: 'include',
+                });
                 const data = await res.json();
                 setSubgenresByGenre((p) => ({ ...p, [gid]: data.subgenres }));
             } catch (err) {
@@ -154,6 +156,7 @@ export default function TourCreation() {
             const res = await fetch("http://localhost:4000/create-tour", {
                 method: "POST",
                 body: fd,
+                credentials: 'include',
             });
             const data = await res.json();
             if (res.ok) {

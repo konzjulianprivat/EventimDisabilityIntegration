@@ -39,7 +39,9 @@ export default function ArtistPage() {
         if (!artist) return;
         const loadArtist = async () => {
             try {
-                const res = await fetch(`${API_BASE_URL}/artist-details/${artist}`);
+                const res = await fetch(`${API_BASE_URL}/artist-details/${artist}`, {
+                    credentials: 'include',
+                });
                 if (!res.ok) throw new Error();
                 const data = await res.json();
                 setArtistData(data.artist);
@@ -54,7 +56,9 @@ export default function ArtistPage() {
     useEffect(() => {
         const fetchTours = async () => {
             try {
-                const res = await fetch(`${API_BASE_URL}/tours-detailed`);
+                const res = await fetch(`${API_BASE_URL}/tours-detailed`, {
+                    credentials: 'include',
+                });
                 if (!res.ok) throw new Error();
                 const json = await res.json();
                 const arr = Array.isArray(json.tours) ? json.tours : [];

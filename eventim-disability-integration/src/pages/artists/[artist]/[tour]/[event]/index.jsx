@@ -92,7 +92,9 @@ export default function EventPage() {
         if (!artist || !tour || !event) return;
         const load = async () => {
             try {
-                const res = await fetch(`${API_BASE_URL}/event-details/${event}`);
+                const res = await fetch(`${API_BASE_URL}/event-details/${event}`, {
+                    credentials: 'include',
+                });
                 if (!res.ok) throw new Error('Fetch failed');
                 const data = await res.json();
 

@@ -27,7 +27,9 @@ export default function TourEventsPage() {
         if (!tour) return;
         const load = async () => {
             try {
-                const res = await fetch(`${API_BASE_URL}/tour-details/${tour}`);
+                const res = await fetch(`${API_BASE_URL}/tour-details/${tour}`, {
+                    credentials: 'include',
+                });
                 if (!res.ok) throw new Error();
                 const data = await res.json();
                 setTourData(data.tour);
@@ -48,7 +50,9 @@ export default function TourEventsPage() {
             const map = {};
             for (const ev of events) {
                 try {
-                    const res = await fetch(`${API_BASE_URL}/event-capacities/${ev.id}`);
+                    const res = await fetch(`${API_BASE_URL}/event-capacities/${ev.id}`, {
+                        credentials: 'include',
+                    });
                     if (!res.ok) continue;
                     const data = await res.json();
                     map[ev.id] = data;
