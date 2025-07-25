@@ -16,7 +16,9 @@
     "multer": "^2.0.0",
     "next": "^15.3.2",
     "nodemon": "^3.1.10",
+    "opossum": "^9.0.0",
     "pg": "^8.16.0",
+    "pm2": "^6.0.8",
     "prop-types": "^15.8.1",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
@@ -25,9 +27,7 @@
     "react-toastify": "^11.0.5",
     "toastify": "^2.0.1",
     "uuid": "^11.1.0",
-    "web-vitals": "^2.1.4",
-    "opossum": "^9.0.0",
-    "pm2": "^6.0.8"
+    "web-vitals": "^2.1.4"
   },
   "scripts": {
     "start": "react-scripts start",
@@ -36,8 +36,8 @@
     "eject": "react-scripts eject",
     "dev:next": "next dev",
     "dev:server": "nodemon server/server.js",
-    "dev": "concurrently \"npm run dev:next\" \"npm run dev:server\"",
-    "start:pm2": "pm2 start ecosystem.config.js"
+    "dev:pm2": "pm2 start ecosystem.config.js",
+    "dev": "concurrently \"npm run dev:next\" \"npm run dev:server\" \"npm run dev:pm2\""
   },
   "eslintConfig": {
     "extends": [
