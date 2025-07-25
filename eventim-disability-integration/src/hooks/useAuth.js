@@ -11,13 +11,15 @@ export function useAuth() {
     });
 
     useEffect(() => {
-        // 1) Direkt aus localStorage (falls vorhanden) setzen
+        // 1) Optional vorhandene Daten aus localStorage vorfuellen
         const cached = localStorage.getItem('user');
         if (cached) {
             try {
                 const u = JSON.parse(cached);
+                // User-Daten setzen, aber loading bleibt true, bis die Session
+                // bestaetigt wurde
                 setAuthState({
-                    loading: false,
+                    loading: true,
                     loggedIn: true,
                     user: {
                         userId: u.userId,
@@ -51,54 +53,34 @@ export function useAuth() {
                     credentials: 'include',
                 });
                 const data = await res.json();
+
                 if (data.loggedIn) {
+                    const userData = {
+                        userId: data.user.userId,
+                        email: data.user.email,
+                        firstName: data.user.firstName,
+                        lastName: data.user.lastName,
+                        requestForDisability: data.user.requestForDisability,
+                        isCurrentlyDisabled: data.user.isCurrentlyDisabled,
+                        disabilityCardExpiryDate: data.user.disabilityCardExpiryDate,
+                        disabilityMarks: data.user.disabilityMarks || [],
+                        visibleUserId: data.user.visibleUserId,
+                        role: data.user.role,
+                        hasRoleAppointingCapability: data.user.hasRoleAppointingCapability,
+                        hasDisabilityApprovalAccess: data.user.hasDisabilityApprovalAccess,
+                        hasAccountManagementAccess: data.user.hasAccountManagementAccess,
+                        hasCreationAccess: data.user.hasCreationAccess,
+                        hasEditingAccess: data.user.hasEditingAccess,
+                        hasDeletionPermission: data.user.hasDeletionPermission,
+                    };
+
                     setAuthState({
                         loading: false,
                         loggedIn: true,
-                        user: {
-                            userId: data.user.userId,
-                            email: data.user.email,
-                            firstName: data.user.firstName,
-                            lastName: data.user.lastName,
-                            requestForDisability: data.user.requestForDisability,
-                            isCurrentlyDisabled: data.user.isCurrentlyDisabled,
-                            disabilityCardExpiryDate: data.user.disabilityCardExpiryDate,
-                            disabilityMarks: data.user.disabilityMarks || [],
-                            visibleUserId: data.user.visibleUserId,
-                            hasRoleAppointingCapability: data.user.hasRoleAppointingCapability,
-                            hasDisabilityApprovalAccess: data.user.hasDisabilityApprovalAccess,
-                            hasAccountManagementAccess: data.user.hasAccountManagementAccess,
-                            hasCreationAccess: data.user.hasCreationAccess,
-                            hasEditingAccess: data.user.hasEditingAccess,
-                            hasDeletionPermission: data.user.hasDeletionPermission,
-                            hasDisabilityApprovalAccess: data.user.hasDisabilityApprovalAccess,
-                            hasAccountManagementAccess: data.user.hasAccountManagementAccess,
-                            hasCreationAccess: data.user.hasCreationAccess,
-                            hasEditingAccess: data.user.hasEditingAccess,
-                            hasDeletionPermission: data.user.hasDeletionPermission,
-                        },
+                        user: userData,
                     });
-                    localStorage.setItem(
-                        'user',
-                        JSON.stringify({
-                            userId: data.user.userId,
-                            email: data.user.email,
-                            firstName: data.user.firstName,
-                            lastName: data.user.lastName,
-                            requestForDisability: data.user.requestForDisability,
-                            isCurrentlyDisabled: data.user.isCurrentlyDisabled,
-                            disabilityCardExpiryDate: data.user.disabilityCardExpiryDate,
-                            disabilityMarks: data.user.disabilityMarks || [],
-                            visibleUserId: data.user.visibleUserId,
-                            role: data.user.role,
-                            hasRoleAppointingCapability: data.user.hasRoleAppointingCapability,
-                            hasDisabilityApprovalAccess: data.user.hasDisabilityApprovalAccess,
-                            hasAccountManagementAccess: data.user.hasAccountManagementAccess,
-                            hasCreationAccess: data.user.hasCreationAccess,
-                            hasEditingAccess: data.user.hasEditingAccess,
-                            hasDeletionPermission: data.user.hasDeletionPermission,
-                        })
-                    );
+
+                    localStorage.setItem('user', JSON.stringify(userData));
                 } else {
                     setAuthState({ loading: false, loggedIn: false, user: null });
                     localStorage.removeItem('user');
