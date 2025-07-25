@@ -21,7 +21,7 @@ export default function ArtistCreation() {
     const validation = useValidation({ name: '', website: '' });
 
     useEffect(() => {
-        fetch('http://localhost:4000/countries')
+        fetch('http://localhost:4000/countries', { credentials: 'include' })
             .then(res => res.json())
             .then(data => setCountries(data.countries))
             .catch(err => console.error('Fehler beim Laden der Länder:', err));
@@ -70,6 +70,7 @@ export default function ArtistCreation() {
             const response = await fetch('http://localhost:4000/create-artist', {
                 method: 'POST',
                 body: fd,
+                credentials: 'include',
             });
             const data = await response.json();
 

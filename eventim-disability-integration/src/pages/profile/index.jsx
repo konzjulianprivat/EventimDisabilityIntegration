@@ -162,7 +162,9 @@ export default function ProfilePage() {
             const query = marks && marks.length > 0
                 ? `?marks=${encodeURIComponent(marks.join(','))}`
                 : '';
-            const res = await fetch(`${API_BASE_URL}/tours-detailed${query}`);
+            const res = await fetch(`${API_BASE_URL}/tours-detailed${query}`, {
+                credentials: 'include',
+            });
             if (res.ok) {
                 const data = await res.json();
                 setTours(Array.isArray(data.tours) ? data.tours : []);
@@ -231,7 +233,9 @@ export default function ProfilePage() {
 
     const fetchMarks = async () => {
         try {
-            const res = await fetch(`${API_BASE_URL}/disability-marks`);
+            const res = await fetch(`${API_BASE_URL}/disability-marks`, {
+                credentials: 'include',
+            });
             if (res.ok) {
                 const json = await res.json();
                 setMarks(Array.isArray(json.marks) ? json.marks : []);

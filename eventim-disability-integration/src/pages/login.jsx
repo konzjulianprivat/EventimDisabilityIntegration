@@ -38,7 +38,8 @@ export default function LoginPage() {
     const checkEmailExists = async (email) => {
         try {
             const res = await fetch(
-                `http://localhost:4000/email-exists?email=${encodeURIComponent(email)}`
+                `http://localhost:4000/email-exists?email=${encodeURIComponent(email)}`,
+                { credentials: 'include' }
             );
             const data = await res.json();
             return data.exists;

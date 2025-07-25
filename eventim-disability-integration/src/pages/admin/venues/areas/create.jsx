@@ -37,7 +37,8 @@ export default function AreaCreation() {
             const res = await fetch('http://localhost:4000/create-area', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(formData)
+                body: JSON.stringify(formData),
+                credentials: 'include',
             });
             const data = await res.json();
             if (res.ok) {

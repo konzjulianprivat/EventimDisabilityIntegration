@@ -85,7 +85,9 @@ export default function ToursContent() {
     }, []);
     const fetchTours = async () => {
         try {
-            const res = await fetch(`${API_BASE_URL}/tours-detailed`);
+            const res = await fetch(`${API_BASE_URL}/tours-detailed`, {
+                credentials: 'include',
+            });
             if (!res.ok) throw new Error();
             const json = await res.json();
             const arr = Array.isArray(json.tours) ? json.tours : [];
@@ -98,7 +100,9 @@ export default function ToursContent() {
     };
     const fetchAllArtists = async () => {
         try {
-            const res = await fetch(`${API_BASE_URL}/artists`);
+            const res = await fetch(`${API_BASE_URL}/artists`, {
+                credentials: 'include',
+            });
             if (!res.ok) throw new Error();
             const j = await res.json();
             const arr = Array.isArray(j)
@@ -113,7 +117,9 @@ export default function ToursContent() {
     };
     const fetchAllGenresWithSub = async () => {
         try {
-            const res = await fetch(`${API_BASE_URL}/genres-with-subgenres`);
+            const res = await fetch(`${API_BASE_URL}/genres-with-subgenres`, {
+                credentials: 'include',
+            });
             if (!res.ok) throw new Error();
             const j = await res.json();
             setAllGenres(j.genres || []);
@@ -124,7 +130,9 @@ export default function ToursContent() {
 
     const fetchAllVenues = async () => {
         try {
-            const res = await fetch(`${API_BASE_URL}/venues`);
+            const res = await fetch(`${API_BASE_URL}/venues`, {
+                credentials: 'include',
+            });
             if (!res.ok) throw new Error();
             const j = await res.json();
             setAllVenues(j.venues || []);
@@ -141,7 +149,7 @@ export default function ToursContent() {
         );
         ids.forEach((id) => {
             if (eventTickets[id] !== undefined) return;
-            fetch(`${API_BASE_URL}/event-capacities/${id}`)
+            fetch(`${API_BASE_URL}/event-capacities/${id}`, { credentials: 'include' })
                 .then((r) => (r.ok ? r.json() : null))
                 .then((d) => {
                     const sold = (d?.categories || []).reduce(
@@ -214,8 +222,8 @@ export default function ToursContent() {
         });
         try {
             const [ra, rg] = await Promise.all([
-                fetch(`${API_BASE_URL}/tour-artists?tourId=${tour.id}`),
-                fetch(`${API_BASE_URL}/tour-genres?tourId=${tour.id}`)
+                fetch(`${API_BASE_URL}/tour-artists?tourId=${tour.id}`, { credentials: 'include' }),
+                fetch(`${API_BASE_URL}/tour-genres?tourId=${tour.id}`, { credentials: 'include' })
             ]);
             const [ja, jg] = await Promise.all([ra.json(), rg.json()]);
             setTourArtists(ja.artists || []);
@@ -227,7 +235,7 @@ export default function ToursContent() {
         // Event-Details laden
         try {
             const promises = (tour.events || []).map((ev) =>
-                fetch(`${API_BASE_URL}/event-details/${ev.id}`).then((r) =>
+                fetch(`${API_BASE_URL}/event-details/${ev.id}`, { credentials: 'include' }).then((r) =>
                     r.ok ? r.json() : null
                 )
             );
@@ -313,6 +321,7 @@ export default function ToursContent() {
             const r = await fetch(`${API_BASE_URL}/tours/${editedData.id}`, {
                 method: 'PUT',
                 body: fd,
+                credentials: 'include',
             });
             if (!r.ok) throw new Error();
 
@@ -320,7 +329,8 @@ export default function ToursContent() {
                 fetch(`${API_BASE_URL}/events/${eid}`, {
                     method: 'PUT',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(data)
+                    body: JSON.stringify(data),
+                    credentials: 'include'
                 })
             );
             await Promise.all(eventPromises);
@@ -333,7 +343,7 @@ export default function ToursContent() {
 
     const handleDelete = async (id) => {
         try {
-            const r = await fetch(`${API_BASE_URL}/tours/${id}`, { method: 'DELETE' });
+            const r = await fetch(`${API_BASE_URL}/tours/${id}`, { method: 'DELETE', credentials: 'include' });
             if (!r.ok) throw new Error();
             setConfirmDeleteId(null);
             fetchTours();
@@ -346,7 +356,7 @@ export default function ToursContent() {
         e.stopPropagation();
         if (!confirm('Event wirklich löschen?')) return;
         try {
-            const r = await fetch(`${API_BASE_URL}/events/${eventId}`, { method: 'DELETE' });
+            const r = await fetch(`${API_BASE_URL}/events/${eventId}`, { method: 'DELETE', credentials: 'include' });
             if (!r.ok) throw new Error();
             fetchTours();
         } catch {

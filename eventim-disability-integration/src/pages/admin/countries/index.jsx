@@ -31,7 +31,9 @@ export default function CountriesContent() {
 
     const fetchCountries = async () => {
         try {
-            const res = await fetch(`${API_BASE_URL}/countries-with-cities`);
+            const res = await fetch(`${API_BASE_URL}/countries-with-cities`, {
+                credentials: 'include',
+            });
             if (!res.ok) throw new Error();
             const j = await res.json();
             const arr = Array.isArray(j.countries) ? j.countries : [];
@@ -93,6 +95,7 @@ export default function CountriesContent() {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(payload),
+                credentials: 'include',
             });
             if (!response.ok) setDeleteError('Fehler beim Löschen da Städte dieses Landes in einem Stadion verwendet werden');
             setEditingId(null);
@@ -106,6 +109,7 @@ export default function CountriesContent() {
         try {
             const res = await fetch(`${API_BASE_URL}/countries/${id}`, {
                 method: 'DELETE',
+                credentials: 'include',
             });
             if (!res.ok) {
                 const errorData = await res.json();

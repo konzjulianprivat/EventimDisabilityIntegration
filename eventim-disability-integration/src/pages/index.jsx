@@ -14,7 +14,9 @@ export default function HomePage() {
     useEffect(() => {
         async function fetchTours() {
             try {
-                const res = await fetch("http://localhost:4000/tours-with-images");
+                const res = await fetch("http://localhost:4000/tours-with-images", {
+                    credentials: "include",
+                });
                 if (!res.ok) throw new Error("Failed to load tours");
                 const body = await res.json();
                 setTours(body.tours);
@@ -30,7 +32,9 @@ export default function HomePage() {
     useEffect(() => {
         async function fetchArtists() {
             try {
-                const res = await fetch("http://localhost:4000/artists-with-images");
+                const res = await fetch("http://localhost:4000/artists-with-images", {
+                    credentials: "include",
+                });
                 if (!res.ok) throw new Error("Failed to load artists");
                 const body = await res.json();
                 setArtists(body.artists);
