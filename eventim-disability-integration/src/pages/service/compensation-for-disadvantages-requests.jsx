@@ -20,9 +20,7 @@ export default function CompensationRequests() {
 
     const fetchPending = async () => {
         try {
-            const r = await fetch(`${API_BASE_URL}/pending-disability-requests`, {
-                credentials: 'include',
-            });
+            const r = await fetch(`${API_BASE_URL}/pending-disability-requests`);
             if (r.ok) {
                 const js = await r.json();
                 setRequests(Array.isArray(js.requests) ? js.requests : []);
@@ -34,9 +32,7 @@ export default function CompensationRequests() {
 
     const fetchAccepted = async () => {
         try {
-            const r = await fetch(`${API_BASE_URL}/accepted-disability-requests`, {
-                credentials: 'include',
-            });
+            const r = await fetch(`${API_BASE_URL}/accepted-disability-requests`);
             if (r.ok) {
                 const js = await r.json();
                 setAcceptedRequests(Array.isArray(js.requests) ? js.requests : []);
@@ -53,9 +49,7 @@ export default function CompensationRequests() {
 
     const loadDetail = async (req) => {
         try {
-            const r = await fetch(`${API_BASE_URL}/users/${req.user_id}/disability`, {
-                credentials: 'include',
-            });
+            const r = await fetch(`${API_BASE_URL}/users/${req.user_id}/disability`);
             if (!r.ok) return;
             const js = await r.json();
             setDetail(js.disabilityData || null);
@@ -67,18 +61,14 @@ export default function CompensationRequests() {
             });
 
             if (js.disabilityData?.disability_card_image_front) {
-                const fr = await fetch(`${API_BASE_URL}/image/${js.disabilityData.disability_card_image_front}`, {
-                    credentials: 'include',
-                });
+                const fr = await fetch(`${API_BASE_URL}/image/${js.disabilityData.disability_card_image_front}`);
                 if (fr.ok) {
                     const blob = await fr.blob();
                     setImgFrontUrl(URL.createObjectURL(blob));
                 }
             }
             if (js.disabilityData?.disability_card_image_back) {
-                const br = await fetch(`${API_BASE_URL}/image/${js.disabilityData.disability_card_image_back}`, {
-                    credentials: 'include',
-                });
+                const br = await fetch(`${API_BASE_URL}/image/${js.disabilityData.disability_card_image_back}`);
                 if (br.ok) {
                     const blob = await br.blob();
                     setImgBackUrl(URL.createObjectURL(blob));
@@ -101,7 +91,7 @@ export default function CompensationRequests() {
     const acceptRequest = async () => {
         if (!selectedUser) return;
         try {
-            await fetch(`${API_BASE_URL}/disability-requests/${selectedUser.user_id}/accept`, { method: 'POST', credentials: 'include' });
+            await fetch(`${API_BASE_URL}/disability-requests/${selectedUser.user_id}/accept`, { method: 'POST' });
         } catch (err) {
             console.error('Error accepting request:', err);
         }
@@ -112,7 +102,7 @@ export default function CompensationRequests() {
     const declineRequest = async () => {
         if (!selectedUser) return;
         try {
-            await fetch(`${API_BASE_URL}/disability-requests/${selectedUser.user_id}/decline`, { method: 'POST', credentials: 'include' });
+            await fetch(`${API_BASE_URL}/disability-requests/${selectedUser.user_id}/decline`, { method: 'POST' });
         } catch (err) {
             console.error('Error declining request:', err);
         }

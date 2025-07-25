@@ -35,9 +35,7 @@ export default function GenresContent() {
 
     const fetchGenres = async () => {
         try {
-            const res = await fetch(`${API_BASE_URL}/genres-with-subgenres`, {
-                credentials: 'include',
-            });
+            const res = await fetch(`${API_BASE_URL}/genres-with-subgenres`);
             if (!res.ok) throw new Error();
             const j = await res.json();
             const arr = Array.isArray(j.genres) ? j.genres : [];
@@ -92,7 +90,6 @@ export default function GenresContent() {
             const payload = { name: editedData.name, subgenres: editedData.subgenres };
             const response = await fetch(`${API_BASE_URL}/genres/${editedData.id}`, {
                 method: 'PUT',
-                credentials: 'include',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(payload),
             });
@@ -106,7 +103,7 @@ export default function GenresContent() {
 
     const handleDelete = async (id) => {
         try {
-            const res = await fetch(`${API_BASE_URL}/genres/${id}`, { method: 'DELETE', credentials: 'include' });
+            const res = await fetch(`${API_BASE_URL}/genres/${id}`, { method: 'DELETE' });
             if (!res.ok) {
                 const errorData = await res.json();
                 setDeleteError('Fehler beim Löschen des Genres. Möglicherweise ist dieses Genre mit einer Tour verbunden.');

@@ -20,9 +20,7 @@ const ImageScroller = ({ tour }) => {
             for (const t of tour) {
                 if (!t.imageId || urls[t.imageId]) continue;
                 try {
-                    const res = await fetch(`http://localhost:4000/image/${t.imageId}`, {
-                        credentials: 'include',
-                    });
+                    const res = await fetch(`http://localhost:4000/image/${t.imageId}`);
                     if (!res.ok) continue;
                     const blob = await res.blob();
                     const objUrl = URL.createObjectURL(blob);

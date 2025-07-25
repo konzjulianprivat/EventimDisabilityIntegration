@@ -31,9 +31,7 @@ export default function CountriesContent() {
 
     const fetchCountries = async () => {
         try {
-            const res = await fetch(`${API_BASE_URL}/countries-with-cities`, {
-                credentials: 'include',
-            });
+            const res = await fetch(`${API_BASE_URL}/countries-with-cities`);
             if (!res.ok) throw new Error();
             const j = await res.json();
             const arr = Array.isArray(j.countries) ? j.countries : [];
@@ -93,7 +91,6 @@ export default function CountriesContent() {
             };
             const response = await fetch(`${API_BASE_URL}/countries/${editedData.id}`, {
                 method: 'PUT',
-                credentials: 'include',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(payload),
             });
@@ -109,7 +106,6 @@ export default function CountriesContent() {
         try {
             const res = await fetch(`${API_BASE_URL}/countries/${id}`, {
                 method: 'DELETE',
-                credentials: 'include',
             });
             if (!res.ok) {
                 const errorData = await res.json();

@@ -18,7 +18,7 @@ export default function CityCreation() {
 
     useEffect(() => {
         // Länder für Dropdown laden
-        fetch('http://localhost:4000/countries', { credentials: 'include' })
+        fetch('http://localhost:4000/countries')
             .then(res => res.json())
             .then(data => setCountries(data.countries))
             .catch(err => console.error('Fehler beim Laden der Länder:', err));
@@ -45,7 +45,6 @@ export default function CityCreation() {
         try {
             const response = await fetch('http://localhost:4000/create-city', {
                 method: 'POST',
-                credentials: 'include',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(formData)
             });

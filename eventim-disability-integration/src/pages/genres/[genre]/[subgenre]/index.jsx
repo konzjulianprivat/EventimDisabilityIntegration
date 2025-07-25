@@ -17,9 +17,7 @@ export default function SubgenreEventsPage() {
         if (!genre || !subgenre) return;
         const load = async () => {
             try {
-                const res = await fetch(`${API_BASE_URL}/genres-with-subgenres`, {
-                    credentials: 'include',
-                });
+                const res = await fetch(`${API_BASE_URL}/genres-with-subgenres`);
                 if (!res.ok) throw new Error();
                 const data = await res.json();
                 const g = (data.genres || []).find((gr) => gr.id === genre);
@@ -28,9 +26,7 @@ export default function SubgenreEventsPage() {
                 if (!sg) throw new Error();
                 setSubgenreData({ id: sg.id, name: sg.name, genreName: g.name });
 
-                const toursRes = await fetch(`${API_BASE_URL}/tours-detailed`, {
-                    credentials: 'include',
-                });
+                const toursRes = await fetch(`${API_BASE_URL}/tours-detailed`);
                 if (!toursRes.ok) throw new Error();
                 const toursJson = await toursRes.json();
                 const tours = Array.isArray(toursJson.tours) ? toursJson.tours : [];
@@ -67,9 +63,7 @@ export default function SubgenreEventsPage() {
             const map = {};
             for (const ev of events) {
                 try {
-                    const res = await fetch(`${API_BASE_URL}/event-capacities/${ev.id}`, {
-                        credentials: 'include',
-                    });
+                    const res = await fetch(`${API_BASE_URL}/event-capacities/${ev.id}`);
                     if (!res.ok) continue;
                     const data = await res.json();
                     map[ev.id] = data;
