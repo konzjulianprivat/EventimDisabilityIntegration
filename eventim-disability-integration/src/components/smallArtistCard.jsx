@@ -12,9 +12,7 @@ const SmallArtistCard = ({ imageId, title, link }) => {
         async function fetchImage() {
             if (!imageId) return;
             try {
-                const res = await fetch(`http://localhost:4000/image/${imageId}`, {
-                    credentials: 'include',
-                });
+                const res = await fetch(`http://localhost:4000/image/${imageId}`);
                 if (!res.ok) {
                     console.warn(`Artist-Bild ${imageId} nicht gefunden`);
                     return;

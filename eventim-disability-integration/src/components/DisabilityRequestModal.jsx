@@ -51,9 +51,7 @@ export default function DisabilityRequestModal({
 
     useEffect(() => {
         if (editMode) {
-            fetch(`${API_BASE_URL}/disability-marks`, {
-                credentials: 'include',
-            })
+            fetch(`${API_BASE_URL}/disability-marks`)
                 .then((r) => r.ok ? r.json() : { marks: [] })
                 .then((js) => setMarksOptions(Array.isArray(js.marks) ? js.marks : []))
                 .catch((err) => console.error('Error loading marks:', err));

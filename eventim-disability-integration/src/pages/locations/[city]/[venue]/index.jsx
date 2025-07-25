@@ -17,9 +17,7 @@ export default function VenueEventsPage() {
         if (!city || !venue) return;
         const load = async () => {
             try {
-                const res = await fetch(`${API_BASE_URL}/cities-with-venues`, {
-                    credentials: 'include',
-                });
+                const res = await fetch(`${API_BASE_URL}/cities-with-venues`);
                 if (!res.ok) throw new Error();
                 const data = await res.json();
                 const c = (data.cities || []).find((ci) => ci.id === city);
@@ -27,9 +25,7 @@ export default function VenueEventsPage() {
                 if (!c || !v) throw new Error();
                 setVenueData({ id: v.id, name: v.name, cityName: c.name });
 
-                const toursRes = await fetch(`${API_BASE_URL}/tours-detailed`, {
-                    credentials: 'include',
-                });
+                const toursRes = await fetch(`${API_BASE_URL}/tours-detailed`);
                 if (!toursRes.ok) throw new Error();
                 const toursJson = await toursRes.json();
                 const tours = Array.isArray(toursJson.tours) ? toursJson.tours : [];
@@ -63,9 +59,7 @@ export default function VenueEventsPage() {
             const map = {};
             for (const ev of events) {
                 try {
-                    const res = await fetch(`${API_BASE_URL}/event-capacities/${ev.id}`, {
-                        credentials: 'include',
-                    });
+                    const res = await fetch(`${API_BASE_URL}/event-capacities/${ev.id}`);
                     if (!res.ok) continue;
                     const data = await res.json();
                     map[ev.id] = data;

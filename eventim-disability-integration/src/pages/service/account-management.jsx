@@ -21,9 +21,7 @@ export default function UserOverview() {
 
     const fetchRoles = async () => {
         try {
-            const res = await fetch(`${API_BASE_URL}/user-roles`, {
-                credentials: 'include',
-            });
+            const res = await fetch(`${API_BASE_URL}/user-roles`);
             if (res.ok) {
                 const js = await res.json();
                 setRoles(Array.isArray(js.roles) ? js.roles : []);
@@ -39,9 +37,7 @@ export default function UserOverview() {
 
     const fetchUsers = async (roleId) => {
         try {
-            const res = await fetch(`${API_BASE_URL}/users?roleId=${roleId}`, {
-                credentials: 'include',
-            });
+            const res = await fetch(`${API_BASE_URL}/users?roleId=${roleId}`);
             if (res.ok) {
                 const js = await res.json();
                 setUsersByRole(prev => ({ ...prev, [roleId]: js.users || [] }));
@@ -54,8 +50,8 @@ export default function UserOverview() {
     const openUser = async (userId) => {
         try {
             const [uRes, oRes] = await Promise.all([
-                fetch(`${API_BASE_URL}/users/${userId}`, { credentials: 'include' }),
-                fetch(`${API_BASE_URL}/users/${userId}/orders`, { credentials: 'include' })
+                fetch(`${API_BASE_URL}/users/${userId}`),
+                fetch(`${API_BASE_URL}/users/${userId}/orders`)
             ]);
             if (uRes.ok) {
                 const uj = await uRes.json();

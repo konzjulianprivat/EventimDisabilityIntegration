@@ -44,9 +44,7 @@ export default function VenuesContent() {
 
     const fetchVenues = async () => {
         try {
-            const res = await fetch('http://localhost:4000/venues-detailed', {
-                credentials: 'include',
-            });
+            const res = await fetch('http://localhost:4000/venues-detailed');
             const json = await res.json();
             const arr = Array.isArray(json.venues) ? json.venues : [];
             setVenues(arr);
@@ -60,9 +58,7 @@ export default function VenuesContent() {
 
     const fetchCities = async () => {
         try {
-            const res = await fetch('http://localhost:4000/cities', {
-                credentials: 'include',
-            });
+            const res = await fetch('http://localhost:4000/cities');
             const json = await res.json();
             setCities(json.cities || []);
         } catch (err) {
@@ -72,9 +68,7 @@ export default function VenuesContent() {
 
     const fetchAreas = async () => {
         try {
-            const res = await fetch('http://localhost:4000/areas', {
-                credentials: 'include',
-            });
+            const res = await fetch('http://localhost:4000/areas');
             const json = await res.json();
             setAreas(json.areas || []);
         } catch (err) {
@@ -94,9 +88,7 @@ export default function VenuesContent() {
             existingImageId: venue.venue_image || null,
         });
         try {
-            const res = await fetch(`http://localhost:4000/venue-areas?venueId=${venue.id}`, {
-                credentials: 'include',
-            });
+            const res = await fetch(`http://localhost:4000/venue-areas?venueId=${venue.id}`);
             const json = await res.json();
             const arr = Array.isArray(json.venueAreas) ? json.venueAreas : [];
             setVenueAreas(arr.map((va) => ({ id: va.id, areaId: va.area_id, maxCapacity: va.max_capacity })));
@@ -154,7 +146,6 @@ export default function VenuesContent() {
 
             const response = await fetch(`http://localhost:4000/venues/${editedData.id}`, {
                 method: 'PUT',
-                credentials: 'include',
                 body: fd,
             });
             if (!response.ok) {
@@ -174,7 +165,6 @@ export default function VenuesContent() {
         try {
             const response = await fetch(`http://localhost:4000/venues/${id}`, {
                 method: 'DELETE',
-                credentials: 'include',
             });
             if (!response.ok) {
                 const errorData = await response.json().catch(() => ({}));

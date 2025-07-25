@@ -30,10 +30,10 @@ export default function VenueCreation() {
     });
 
     useEffect(() => {
-        fetch('http://localhost:4000/cities', { credentials: 'include' })
+        fetch('http://localhost:4000/cities')
             .then((r) => r.json())
             .then((d) => setCities(d.cities));
-        fetch('http://localhost:4000/areas', { credentials: 'include' })
+        fetch('http://localhost:4000/areas')
             .then((r) => r.json())
             .then((d) => setAreas(d.areas));
     }, []);
@@ -103,7 +103,6 @@ export default function VenueCreation() {
 
             const res = await fetch('http://localhost:4000/create-venue', {
                 method: 'POST',
-                credentials: 'include',
                 body: fd,
             });
             const data = await res.json();
