@@ -1,0 +1,20 @@
+@startuml
+title Antrag auf Nachteilsausgleich annehmen oder ablehnen
+
+!theme plain
+skinparam linetype ortho
+start
+
+:"/service/compensation-for-disadvantages-requests" öffnen;
+:Tabelle "Offene Anträge" durchsuchen;
+:Eintrag anklicken -> Detailmodal erscheint;
+:Daten und Ausweisfotos prüfen;
+if (Antrag korrekt?) then (ja)
+  :"Annehmen" klicken;
+else (nein)
+  :"Ablehnen" klicken;
+endif
+:Liste aktualisiert sich;
+
+stop
+@enduml

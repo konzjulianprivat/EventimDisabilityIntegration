@@ -1,0 +1,16 @@
+@startuml
+title Antrag auf Nachteilsausgleich
+
+!theme plain
+skinparam linetype ortho
+start
+
+:"/profile" aufrufen;
+:Bereich "Meine Daten" öffnen;
+:Button "Antrag auf Nachteilsausgleich" wählen;
+:Grad, Ablaufdatum, Merkzeichen und Ausweisbilder eingeben;
+:"Antrag abschicken";
+:Daten werden gespeichert und an den Service übermittelt;
+
+stop
+@enduml

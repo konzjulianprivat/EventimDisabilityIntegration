@@ -1,0 +1,15 @@
+@startuml
+title Abmelden
+
+!theme plain
+skinparam linetype ortho
+start
+
+:Dropdown in der Navigation öffnen;
+:"Abmelden" klicken;
+:POST "/logout" wird gesendet;
+:Lokale Sessiondaten entfernen;
+:Seite lädt neu und zeigt Login-Button;
+
+stop
+@enduml

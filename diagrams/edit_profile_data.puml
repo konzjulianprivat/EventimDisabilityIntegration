@@ -1,0 +1,15 @@
+@startuml
+title Profildaten bearbeiten
+
+!theme plain
+skinparam linetype ortho
+start
+
+:"/profile" aufrufen;
+:Bereich "Meine Daten" -> Stiftsymbol anklicken;
+:Felder bearbeiten (Name, Adresse, Telefon ...);
+:"Speichern" drücken;
+:System aktualisiert die Daten;
+
+stop
+@enduml

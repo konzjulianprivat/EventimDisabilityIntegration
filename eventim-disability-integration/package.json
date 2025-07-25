@@ -8,9 +8,11 @@
     "@testing-library/react": "^16.3.0",
     "@testing-library/user-event": "^13.5.0",
     "bcrypt": "^6.0.0",
+    "cookie-parser": "^1.4.6",
     "cors": "^2.8.5",
     "express": "^5.1.0",
     "express-session": "^1.18.1",
+    "jsonwebtoken": "^9.0.2",
     "multer": "^2.0.0",
     "next": "^15.3.2",
     "nodemon": "^3.1.10",
@@ -23,8 +25,6 @@
     "react-toastify": "^11.0.5",
     "toastify": "^2.0.1",
     "uuid": "^11.1.0",
-    "jsonwebtoken": "^9.0.2",
-    "cookie-parser": "^1.4.6",
     "web-vitals": "^2.1.4"
   },
   "scripts": {

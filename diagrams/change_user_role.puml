@@ -1,0 +1,17 @@
+@startuml
+title Benutzerrolle ändern
+
+!theme plain
+skinparam linetype ortho
+start
+
+:"/service/account-management" aufrufen;
+:Nutzer über Liste oder Suche auswählen;
+:Detailmodal öffnet sich;
+:"Rolle anpassen" wählen;
+:Neue Rolle im Dropdown setzen;
+:"Speichern" klicken;
+:System aktualisiert Rolle des Users;
+
+stop
+@enduml

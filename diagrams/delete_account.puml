@@ -1,0 +1,20 @@
+@startuml
+title Konto löschen
+
+!theme plain
+skinparam linetype ortho
+start
+
+:"/profile" öffnen;
+:"Account löschen" wählen;
+:"Dialog verlangt Eingabe "Löschen";
+if (noch offene Tickets?) then (ja)
+  :"Fehlermeldung anzeigen;
+else (nein)
+  :"Eingabe bestätigen -> Konto wird entfernt;
+  :"Lokale Sessiondaten entfernen;
+  :"Weiterleitung zur Startseite;
+endif
+
+stop
+@enduml

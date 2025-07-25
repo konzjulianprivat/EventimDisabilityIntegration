@@ -1,0 +1,30 @@
+@startuml
+title Registration Process
+
+!theme plain
+skinparam linetype ortho
+start
+
+:Öffne "/login";
+if (Neuer Kunde?) then (ja)
+:Weiterleitung auf "/register";
+:Registrierungs-Formular öffnen & ausfüllen;
+  if (Behindertenausweis vorhanden?) then (ja)
+    :Ausweis aktivieren & Fotos hochladen;
+    else (nein)
+    :Registrierung ohne Ausweis;
+  endif
+  :Formular abschicken;
+  :Weiterleitung auf "/login";
+else (nein)
+  :E-Mail & Passwort eingeben & abschicken;
+endif
+
+if (Anmeldedaten korrekt?) then (ja)
+  :Weiterleitung zur Startseite;
+else (nein)
+  :Fehlermeldung anzeigen;
+endif
+
+stop
+@enduml

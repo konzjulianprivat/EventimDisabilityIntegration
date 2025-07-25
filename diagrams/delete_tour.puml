@@ -1,0 +1,18 @@
+@startuml
+title Tour löschen
+
+!theme plain
+skinparam linetype ortho
+start
+
+:"/admin/tours" aufrufen;
+:Bei einer Tour auf "Löschen" klicken;
+if (keine verkauften Tickets?) then (ja)
+  :Bestätigungsdialog -> "Ja, löschen";
+  :Tour wird entfernt und Liste neu geladen;
+else (nein)
+  :Hinweis "Löschen nicht möglich" anzeigen;
+endif
+
+stop
+@enduml

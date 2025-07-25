@@ -1,0 +1,26 @@
+@startuml
+title Kaufprozess
+
+!theme plain
+skinparam linetype ortho
+start
+
+:Öffne Startseite oder "/artists";
+:Tour wählen → "/artists/{artistId}/{tourId}";
+:Event auswählen → "/artists/{artistId}/{tourId}/{eventId}";
+if (Sonderzeichen B?) then (ja)
+  :Hinzufügen des Tickets der Begleitperson;
+endif
+:"Warenkorb" & "Weiter" klicken & → "/checkout/shopping-cart";
+:"Weiter" → "/checkout/shipping-information";
+:"Lieferadresse prüfen/erfassen" & "Versandart wählen";
+:"Weiter" → "/checkout/payment";
+:"Zahlungsart auswählen & bestätigen";
+if (Zahlung erfolgreich?) then (ja)
+  :"→ "/checkout/success" mit Erfolgsmeldung;
+  :"Weiterleitung zu  "/checkout/success";
+else (nein)
+  :Fehlermeldung anzeigen;
+  :Zurück zu "/";
+stop
+@enduml
