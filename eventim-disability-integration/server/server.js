@@ -8,6 +8,8 @@ const bcrypt = require('bcrypt');
 const multer = require('multer');
 const crypto = require('crypto');
 const { v4: uuidv4 } = require('uuid');
+const jwt = require('jsonwebtoken');
+const cookieParser = require('cookie-parser');
 
 const app = express();
 app.use(cors({
@@ -33,6 +35,32 @@ app.use(
         },
     })
 );
+
+app.use(cookieParser());
+
+function restoreSession(req, res, next) {
+    if (req.session.userId) return next();
+    const token = req.cookies && req.cookies.authToken;
+    if (!token) return next();
+    try {
+        const payload = jwt.verify(token, credentials.sessionSecret);
+        req.session.userId = payload.userId;
+        req.session.email = payload.email;
+        req.session.role = payload.role;
+        req.session.visibleUserId = payload.visibleUserId;
+        req.session.hasRoleAppointingCapability = payload.hasRoleAppointingCapability;
+        req.session.hasDisabilityApprovalAccess = payload.hasDisabilityApprovalAccess;
+        req.session.hasAccountManagementAccess = payload.hasAccountManagementAccess;
+        req.session.hasCreationAccess = payload.hasCreationAccess;
+        req.session.hasEditingAccess = payload.hasEditingAccess;
+        req.session.hasDeletionPermission = payload.hasDeletionPermission;
+    } catch (_) {
+        // ignore invalid token
+    }
+    next();
+}
+
+app.use(restoreSession);
 
 // Serve /uploads as static
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
@@ -344,6 +372,26 @@ app.post('/login-user', async (req, res) => {
         req.session.hasEditingAccess = !!perms.has_editing_access;
         req.session.hasDeletionPermission = !!perms.has_deletion_permission;
 
+        const tokenPayload = {
+            userId: user.user_id,
+            email: user.email,
+            role: user.role,
+            visibleUserId: user.visible_user_id,
+            hasRoleAppointingCapability: canAppoint,
+            hasDisabilityApprovalAccess: !!perms.has_disability_approval_access,
+            hasAccountManagementAccess: !!perms.has_account_management_access,
+            hasCreationAccess: !!perms.has_creation_access,
+            hasEditingAccess: !!perms.has_editing_access,
+            hasDeletionPermission: !!perms.has_deletion_permission,
+        };
+        const token = jwt.sign(tokenPayload, credentials.sessionSecret, { expiresIn: '1h' });
+        res.cookie('authToken', token, {
+            httpOnly: true,
+            secure: false,
+            sameSite: 'lax',
+            maxAge: 1000 * 60 * 60,
+        });
+
         return res.status(200).json({
             message: 'Login erfolgreich',
             cardExpired,
@@ -491,6 +539,7 @@ app.post('/logout', (req, res) => {
         }
         // Cookie löschen
         res.clearCookie('sid');
+        res.clearCookie('authToken');
         return res.status(200).json({ message: 'Erfolgreich ausgeloggt.' });
     });
 });
