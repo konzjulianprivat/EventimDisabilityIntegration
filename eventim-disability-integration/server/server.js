@@ -11,6 +11,16 @@ const { v4: uuidv4 } = require('uuid');
 const jwt = require('jsonwebtoken');
 const cookieParser = require('cookie-parser');
 
+process.on('unhandledRejection', err => {
+    console.error('Unhandled Rejection:', err);
+    process.exit(1);
+});
+
+process.on('uncaughtException', err => {
+    console.error('Uncaught Exception:', err);
+    process.exit(1);
+});
+
 const app = express();
 app.use(cors({
     origin: 'http://localhost:3000',    // your Next.js dev origin
