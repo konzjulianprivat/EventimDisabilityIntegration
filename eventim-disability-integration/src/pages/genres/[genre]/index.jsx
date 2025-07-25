@@ -30,7 +30,9 @@ export default function GenrePage() {
         if (!genre) return;
         const loadGenre = async () => {
             try {
-                const res = await fetch(`${API_BASE_URL}/genres-with-subgenres`);
+                const res = await fetch(`${API_BASE_URL}/genres-with-subgenres`, {
+                    credentials: 'include',
+                });
                 if (!res.ok) throw new Error();
                 const data = await res.json();
                 const g = (data.genres || []).find((gr) => gr.id === genre);
@@ -51,7 +53,9 @@ export default function GenrePage() {
     useEffect(() => {
         const fetchTours = async () => {
             try {
-                const res = await fetch(`${API_BASE_URL}/tours-detailed`);
+                const res = await fetch(`${API_BASE_URL}/tours-detailed`, {
+                    credentials: 'include',
+                });
                 if (!res.ok) throw new Error();
                 const json = await res.json();
                 setTours(Array.isArray(json.tours) ? json.tours : []);

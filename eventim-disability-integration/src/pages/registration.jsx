@@ -68,7 +68,9 @@ export default function Registration() {
     useEffect(() => {
         async function fetchMarks() {
             try {
-                const res = await fetch('http://localhost:4000/disability-marks');
+                const res = await fetch('http://localhost:4000/disability-marks', {
+                    credentials: 'include',
+                });
                 if (!res.ok) throw new Error('Failed to load disability marks');
                 const json = await res.json();
                 // Expecting json.marks to be an array of { mark_code, description, area_name }
@@ -210,6 +212,7 @@ export default function Registration() {
 
             const response = await fetch('http://localhost:4000/register-user', {
                 method: 'POST',
+                credentials: 'include',
                 body: payload,
             });
             const data = await response.json();
