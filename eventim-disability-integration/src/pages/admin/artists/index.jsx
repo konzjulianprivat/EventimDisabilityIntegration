@@ -37,7 +37,9 @@ export default function ArtistsContent() {
 
     const fetchArtists = async () => {
         try {
-            const res = await fetch('http://localhost:4000/artists');
+            const res = await fetch('http://localhost:4000/artists', {
+                credentials: 'include',
+            });
             const json = await res.json();
             const dataArray = Array.isArray(json)
                 ? json
@@ -92,6 +94,7 @@ export default function ArtistsContent() {
                 `http://localhost:4000/artists/${editedData.id}`,
                 {
                     method: 'PUT',
+                    credentials: 'include',
                     body: formData,
                 }
             );
@@ -110,6 +113,7 @@ export default function ArtistsContent() {
         try {
             const response = await fetch(`http://localhost:4000/artists/${id}`, {
                 method: 'DELETE',
+                credentials: 'include',
             });
             if (!response.ok) {
                 const d = await response.json().catch(() => ({}));

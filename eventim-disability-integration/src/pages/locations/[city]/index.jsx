@@ -27,7 +27,9 @@ export default function CityPage() {
         if (!city) return;
         const loadCity = async () => {
             try {
-                const res = await fetch(`${API_BASE_URL}/cities-with-venues`);
+                const res = await fetch(`${API_BASE_URL}/cities-with-venues`, {
+                    credentials: 'include',
+                });
                 if (!res.ok) throw new Error();
                 const data = await res.json();
                 const c = (data.cities || []).find((ci) => ci.id === city);
@@ -48,7 +50,9 @@ export default function CityPage() {
     useEffect(() => {
         const fetchTours = async () => {
             try {
-                const res = await fetch(`${API_BASE_URL}/tours-detailed`);
+                const res = await fetch(`${API_BASE_URL}/tours-detailed`, {
+                    credentials: 'include',
+                });
                 if (!res.ok) throw new Error();
                 const json = await res.json();
                 setTours(Array.isArray(json.tours) ? json.tours : []);

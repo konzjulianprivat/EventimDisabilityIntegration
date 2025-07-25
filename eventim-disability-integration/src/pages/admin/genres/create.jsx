@@ -55,6 +55,7 @@ export default function GenreCreation() {
             const payload = { ...formData, subgenres };
             const res = await fetch('http://localhost:4000/create-genre', {
                 method: 'POST',
+                credentials: 'include',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(payload),
             });

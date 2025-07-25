@@ -39,15 +39,15 @@ export default function EventCreation() {
     // 1) Load tours, venues, artists
     useEffect(() => {
         // wir brauchen start_date und end_date für Validierung
-        fetch('http://localhost:4000/tours-detailed')
+        fetch('http://localhost:4000/tours-detailed', { credentials: 'include' })
             .then(r => r.json())
             .then(d => setTours(d.tours));
 
-        fetch('http://localhost:4000/venues')
+        fetch('http://localhost:4000/venues', { credentials: 'include' })
             .then(r => r.json())
             .then(d => setVenues(d.venues));
 
-        fetch('http://localhost:4000/artists')
+        fetch('http://localhost:4000/artists', { credentials: 'include' })
             .then(r => r.json())
             .then(d => setArtists(d.artists));
     }, []);
@@ -60,7 +60,7 @@ export default function EventCreation() {
             setDisabilityCapacityMap({});
             return;
         }
-        fetch(`http://localhost:4000/venue-areas?venueId=${formData.venueId}`)
+        fetch(`http://localhost:4000/venue-areas?venueId=${formData.venueId}`, { credentials: 'include' })
             .then(r => r.json())
             .then(d => {
                 const allAreas = d.venueAreas || [];
@@ -295,6 +295,7 @@ export default function EventCreation() {
             };
             const res = await fetch('http://localhost:4000/create-event', {
                 method: 'POST',
+                credentials: 'include',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(payload)
             });
