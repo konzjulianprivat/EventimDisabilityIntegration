@@ -18,7 +18,7 @@ export default function VenueCreation() {
     });
     const [cities, setCities] = useState([]);
     const [areas, setAreas] = useState([]);
-    const [venueAreas, setVenueAreas] = useState([]); // [{ areaId, maxCapacity }]
+    const [venueAreas, setVenueAreas] = useState([]);
     const [message, setMessage] = useState('');
     const [loading, setLoading] = useState(false);
     const validation = useValidation({
@@ -126,6 +126,19 @@ export default function VenueCreation() {
             setLoading(false);
         }
     };
+
+    // Sortierte Bereiche: Kategorie zuerst, dann normal, dann SB -
+    const sortedAreas = [
+        ...areas
+            .filter((a) => a.name.startsWith('Kategorie'))
+            .sort((a, b) => a.name.localeCompare(b.name)),
+        ...areas
+            .filter((a) => !a.name.startsWith('Kategorie') && !a.name.startsWith('SB -'))
+            .sort((a, b) => a.name.localeCompare(b.name)),
+        ...areas
+            .filter((a) => a.name.startsWith('SB -'))
+            .sort((a, b) => a.name.localeCompare(b.name)),
+    ];
 
     return (
         <div className="artist-container">
@@ -263,7 +276,7 @@ export default function VenueCreation() {
                                 className="form-select"
                             >
                                 <option value="">Bereich wählen</option>
-                                {areas.map((a) => (
+                                {sortedAreas.map((a) => (
                                     <option key={a.id} value={a.id}>
                                         {a.name}
                                     </option>
