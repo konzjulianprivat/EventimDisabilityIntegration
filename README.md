@@ -10,49 +10,58 @@
 
 # Eventim Disability Integration
 
-Dieses Repository enthält eine Next.js Anwendung samt Express Backend, mit der Eventim eine barrierefreie Abwicklung von Ticketbestellungen und eine Verwaltung von Nachteilsausgleichsanträgen ermöglicht. Das Projekt gliedert sich in ein Frontend und einen Node.js Server im Unterordner `eventim-disability-integration`.
+Die Eventim Disability Integration stellt eine umfassende Lösung zur barrierefreien Abwicklung von Ticketbestellungen und Nachteilsausgleichsanträgen auf der Eventim-Plattform dar. Das System ermöglicht Menschen mit Behinderungen einen gleichberechtigten Zugang zu Veranstaltungen durch digitale Verifizierung von Schwerbehindertenausweisen und automatisierte Nachteilsausgleiche. Die Architektur basiert auf einem Next.js Frontend mit Express-Backend und PostgreSQL-Datenbank, wodurch eine skalierbare und benutzerfreundliche Plattform geschaffen wird, die sowohl gesetzliche Anforderungen erfüllt als auch den Komfort für die Zielgruppe deutlich erhöht. Dieses Dokument geht darauf ein, was das Ziel der Eventim Disability Integration ist, wie die Applikation aufgebaut ist und welche Funktionalitäten sie umsetzt.
 
 ## Inhaltsverzeichnis
 
 <!-- toc -->
 
-- [Einleitung](#einleitung)
-  * [Projekthintergrund und Motivation](#projekthintergrund-und-motivation)
-  * [Aktuelle Herausforderungen](#aktuelle-herausforderungen)
-  * [Gesellschaftlicher und rechtlicher Kontext](#gesellschaftlicher-und-rechtlicher-kontext)
-- [Projektvision und Zielsetzung](#projektvision-und-zielsetzung)
-  * [Kernfunktionalitäten](#kernfunktionalitäten)
-  * [Ziele](#ziele)
-  * [Zielgruppen und Stakeholder](#zielgruppen-und-stakeholder)
-  * [Interne Stakeholder](#interne-stakeholder)
-- [Projektübersicht](#projektubersicht)
-- [Setup](#setup)
-  * [Installations-Guide](#installations-guide)
-  * [Login-Daten](#login-daten)
-- [Architektur und eingesetzte Technologien](#architektur-und-eingesetzte-technologien)
-  * [Ordnerstruktur](#ordnerstruktur)
-  * [Frontend](#frontend)
-  * [Backend](#backend)
-  * [Datenbank](#datenbank)
-  * [Verwendete Technologien](#verwendete-technologien)
-  * [Sessions](#sessions)
-- [Security & Fault Tolerance](#security--fault-tolerance)
-  * [Rollen und Zugriffsberechtigungen](#rollen-und-zugriffsberechtigungen)
-  * [Doppelte Validierung zwischen Front- und Backend bei CRUD-Operations](#doppelte-validierung-zwischen-front--und-backend-bei-crud-operations)
-  * [Ausfallsicherheit & Auto-Recovery](#ausfallsicherheit--auto-recovery)
-- [Testkonzept](#testkonzept)
-  * [User-Tests](#user-tests)
-  * [Backend-Tests](#backend-tests)
-- [Nächste Schritte](#nächste-schritte)
-- [Anhang](#anhang)
-  * [FAQ Section](#faq-section)
-  * [Datenbank-Modell](#datenbank-modell)
+- [Einleitung](#einleitung-)
+  * [Projekthintergrund und Motivation](#projekthintergrund-und-motivation-)
+- [Projektvision und Zielsetzung](#projektvision-und-zielsetzung-)
+  * [Kernfunktionalitäten](#kernfunktionalitaten-)
+  * [Ziele](#ziele-)
+  * [Zielgruppen und Stakeholder](#zielgruppen-und-stakeholder-)
+  * [Interne Stakeholder](#interne-stakeholder-)
+- [Setup](#setup-)
+  * [Installations-Guide](#installations-guide-)
+  * [Login-Daten](#login-daten-)
+- [Architektur und eingesetzte Technologien](#architektur-und-eingesetzte-technologien-)
+  * [Ordnerstruktur](#ordnerstruktur-)
+  * [Frontend](#frontend-)
+  * [Backend](#backend-)
+  * [Datenbank](#datenbank-)
+- [Verwendete Technologien](#verwendete-technologien-)
+  * [Frameworks und Libraries](#frameworks-und-libraries-)
+  * [Wiederverwendbare Codeabschnitte](#wiederverwendbare-codeabschnitte-)
+  * [Sessions](#sessions-)
+- [Security und Fault Tolerance](#security-und-fault-tolerance-)
+  * [Rollen und Zugriffsberechtigungen](#rollen-und-zugriffsberechtigungen-)
+  * [Doppelte Validierung zwischen Front- und Backend bei CRUD-Operations](#doppelte-validierung-zwischen-front--und-backend-bei-crud-operations-)
+  * [Ausfallsicherheit und Auto-Recovery](#ausfallsicherheit-und-auto-recovery-)
+- [Workflows](#workflows-)
+  * [Registrierung von Nutzern](#registrierung-von-nutzern-)
+  * [Ticketkauf](#ticketkauf-)
+  * [Nachteilsausgleichsantrag stellen](#nachteilsausgleichsantrag-stellen-)
+  * [Nachteilsausgleichsantrag bearbeiten](#nachteilsausgleichsantrag-bearbeiten-)
+  * [Nutzerrolle anpassen](#nutzerrolle-anpassen-)
+  * [Event erstellen](#event-erstellen-)
+  * [Tour löschen](#tour-loschen--)
+  * [Benutzerkonto löschen](#benutzerkonto-loschen-)
+  * [Abmelden](#abmelden-)
+  * [Profildaten aktualisieren](#profildaten-aktualisieren-)
+- [Testkonzept](#testkonzept-)
+  * [User-Tests](#user-tests-)
+  * [Backend-Tests](#backend-tests-)
+- [Nächste Schritte](#nachste-schritte-)
+- [Anhang](#anhang-)
+  * [Datenbank-Modell](#datenbank-modell-)
   * [Versionen eingesetzter Technologien](#versionen-eingesetzter-technologien)
-  * [Workflows](#workflows)
-
-<div class="pagebreak"></div>
+  * [Frameworks](#frameworks-)
 
 <!-- tocstop -->
+
+<div class="pagebreak"></div>
 
 ## Einleitung <a name="einleitung"></a>
 
@@ -63,11 +72,11 @@ Die Eventim-Plattform ist eine der führenden Ticketing-Lösungen im deutschspra
 
 In Deutschland leben etwa 7,9 Millionen Menschen mit einer anerkannten Schwerbehinderung (Stand 2021). Diese Personengruppe hat nach dem Sozialgesetzbuch IX (SGB IX) und verschiedenen Landesgesetzen Anspruch auf Nachteilsausgleiche bei kulturellen Veranstaltungen. Die EU-Richtlinie zur Barrierefreiheit (European Accessibility Act) verpflichtet zudem bis 2025 zur digitalen Barrierefreiheit von Ticketing-Systemen.
 
-## Projektvision und Zielsetzung
+## Projektvision und Zielsetzung <a name="projektvision-und-zielsetzung"></a>
 
 Vision: "Eventim wird zur ersten vollständig inklusiven Ticketing-Plattform, die Menschen mit Behinderungen den gleichen komfortablen, digitalen Zugang zu kulturellen Erlebnissen ermöglicht wie allen anderen Nutzern."
 
-### Kernfunktionalitäten
+### Kernfunktionalitäten <a name="kernfunktionalitäten"></a>
 
 - **Behindertenausweis-Verifizierung**
   - Zwei Einstiegspunkte
@@ -79,7 +88,7 @@ Vision: "Eventim wird zur ersten vollständig inklusiven Ticketing-Plattform, di
   - Dynamische Darstellung von zusätzlichen Kategorien abhängig von Event und Venue, welche nur für diese Nutzergruppe buchbar sind und einen reduzierten Preis haben
   - Automatische Zubuchung eines kostenfreien Begleitpersonen-Tickets bei Buchung mit Merkzeichen "B" (Begleitperson) im Schwerbehindertenausweis
 
-### Ziele
+### Ziele <a name="ziele"></a>
 
 #### Primäre Ziele:
 
@@ -93,7 +102,7 @@ Vision: "Eventim wird zur ersten vollständig inklusiven Ticketing-Plattform, di
 - Steigerung der Kundenzufriedenheit in der Zielgruppe
 - Positionierung als Accessibility-Leader im Ticketing-Markt
 
-### Zielgruppen und Stakeholder
+### Zielgruppen und Stakeholder <a name="zielgruppe-und-stakeholder"></a>
 
 #### Menschen mit Schwerbehinderung (Primary Users)
 
@@ -108,7 +117,7 @@ Vision: "Eventim wird zur ersten vollständig inklusiven Ticketing-Plattform, di
 - Charakteristika: Oft technisch versierter, buchen stellvertretend
 - Bedürfnisse: Transparente Abrechnung, klare Berechtigungsregeln
 
-### Interne Stakeholder
+### Interne Stakeholder <a name="interne-stakeholder"></a>
 
 #### Service-Mitarbeiter
 
@@ -122,9 +131,11 @@ Vision: "Eventim wird zur ersten vollständig inklusiven Ticketing-Plattform, di
 - Bedürfnisse: Einfache Konfiguration von barrierefreien Bereichen
 - Erfolgsmetriken: Reduzierte Setup-Zeit für neue Events
 
-## Setup
+<div class="pagebreak"></div>
 
-### Installations-Guide
+## Setup <a name="setup"></a>
+
+### Installations-Guide <a name="installations-guide"></a>
 
 1. **Repository klonen** und in das Projekt wechseln:
 
@@ -161,9 +172,7 @@ npm run dev
 
 Damit starten sowohl das Next.js Frontend auf [http://localhost:3000](http://localhost:3000), das Backend unter [http://localhost:4000](http://localhost:4000) sowie P2M zur Überwachung der Datenbank- und Backendverbindung.
 
-<a name="technologien"></a>
-
-### Login-Daten
+### Login-Daten <a name="login-daten"></a>
 
 Im Zuge der Bewertung der Webseite bleibt es Ihnen offen, ob Sie sich selbst einen/mehrere eigene Accounts anlegen wollen oder ob sie bereits vordefinierte Accounts nutzen wollen. Folgende User wurden bereits gestellt und können genutzt werden:
 
@@ -173,11 +182,13 @@ Im Zuge der Bewertung der Webseite bleibt es Ihnen offen, ob Sie sich selbst ein
 | `SERVICE` | testService1@test.de | testService1@test.de |
 | `ADMIN` | testAdmin1@test.de | testAdmin1@test.de |
 
-## Architektur und eingesetzte Technologien
+<div class="pagebreak"></div>
+
+## Architektur und eingesetzte Technologien <a name="architektur-und-technologien"></a>
 
 Die Anwendung besteht aus einem [Next.js](https://nextjs.org/) Frontend und einem [Express](https://expressjs.com/) Backend. Als Datenbank kommt [PostgreSQL](https://www.postgresql.org/) zum Einsatz. Die Wahl fiel auf diese Kombination, da sie leichtgewichtig, gut erweiterbar und auch ohne großen Konfigurationsaufwand lokal ausführbar ist. Next.js liefert die React basierte Oberfläche und kann sowohl statische Seiten als auch serverseitig gerenderte Inhalte bereitstellen. Express dient als schlanker REST‑API Server, der über die `server`‑Ordnerstruktur umgesetzt ist. Die Kommunikation zwischen Frontend und Backend erfolgt ausschließlich über JSON‑basierte HTTP‑Aufrufe.
 
-### Ordnerstruktur
+### Ordnerstruktur <a name="ordnerstruktur"></a>
 
 Der gesamte Quellcode liegt im Ordner `eventim-disability-integration`. Die nachfolgende Tabelle bietet einen schnellen Überblick über alle relevanten Verzeichnisse:
 
@@ -192,7 +203,7 @@ Der gesamte Quellcode liegt im Ordner `eventim-disability-integration`. Die nach
 
 <a name="frontend"></a>
 
-### Frontend
+### Frontend <a name="frontend"></a>
 
 Das Frontend einer Applikation ist die sichtbare Benutzeroberfläche (UI), über die Anwender mit den Funktionen und Daten der Anwendung arbeiten. Es ist aufgeteilt in Seiten (Pages) unter `/pages`, welche sich in Darstellung, Daten und Funktionalität unterscheiden. Nutzer können über das Frontend Abläufe der APplikationslogik starten, welche über das Backend und den Browser dynamisch Daten abrufen, sichern oder manipulieren.
 
@@ -223,7 +234,7 @@ Im Folgenden wird das Backend der Applikation beschrieben.
 
 <a name="backend"></a>
 
-### Backend
+### Backend <a name="backend"></a>
 
 Das Backend ist die serverseitige Schicht, die HTTP‑Anfragen des Frontends entgegennimmt, über die Applikationslogik verarbeitet und anschließend auf die Datenbank zugreift, um Daten zu speichern oder abzurufen. Es stellt sogenannte Endpunkte zur Verfügung, mit denen die Applikationslogik über HTTP‑Methoden (GET, POST, PUT, DELETE) angesprochen wird, um CRUD‑Operationen auf den Daten auszuführen und diese in der Datenbank festzuhalten. Die Applikation nutzt einen lokal laufenden Server, der über das Skript `server/server.js` gestartet wird und unter http://localhost:4000/ erreichbar ist.
 
@@ -260,9 +271,7 @@ Die Endpunkte folgen den Best Practices von REST-API-Schnittstellen und halten k
 
 Im Folgenden wird die verwendete Datenbank sowie deren Tabellen betrachtet.
 
-<a name="datenbank"></a>
-
-### Datenbank
+### Datenbank <a name="datenbank"></a>
 
 Eine Datenbank ist eine Anwendung, die Daten anhand eines vordefinierten Schemas organisiert, dauerhaft ablegt und über standardisierte Schnittstellen abfragbar macht. Realisiert werden diese Abfragen mittels einer Library
 
@@ -288,11 +297,11 @@ Eine detaillierte Ansicht aller Tabellen, eine zugehörige Beschreibung sowie ih
 
 Im Folgenden werden weitere Technologien beschrieben, welche als Runtime / Framework / Library in den Code der Applikation eingebunden wurden.
 
-<a name="komponenten-hooks"></a>
+<div class="pagebreak"></div>
 
-## Verwendete Technologien
+## Verwendete Technologien <a name="verwendete-tecnologien"></a>
 
-### Frameworks & Libraries
+### Frameworks und Libraries <a name="frameworks-und-libraries"></a>
 
 Neben den eingesetzten Frameworks wurden in diesem Projekt mehrere Libraries eingebunden, welche im Folgenden aufgelistet werden.
 
@@ -316,7 +325,7 @@ Neben den eingesetzten Frameworks wurden in diesem Projekt mehrere Libraries ein
 
 Es wurde insbesondere `react-toastify` genutzt, um auf der Seite ein konsistentes Benachrichtigungssystem umzusetzen. Darüber hinaus sorgen `opossum` und `PM2` für eine resiliente Fehlerbehandlung im Backend und einen stabilen Betrieb.
 
-### 
+### Wiederverwendbare Codeabschnitte <a name="wiederverwendbare-codeabschnitte"></a>
 
 Eine Komponente im Kontext dieser Arbeit ist ein kapselbarer UI-Baustein auf React-Basis, wohingegen ein Hook wiederverwendbare Logik wie Zustandsverwaltung oder Seiteneffekte abbildet. Beide Konzepte eignen sich dazu, komplexe Abläufe zu abstrahieren und die Wiederverwendbarkeit des Codes signifikant zu erhöhen.
 
@@ -346,7 +355,7 @@ Die Komponenten sind so aufgebaut, dass sie in verschiedenen Seiten wiederverwen
 
 Die Hooks kapseln wiederverwendbare Geschäftslogik und stellen eine konsistente Schnittstelle zum Backend bereit. Während `useAuth` Session-Management und Berechtigungsprüfung implementiert, orchestriert `useCart` die asynchrone Kommunikation mit dem Server für Warenkorb-Operationen. Diese modulare Struktur reduziert Redundanz und garantiert einheitliches Verhalten über die gesamte Anwendung hinweg.
 
-### Sessions
+### Sessions <a name="sessions"></a>
 
 Eine Session ist eine temporäre Verbindung zwischen Client und Server, die Benutzerdaten während der Interaktion mit einer Webanwendung speichert. Die Anwendung nutzt serverseitiges Session-Management mittels `express-session`. Die Session-Verwaltung basiert auf einem Cookie-basierten Ansatz, bei dem der Browser nur eine einzigartige Session-ID enthält, während die eigentlichen Session-Daten sicher auf dem Server verbleiben.
 
@@ -375,9 +384,11 @@ In den Sessions werden abhängig vom Anwendungsfall verschiedene Informationen g
 
 Die Session-Daten werden serverseitig validiert, um unbefugte Zugriffe oder Manipulationen zu verhindern. Dies ist besonders wichtig für die Rollenverwaltung und Berechtigungsprüfungen beim Zugriff auf geschützte Bereiche der Anwendung.
 
-## Security & Fault Tolerance
+<div class="pagebreak"></div>
 
-### Rollen und Zugriffsberechtigungen
+## Security und Fault Tolerance <a name="security-und-fault-tolerance"></a>
+
+### Rollen und Zugriffsberechtigungen <a name="rollen-und-zugriffsberechtigungen"></a>
 
 Die Tabelle `user_roles` definiert Berechtigungen. Aktuell existieren drei Rollen:
 
@@ -391,7 +402,7 @@ Damit wird garantiert, dass nur Nutzer mit Berechtigungen ausgewählte Aktionen 
 
 Zusätzlich ist es Nutzern mit fehlenden Berechtigungen nicht möglich, auf Seiten zu navigieren, zu denen sie keine Berechtigung haben, indem in der Login-Session die Rollenrechte des Nutzers gespeichert werden und auf ausgewählten Seiten abgefragt wird, ob diese erfüllt sind oder nicht. Sind diese nicht berechtigt, die Seite aufzurufen, so werden sie mittels eines `307: Temporary Redirect` auf die Ursprungsseite zurückverwiesen.
 
-### Doppelte Validierung zwischen Front- und Backend bei CRUD-Operations
+### Doppelte Validierung zwischen Front- und Backend bei CRUD-Operations <a name="doppelte-validierung"></a>
 
 Um im Falle eines Datenbank- oder Backend-Fehlers dem Nutzer weiterhin ein funktionsfähiges System zu bieten, werden Fehlerzustände serverseitig abgefangen und dem Frontend in strukturierter Form gemeldet. Beim Versuch, eine Tour bzw. ein Event zu löschen validiert zunächst das Frontend, ob zu dieser Tour/ einem Event dieser Tour bereits Tickets existieren. Nur wenn keine Tickets in `orders` hinterlegt sind, erscheint die Möglichkeit das Event zu löschen.
 
@@ -418,7 +429,7 @@ Folgende Fälle werden durch die Applikation abgedeckt:
 
 Umgesetzt wird dies durch ein Zusammenspiel aus clientseitigen Guards und serverseitiger Validierung, welche jede Manipulation der Daten prüft. Diese doppelte Validierung erlaubt es, dass die Daten trotz Fehler in Front- und Backend nicht fehlerhaft auf der Datenbank gesichert/manipuliert werden.
 
-### Ausfallsicherheit & Auto-Recovery
+### Ausfallsicherheit und Auto-Recovery <a name="ausfallsicherheit-und-auto-recovery"></a>
 
 Im Falle eines Absturz des Backends oder der Datenbank wird dieses durch die Verwendung von `PM2` und `opossum` automatisch neugestartet. Übersteigt die Antwortzeit einer Datenbank-Query den in `opossum` gesetzten Timeout, werden Requests an die Datenbank blockiert. `PM2` startet dann einen neuen Worker, der Timer wird zurückgesetzt und ein neuer Connection-Pool zwischen Datenbank und Backend aufgebaut.
 
@@ -432,11 +443,245 @@ Die Ausfallsicherheit wird durch mehrere Maßnahmen gewährleistet:
 
 Diese Architektur gewährleistet, dass temporäre Datenbankausfälle oder Speicherprobleme die Anwendungsverfügbarkeit nur minimal beeinträchtigen und das System selbstständig in einen funktionsfähigen Zustand zurückkehrt.
 
-## Testkonzept
+<div class="pagebreak"></div>
+
+## Workflows <a name="workflows"></a>
+
+Die folgenden Aktivitätsdiagramme visualisieren typische Abläufe im System. Sie zeigen jeweils, auf welchen Seiten sich der Nutzer befindet und welche Daten einzugeben sind.
+
+### Registrierung von Nutzern <a name="registrierung-von-nutzern"></a>
+
+![Registrierung](./diagrams/pictures/registration.svg)
+
+#### Überblick 
+Der "Registrierungsprozess" beschreibt den Fluss der Benutzerregistrierung im System. Er bietet sowohl eine Option für neue Kunden zur vollständigen Registrierung als auch einen direkten Anmeldepfad für bestehende Kunden. Ein zentraler Aspekt ist die optionale Verifizierung mittels Behindertenausweis.
+
+#### Ablauf
+1. **Startpunkt: Öffnen der Login-Seite**
+  - Der Prozess beginnt mit dem Aufrufen der /login-Seite.
+2. **Entscheidung: Neuer Kunde?**
+  - Wenn "Ja" (Neuer Kunde):
+    - Weiterleitung auf "/register": Der Benutzer wird zur Registrierungsseite weitergeleitet.
+    - Registrierungs-Formular öffnen & ausfüllen: Der Benutzer füllt das Registrierungsformular aus.
+    - Entscheidung: Behindertenausweis vorhanden?
+     - Wenn "Ja":
+      - Ausweis aktivieren & Fotos hochladen: Der Benutzer aktiviert die Ausweisfunktion und lädt entsprechende Fotos hoch.
+     - Wenn "Nein":
+      - Registrierung ohne Ausweis: Die Registrierung wird ohne Ausweisverifizierung fortgesetzt.
+    - Formular abschicken: Das ausgefüllte Formular wird abgeschickt.
+    - Weiterleitung auf "/login": Nach dem Abschicken wird der Benutzer zurück zur Login-Seite geleitet.
+  - Wenn "Nein" (Bestehender Kunde):
+    - E-Mail & Passwort eingeben & abschicken: Der Benutzer gibt direkt seine Anmeldedaten auf der Login-Seite ein und sendet sie ab.
+
+### Ticketkauf <a name="ticketkauf"></a>
+
+![Ticketkauf](./diagrams/pictures/buying_tickets.svg)
+
+#### Überblick
+Der Kaufprozess bildet den vollständigen Ablauf zur Ticketbuchung auf der Plattform ab – von der Tourauswahl über den Checkout bis zur Zahlungsbestätigung. Dabei werden Nutzer schrittweise durch Auswahlmöglichkeiten, Eingabemasken und Zahlungsoptionen geführt, um eine reibungslose Bestellung zu ermöglichen.
+
+#### Tour- und Eventauswahl
+1.	Einstieg über die Startseite oder Künstlerübersicht (/artists)
+2.	Auswahl einer bestimmten Tour eines Künstlers
+3.	Auswahl eines konkreten Events innerhalb der Tour
+4.	Optionales Hinzufügen eines Tickets für eine Begleitperson bei aktivem Sondermerkmal (z. B. Sonderzeichen B)
+
+#### Checkout-Prozess
+1.	Hinzufügen der Eventtickets in den Warenkorb
+2.	Weiterleitung zur Seite für Versandinformationen
+3.	Eingabe oder Prüfung der Lieferadresse und Auswahl der Versandart
+4.	Fortsetzung zum Zahlungsbereich
+
+#### Zahlungsabwicklung
+1.	Auswahl und Bestätigung der gewünschten Zahlungsart
+2.	Erfolgreiche Zahlung führt zur Weiterleitung auf eine Bestätigungsseite mit Erfolgsnachricht
+3.	Bei fehlgeschlagener Zahlung: Anzeige einer Fehlermeldung und Rückleitung zur Startseite
+
+
+### Nachteilsausgleichsantrag stellen <a name="nachteilsausgleich-stellen"></a>
+
+![Nachteilsausgleich stellen](./diagrams/pictures/request_for_disadvantages.svg)
+
+#### Überblick
+Die Funktion "Antrag auf Nachteilsausgleich" ermöglicht es Benutzern, einen Antrag zur Berücksichtigung besonderer Bedürfnisse einzureichen. Dies beinhaltet die Angabe relevanter Daten wie Grad des Nachteilsausgleichs, Ablaufdatum und das Hochladen von Ausweisbildern zur Übermittlung an den Service.
+
+#### Bearbeitungsablauf
+1. Profilbereich aufrufen:
+  - Der Prozess beginnt mit dem Aufrufen des persönlichen Profilbereichs unter dem Pfad "/profile".
+2. Bereich "Meine Daten" öffnen:
+  - Innerhalb des Profilbereichs öffnet der Benutzer den Abschnitt "Meine Daten".
+3. "Antrag auf Nachteilsausgleich" wählen:
+  - Der Benutzer klickt auf den Button oder die Option "Antrag auf Nachteilsausgleich".
+4. Daten eingeben:
+  - Es öffnet sich ein Formular, in dem der Benutzer den Grad des Nachteilsausgleichs, das Ablaufdatum, relevante Merkzeichen und Ausweisbilder eingibt.
+5. Antrag abschicken:
+  - Nachdem alle erforderlichen Informationen eingegeben wurden, klickt der Benutzer auf die Schaltfläche "Antrag abschicken".
+
+#### Systemverarbeitung
+-	Daten werden gespeichert und an den Service übermittelt:
+  -	Das System speichert die eingegebenen Daten und leitet den Antrag zur weiteren Bearbeitung an den zuständigen Service weiter.
+
+### Nachteilsausgleichsantrag bearbeiten <a name="nachteilsausgleich-bearbeiten"></a>
+
+![Nachteilsausgleich](./diagrams/pictures/request_for_disadvantages.svg)
+
+#### Überblick
+Dieser Prozess unterstützt autorisierte Mitarbeitende bei der strukturierten Prüfung und Bearbeitung von Anträgen auf Nachteilsausgleich. Die Entscheidung basiert auf der Sichtung hochgeladener Daten und Ausweisfotos, wobei die Bearbeitung direkt im System erfolgt.
+
+#### Bearbeitungsablauf
+1.	Öffnen der Antragsübersicht über den Pfad "/service/compensation-for-disadvantages-requests"
+2.	Durchsuchen der Tabelle „Offene Anträge“
+3.	Anklicken eines Eintrags, wodurch ein Detailmodal mit allen relevanten Angaben erscheint
+4.	Sichtprüfung der Antragsdaten und der hochgeladenen Ausweisdokumente
+
+#### Entscheidung und Ergebnis
+1. 	Ist der Antrag formal korrekt:
+1.1. 	Klick auf „Annehmen“, der Antrag wird genehmigt
+2.	Ist der Antrag fehlerhaft oder unvollständig:
+2.1.	Klick auf „Ablehnen“, der Antrag wird zurückgewiesen
+3.	Nach der Entscheidung wird die Antragsliste automatisch aktualisiert und der bearbeitete Eintrag entfernt
+
+### Nutzerrolle anpassen <a name="nutzerrolle-anpassen"></a>
+
+![Nutzerrolle anpassen](./diagrams/pictures/change_user_role.svg)
+
+#### Überblick
+Die Funktion „Benutzerrolle ändern“ ermöglicht es autorisierten Administratoren, die Rollen einzelner Nutzer im System anzupassen. Der Prozess erfolgt über eine zentrale Verwaltungsoberfläche und wird durch ein Modal-Dialogsystem unterstützt.
+
+#### Anpassung der Rolle
+1.	Aufrufen des Benutzerverwaltungsbereichs unter "/service/account-management"
+2.	Auswahl eines Nutzers über die Ergebnisliste oder durch Nutzung der Suchfunktion
+3.	Nach Auswahl eines Nutzers öffnet sich automatisch ein Detailmodal
+4.	Im Modal wird die Option „Rolle anpassen“ ausgewählt
+5.	Eine neue Rolle wird im Dropdown-Menü festgelegt
+6.	Die Änderung wird durch Klick auf „Speichern“ bestätigt
+7.	Das System aktualisiert die Benutzerrolle unmittelbar nach der Aktion
+
+#### Hinweise
+-	Nur autorisierte Rollen (z. B. Admin) dürfen Änderungen an Benutzerrollen vornehmen
+-	Die Änderungen wirken sich unmittelbar auf Berechtigungen und Zugriffsrechte des Nutzers aus
+
+### Event erstellen <a name="event-erstellen"></a>
+
+![Tour mit Event erstellen](./diagrams/pictures/create_event.svg)
+
+#### Überblick
+Diese Funktion ermöglicht Administratoren die Erstellung neuer Events im System. Der Ablauf besteht aus zwei Stufen: Zuerst wird eine übergeordnete Tour mit Metadaten angelegt, anschließend können zugehörige Einzel-Events hinzugefügt und konfiguriert werden.
+
+#### Ablauf
+1.	Aufruf des Erstellungsformulars über den Pfad "/admin/tours/create"
+2.	Eingabe grundlegender Tourdaten:
+2.1.	Titel
+2.2.	Zeitraum
+2.3.	Bildmaterial
+2.4.	Künstlerzuordnung
+3.	Absenden des Formulars, wodurch die neue Tour gespeichert wird
+4.	Im nächsten Schritt:
+4.1.	Öffnen der Event-Erstellung unter "/admin/tours/events/create"
+4.2.	Auswahl von Tour und Veranstaltungsort (Venue)
+4.3.	Erfassung von Event-spezifischen Informationen:
+4.3.1	Datum & Uhrzeit
+4.3.2	Kategorien
+5.	Abschließend wird das Event gespeichert und dem System hinzugefügt
+
+
+### Tour löschen  <a name="tour-löschen"></a>
+
+![Tour löschen](./diagrams/pictures/delete_tour.svg)
+
+#### Überblick
+Die Funktion „Tour löschen“ erlaubt es Administratoren, nicht mehr benötigte Touren aus dem System zu entfernen. Vor der Löschung wird sichergestellt, dass keine Tickets für die betreffende Tour verkauft wurden, um eine versehentliche Datenlöschung zu verhindern.
+
+#### Ablauf
+1.	Aufruf des Tour-Verwaltungsbereichs über "/admin/tours"
+2.	Auswahl einer Tour in der Übersicht
+3.	Klick auf die Option „Löschen“
+4.  Das System püft, ob die Tour gelöscht werden kann
+
+#### Entscheidung
+-	Wenn keine Tickets verkauft wurden:
+  -	Öffnen eines Bestätigungsdialogs
+  -	Klick auf „Ja, löschen“
+  -	Die Tour wird aus dem System entfernt
+  -	Die Übersichtsliste wird automatisch neu geladen
+-	Wenn Tickets verkauft wurden:
+  -	Die Löschung wird blockiert
+  -	Anzeige eines Hinweises „Löschen nicht möglich“
+
+#### Hinweise
+-	Bereits gebuchte oder verknüpfte Events/Tickets verhindern die Löschung aus Gründen der Datenkonsistenz
+-	Die Tour kann erst gelöscht werden, wenn alle zugehörigen Tickets storniert oder entfernt wurden
+
+### Benutzerkonto löschen <a name="benutzerkonto-löschen"></a>
+
+![Account löschen](./diagrams/pictures/delete_account.svg)
+
+#### Überblick
+Dieser Prozess ermöglicht Nutzer*innen, ihr Konto eigenständig und dauerhaft zu löschen. Das System prüft dabei automatisch, ob noch offene oder nicht eingelöste Tickets vorhanden sind. Eine vollständige Löschung erfolgt nur bei erfüllten Voraussetzungen.
+
+#### Ablauf
+1.	Aufrufen des eigenen Benutzerprofils unter "/profile"
+2.	Auswahl der Option „Account löschen“
+3.	Ein Dialog erscheint, der die Eingabe des Wortes „Löschen“ verlangt, um unbeabsichtigtes Entfernen zu vermeiden
+4.	Überprüfung durch das System, ob noch offene Tickets existieren
+
+#### Entscheidung
+-	Wenn noch offene Tickets vorhanden sind:
+  -	Abbruch der Löschung
+  -	Anzeige einer Fehlermeldung, die auf die offenen Tickets hinweist
+-	Wenn keine offenen Tickets vorhanden sind:
+  -	Bestätigung der Eingabe
+  -	Das Konto wird dauerhaft entfernt
+  -	Lokale Sitzungsdaten (Sessiondaten) werden gelöscht
+  -	Weiterleitung zur Startseite
+
+### Abmelden <a name="abmelden"></a>
+
+![Logout](./diagrams/pictures/logout.svg)
+
+#### Überblick
+Die Funktion "Abmelden" ermöglicht es Benutzern, ihre aktive Sitzung sicher zu beenden und sich vom System abzumelden. Dieser Prozess sorgt dafür, dass die Benutzerdaten geschützt bleiben, indem die lokale Session beendet wird und der Zugriff auf das Konto nur durch eine erneute Anmeldung möglich ist.
+
+#### Ablauf
+1.	Dropdown in der Navigation öffnen:
+1.1.	Der Prozess beginnt damit, dass der Benutzer ein Dropdown-Menü in der globalen Navigation öffnet, in dem die Abmeldeoption verfügbar ist.
+2.	"Abmelden" klicken:
+2.1.	Innerhalb dieses Dropdowns klickt der Benutzer auf die Option "Abmelden".
+3.	POST "/logout" wird gesendet:
+3.1.	Das System sendet daraufhin eine POST-Anfrage an den /logout-Endpunkt, um die serverseitige Sitzung zu beenden.
+4.	Lokale Sessiondaten entfernen:
+4.1.	Parallel oder im Anschluss werden lokale Sessiondaten, wie Cookies oder Tokens, aus dem Browser des Benutzers entfernt. Dies ist ein kritischer Schritt für die Sicherheit.
+5.	Seite lädt neu und zeigt Login-Button:
+5.1.	Nach erfolgreicher Abmeldung lädt die Seite neu und präsentiert dem Benutzer den Login-Button oder die Login-Maske, was anzeigt, dass die Sitzung beendet wurde und eine erneute Anmeldung erforderlich ist.
+
+### Profildaten aktualisieren <a name="profildaten-aktualisieren"></a>
+
+![Profildaten anpassen](./diagrams/pictures/edit_profile_data.svg)
+
+#### Überblick
+Die Funktion "Profildaten bearbeiten" ermöglicht es Benutzern, ihre persönlichen Informationen wie Name, Adresse und Telefonnummer im System zu aktualisieren. Der Prozess ist darauf ausgelegt, eine einfache und direkte Bearbeitung der eigenen Daten zu gewährleisten.
+
+#### Ablauf
+1.	Aufruf des Profilbereichs:
+1.1.	Der Prozess beginnt mit dem Aufrufen des persönlichen Profilbereichs, typischerweise unter dem Pfad /profile.
+2.	Initiierung der Bearbeitung:
+2.1.	Im Profilbereich wählt der Benutzer den Bereich "Meine Daten" aus und klickt auf das zugehörige Stiftsymbol, um den Bearbeitungsmodus zu aktivieren.
+3.	Bearbeitung der Felder:
+3.1.	Der Benutzer kann nun die gewünschten Felder wie Anrede, Vorname, Nachname, Firma, Straße und Hausnummer, PLZ, Stadt, Land, E-Mail, Geburtsdatum und Telefon bearbeiten oder aktualisieren.
+4.	Speichern der Änderungen:
+4.1.	Nachdem die Änderungen vorgenommen wurden, klickt der Benutzer auf die Schaltfläche "Speichern".
+
+#### Systemprüfung und Aktualisierung
+-	System aktualisiert die Daten:
+  -	Das System verarbeitet die eingegebenen Informationen und aktualisiert die Profildaten des Benutzers in der Datenbank.
+
+<div class="pagebreak"></div>
+
+## Testkonzept <a name="testkonzept"></a>
 
 Zur Validierung der Ergebnisse aus der Applikation werden Tests durchgeführt, die sowohl Unit- als auch Integrationstestfälle umfassen. Geprüft werden hierbei die REST-Endpunkte des Backends, die Funktionsweise der React-Komponenten sowie komplette Nutzerflüsse mittels End-to-End-Tests.
 
-### User-Tests
+### User-Tests <a name="user-tests"></a>
 
 User-Tests bezeichnen systematische Überprüfungen, bei denen reale Benutzer mit dem System interagieren, um dessen Benutzerfreundlichkeit, Funktionalität und Zuverlässigkeit zu bewerten. Bei diesen Tests werden typische Anwendungsfälle durchgespielt, um Probleme zu identifizieren, bevor sie in der Produktivumgebung auftreten.
 
@@ -458,87 +703,75 @@ Ein weiterer Test zielte darauf ab, mehr Tickets zu bestellen, als tatsächlich 
 
 Beim Anlegen eines Events in einer Venue mit Behindertenbereich wurde geprüft, ob sich Sitzplätze – egal ob regulär oder für Schwerbehinderte – komplett weglassen lassen (TC13). Das System erlaubte dies nicht: Kategorien bzw. Sitzplätze müssen einen Wert größer null haben, womit gesetzliche Vorgaben eingehalten werden. Schließlich wurde getestet, ob mehrere Schwerbehindertentickets (etwa Sondertickets oder Gratis-Begleitpersonen) gleichzeitig gekauft werden können (TC14). Auch das war nicht möglich: Der „In den Warenkorb“-Button blieb ausgegraut und ließ sich nicht anklicken.
 
-### Backend-Tests
+### Backend-Tests <a name="backend-tests"></a>
 
-Die automatisierten Backend-Tests nutzen Jest und prüfen alle API-Routen auf korrekte Antwortcodes sowie auf die Validierung der Eingabedaten. Hierbei wird eine isolierte Testdatenbank verwendet, damit produktive Daten nicht beeinflusst werden.
+Die automatisierten Backend-Tests nutzen Jest und prüfen alle API-Routen auf korrekte Antwortcodes sowie auf die Validierung der Eingabedaten. Hierbei wird eine isolierte Testdatenbank verwendet, damit produktive Daten nicht beeinflusst werden. Die Tests können mittels `npm run test:backend` ausgeführt werden.
 
-<a name="next-steps"></a>
+Die Test-Suite deckt folgende Testfälle ab:
 
-## Nächste Schritte
-Das Grundgerüst funktioniert lokal stabil: Registrierung, Login, Rollenverwaltung und der Bestellprozess sind lauffähig. Das Projekt ist in Frontend und Backend klar getrennt und setzt auf PostgreSQL als persistente Datenbasis.
+| Test-Kategorie | Testfall | Beschreibung |
+|----------------|----------|--------------|
+| **Nutzer-API** | Registrierung | Prüft, ob neue Nutzer angelegt werden können und ob Validierungsfehler korrekt zurückgegeben werden |
+| | Login | Validiert den Login-Prozess mit korrekten und falschen Anmeldedaten |
+| | Profildaten | Testet Abruf und Aktualisierung von Nutzerprofilen |
+| **Event-API** | Event-Listing | Überprüft, ob Events korrekt nach verschiedenen Kriterien gefiltert werden |
+| | Kategorie-Zuordnung | Validiert die korrekte Zuweisung von Kategorien zu Events |
+| | Verfügbarkeit | Testet, ob die Verfügbarkeitslogik korrekt funktioniert |
+| **Bestellprozess** | Warenkorb | Prüft das Hinzufügen und Entfernen von Artikeln |
+| | Checkout | Validiert den kompletten Checkout-Prozess |
+| | Bestellung | Testet die Erstellung einer Bestellung |
+| **Nachteilsausgleich** | Antragsvalidierung | Überprüft die Validierung von Disability-Anträgen |
+| | Genehmigungsprozess | Testet den Workflow zur Genehmigung/Ablehnung |
 
-Vor einer finalen Bereitstellung sollten noch folgende Punkte bearbeitet werden:
+Die Tests simulieren reale API-Aufrufe und validieren sowohl Erfolgs- als auch Fehlerszenarien. Jeder Testfall enthält mehrere Assertions, die spezifische Aspekte der API-Antwort überprüfen, wie HTTP-Status, Datenstruktur und Geschäftslogik.
 
-1. **Konfiguration bereinigen** – Secrets in Umgebungsvariablen auslagern und Produktionsbuilds automatisieren.
-2. **Security prüfen** – HTTPS erzwingen, CORS-Regeln präzisieren und optionale 2FA vorsehen.
-3. **Fehlertoleranz weiter ausbauen** – zentrales Logging und Alerting einrichten.
+Die Testumgebung wird vor jedem Testlauf zurückgesetzt, um Seiteneffekte zu vermeiden. Für die Simulation von authentifizierten Anfragen werden temporäre Sessions erstellt, die nach Abschluss des Tests automatisch bereinigt werden.
 
-Bereits sehr gut funktionieren das Rollenmodell, die Bild-Uploads sowie die periodische Datenbereinigung im Backend.
+<div class="pagebreak"></div>
 
-<a name="appendix"></a>
+## Nächste Schritte <a name="nächste-schritte"></a>
 
-## Anhang
+Das Grundgerüst funktioniert lokal stabil: Registrierung, Login, Rollenverwaltung und der Bestellprozess sind lauffähig. Das Projekt ist in Frontend und Backend klar getrennt und setzt auf PostgreSQL als persistente Datenbasis. Dennoch gibt es mehrere Bereiche, die vor einer Produktivschaltung verbessert werden sollten:
 
-## FAQ Section
+**Technische Optimierungen**
 
-### Wie kann die Architektur beschrieben werden?
+1. **Session-Management verbessern**
+  - Implementierung eines persistenten Session-Stores (Redis/PostgreSQL)
+  - Aktuelle MemoryStore-Lösung verliert Sessions bei Neustarts
 
-- Womit interagiert der Endnutzer
-  - Der Endnutzer arbeitet über einen Browser mit dem in Next.js entwickelten Frontend. Von dort werden REST-Aufrufe an das Express-Backend geschickt. Direkten Kontakt zur Datenbank gibt es nicht.
-- Womit interagiert der Endnutzer nicht
-  - Der Endnutzer hat keinerlei direkte Verbindung zu Server oder Datenbank. Alle technischen Details wie Session-Verwaltung oder Datenbankzugriffe laufen vollständig im Backend ab, ohne dass der Nutzer darauf zugreifen kann.
-- Wie sind Applikation und Server verbunden
-  - Das Frontend läuft in einem Next.js-Server, der als Client im Browser ausgeführt wird, und kommuniziert per HTTP/REST mit dem Express-Server auf Port 4000. In der `NEXT_PUBLIC_API_URL` wird definiert, unter welcher Adresse die API erreichbar ist.
-- Wie sind Server und Daenbank verbunden bzw tauschen Daten aus
-  - Der Express-Server nutzt das `pg`-Modul, um über einen Connection-Pool auf die PostgreSQL-Datenbank zuzugreifen. Die Verbindungskonfiguration liest er aus `credentials.json`. Anfragen werden durch einen `opossum`-Circuit-Breaker geleitet, der bei Fehlern den Pool neu aufbaut.
-- wie könnte ich eine Grafik mit folgenden Komponenten bauen: Server, Datenbank, Applikation, Sessions, Browser, Endnutzer
-  - Ein mögliches Architekturdiagramm zeigt den Browser des Nutzers, der über HTTPS auf das Next.js-Frontend zugreift. Dieses ruft per REST den Express-Server auf, der Sessions in `express-session` verwaltet und über `pg` mit der PostgreSQL-Datenbank spricht. Pfeile zwischen den Komponenten verdeutlichen die Datenflüsse.
+2. **Datenbankverbindungen optimieren**
+  - Connection-Pooling-Parameter anpassen
+  - Prepared Statements konsequenter einsetzen
 
-### Wie funktionieren Sessions?
+3. **Frontend-Performance steigern**
+  - Bundle-Größe durch Code-Splitting reduzieren
+  - Lazy Loading für große Komponenten implementieren
 
-- Wo werden wie Sessions verwaltet (bspw. beim Checkout oder Login)?
-  - Die Sessions werden serverseitig mit `express-session` gehalten. Beim Login speichert der Server im Session-Objekt die Nutzer-ID und Berechtigungen. Beim Checkout legt er ein Unterobjekt `checkout` an, in dem Versand- und Zahlungsdaten während des Kaufvorgangs liegen.
-- Wie sind die Sessions aufgebaut?
-  - Jede Session besteht aus einem Cookie mit dem Namen `sid`, das im Browser hinterlegt ist, und einem dazugehörigen Servereintrag im MemoryStore. Dort liegen Attribute wie `userId`, `email`, diverse Rollenrechte sowie das `checkout`-Objekt. Die Daten sind also in einem JS-Objekt strukturiert.
-- Welche Daten werden in welcher Session wie lange gespeichert?
-  - Die Login-Session speichert Nutzerdaten eine Stunde lang, da die Cookie-Option `maxAge` auf 3600000 Millisekunden steht. Daten des Checkout-Vorgangs werden zusätzlich im `checkout`-Objekt abgelegt und nach 15 Minuten Inaktivität verworfen.
-- Wo werden die Daten genau gespeichert die in einer Session sind, macht das der Browser oder wer sonst?
-  - Die eigentlichen Sessiondaten liegen ausschließlich im Node.js-Server und werden standardmäßig in dessen Speicher abgelegt. Der Browser hält nur die Session-ID im Cookie. Bei jedem Request sendet er dieses Cookie mit, sodass der Server die zugehörigen Daten finden kann.
+**Sicherheitsmaßnahmen**
 
-### Wie genau werden Bilder gespeichert?
+1. **Eingabevalidierung erweitern**
+  - Schema-Validierung auf allen Endpunkten
+  - Sanitization aller Benutzereingaben
 
-- Wie werden die Bilder von .png bzw .jpeg in ein Format umgewandelt was die Datenbank speichert?
-  - Der Server nimmt hochgeladene PNG- oder JPEG-Dateien über `multer` entgegen. Da wir den Speicher auf `memoryStorage` gesetzt haben, liegen sie bereits als Buffer im Arbeitsspeicher. Dieser Binärpuffer wird anschließend direkt in die Spalte `image_data` der Tabelle `images` geschrieben.
-- in welcher Form bekommt der Server die Bilddaten und wie werden diese dann in images gespeichert?
-  - Durch das Multer-Middleware bekommt `server.js` die hochgeladenen Dateien in `req.file` beziehungsweise `req.files` als Buffer zusammen mit dem MIME-Type. Jeder Upload erhält eine UUID als ID. Anschließend wird `INSERT INTO images (id, image_data, image_type)` ausgeführt, sodass Buffer und Typ persistiert werden.
-- wie werden Bilder aus der Datenbank geholt
-  - Zum Abruf stellt das Backend die Route `/image/:id` bereit. Dort wird per `SELECT image_data, image_type FROM images WHERE id = $1` das gespeicherte Binary geladen. Danach setzt der Server den Content-Type auf den gespeicherten MIME-Wert und sendet die Daten als HTTP-Response zurück.
-- wie erfolgt die Umwandlung vom Format der Datenabank in ein Bild?
-  - Im Browser geschieht keine Konvertierung: das Backend liefert das Bild bereits mit korrektem MIME-Type aus. Der Browser interpretiert den Content-Type und stellt das Binary direkt als Bild dar. Es wird also nur übertragen und nicht nochmals transformiert.
+2. **Dateisicherheit verbessern**
+  - MIME-Type-Validierung bei Uploads verstärken
+  - Größenbegrenzung für hochgeladene Bilder
 
-### Wie genau funktionieren Hooks?
+**Deployment-Verbesserungen**
 
-- Was ist der Sinn von Hooks?
-  - React-Hooks ermöglichen es, in Funktionskomponenten zustandsbehaftete Logik und Nebeneffekte zu kapseln. Mit `useState` werden lokale Zustände verwaltet, `useEffect` führt Code bei bestimmten Änderungen aus. Dadurch bleibt der Code schlanker und wiederverwendbar.
-- Wie genau werden Hooks in diesem Code genutzt?
-  - In den React-Seiten wie `login.jsx` und den Checkout-Komponenten werden `useState` und `useEffect` eingesetzt, um Formularfelder zu steuern und API-Daten zu laden. Beispielsweise speichert `useState` die E-Mail im Login-Formular und `useEffect` ruft Versand- oder Zahlungsoptionen ab.
+1. **CI/CD-Pipeline**
+  - Automatisierte Tests einrichten
+  - Docker-Compose für Entwicklung und Staging
 
-### Wie funktioniert der Auto-Restart und Circuit Breaker durch Opossum und P2M?
+2. **Monitoring einführen**
+  - Health-Checks und Logging implementieren
+  - Performance-Metriken erfassen
 
-- Was ist der Sinn von den zwei Integrationen?
-  - PM2 überwacht den Node-Prozess und startet ihn automatisch neu, falls er abstürzt. Opossum kapselt einzelne Funktionen – hier vor allem Datenbankzugriffe – in einen Circuit Breaker und verhindert, dass wiederholte Fehler das gesamte System lahmlegen.
-- Was macht ein Circuit Breaker von Opossum?
-  - Der Circuit Breaker überwacht Fehlerraten und Antwortzeiten der gekapselten Funktion. Überschreiten die Fehler ein vordefiniertes Limit, wird der Breaker geöffnet. In dieser Phase werden Anfragen sofort abgelehnt, bis nach Ablauf von `resetTimeout` ein neuer Versuch gestartet wird.
-- Wie genau weiß der Circuit Breaker, dass das backend/frontend grade nicht funktioniert ud startet die apps durch?
-  - Opossum misst Erfolgs- und Fehlerschwellen beim Ausführen der eingekapselten Funktion, hier etwa eines DB-Queries. Wird die Funktion mehrmals nacheinander mit Fehlern beantwortet oder überschreitet die Antwortzeit das Timeout, geht der Breaker in den offenen Zustand. Dadurch werden weitere Aufrufe blockiert, bis ein Retry ansteht. Ein Neustart der App erfolgt über PM2.
-- Wie genau kann p2m oder opossum die apps durchstarten?
-  - PM2 führt den Node-Prozess als Daemon aus und überwacht Exit-Codes sowie Speicherverbrauch. Stürzt der Prozess ab oder beendet er sich selbst, startet PM2 automatisch einen neuen Worker. Opossum selbst startet die App nicht neu; es sorgt aber dafür, dass fehlerhafte Funktionen nicht mehr ausgeführt werden, bis sie wieder stabil sind.
-- Was sind die zeitintervalle, in denen P2m und Opossum die App überprüfen, ob sie läuft
-  - Im Projekt werden keine speziellen PM2-Intervalle definiert, da PM2 permanent den Prozessstatus beobachtet. Der Circuit Breaker führt jedoch alle zehn Sekunden einen Datenbank-Healthcheck durch und öffnet sich fünf Sekunden lang nach jedem Fehler (`resetTimeout`), bevor ein erneuter Verbindungsversuch erfolgt.
-- Wie kann die App dennoch abstürzen?
-  - Trotz Circuit Breaker und PM2 können unbehandelte Exceptions, Speicherlecks oder Logikfehler im Code zum Absturz führen. Wenn beispielsweise ein API-Endpunkt eine falsche Query ausführt oder Endlosschleifen erzeugt, beendet sich der Prozess. PM2 startet ihn zwar neu, aber der Fehler muss im Quellcode behoben werden.
+Die Session-Verwaltung und die Eingabevalidierung sollten prioritär angegangen werden, da sie die Stabilität und Sicherheit der Anwendung direkt beeinflussen.
 
-### Datenbank-Modell
+## Anhang <a name="appendix"></a>
+
+### Datenbank-Modell <div class="datenbank-modell"></div>
 
 | Tabelle | Zweck / wichtige Spalten | Abhängigkeiten |
 |---------|--------------------------|---------------|
@@ -572,7 +805,7 @@ Bereits sehr gut funktionieren das Rollenmodell, die Bild-Uploads sowie die peri
 
 ### Versionen eingesetzter Technologien
 
-### Frameworks
+### Frameworks <div class="frameworks"></div>
 
 | Paket | Version |
 |-------|---------|
