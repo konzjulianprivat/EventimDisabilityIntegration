@@ -413,8 +413,6 @@ Beim Anlegen eines Events in einer Venue mit Behindertenbereich wurde geprüft, 
 
 Die automatisierten Backend-Tests nutzen Jest und prüfen alle API-Routen auf korrekte Antwortcodes sowie auf die Validierung der Eingabedaten. Hierbei wird eine isolierte Testdatenbank verwendet, damit produktive Daten nicht beeinflusst werden.
 
-Zusätzlich existieren Integrationstests, welche das Zusammenspiel zwischen Backend, Datenbank und Frontend simulieren.
-
 <a name="next-steps"></a>
 
 ## Nächste Schritte
@@ -469,6 +467,45 @@ Die folgenden Tabellen listen alle im Projekt genutzten Pakete samt Version auf.
 | `concurrently` | ^9.1.2 |
 
 Die Anwendung wurde zuletzt mit Node.js v22 getestet. Eine aktuelle Node-Version wird empfohlen, um alle Features von Next.js nutzen zu können.
+
+## FAQ Section
+
+### Wie kann die Architektur beschrieben werden?
+
+- Womit interagiert der Endnutzer
+- Womit interagiert der Endnutzer nicht
+- Wie sind Applikation und Server verbunden
+- Wie sind Server und Daenbank verbunden bzw tauschen Daten aus
+- wie könnte ich eine Grafik mit folgenden Komponenten bauen: Server, Datenbank, Applikation, Sessions, Browser, Endnutzer
+
+### Wie funktionieren Sessions?
+
+- Wo werden wie Sessions verwaltet (bspw. beim Checkout oder Login)?
+- Wie sind die Sessions aufgebaut?
+- Welche Daten werden in welcher Session wie lange gespeichert?
+- Wo werden die Daten genau gespeichert die in einer Session sind, macht das der Browser oder wer sonst?
+
+### Wie genau werden Bilder gespeichert?
+
+- Wie werden die Bilder von .png bzw .jpeg in ein Format umgewandelt was die Datenbank speichert?
+- in welcher Form bekommt der Server die Bilddaten und wie werden diese dann in images gespeichert?
+- wie werden Bilder aus der Datenbank geholt
+- wie erfolgt die Umwandlung vom Format der Datenabank in ein Bild?
+
+### Wie genau funktionieren Hooks?
+
+- Was ist der Sinn von Hooks?
+- Wie genau werden Hooks in diesem Code genutzt?
+
+### Wie funktioniert der Auto-Restart und Circuit Breaker durch Opossum und P2M?
+
+- Was ist der Sinn von den zwei Integrationen?
+- Was macht ein Circuit Breaker von Opossum?
+- Wie genau weiß der Circuit Breaker, dass das backend/frontend grade nicht funktioniert ud startet die apps durch?
+- Wie genau kann p2m oder opossum die apps durchstarten?
+- Was sind die zeitintervalle, in denen P2m und Opossum die App überprüfen, ob sie läuft
+- Wie kann die App dennoch abstürzen?
+
 
 =======
 ## Anhang
