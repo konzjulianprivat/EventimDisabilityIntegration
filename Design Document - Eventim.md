@@ -56,7 +56,6 @@ Die Eventim Disability Integration stellt eine umfassende Lösung zur barrierefr
 - [Nächste Schritte](#nachste-schritte-)
 - [Anhang](#anhang-)
   * [Datenbank-Modell](#datenbank-modell-)
-  * [Versionen eingesetzter Technologien](#versionen-eingesetzter-technologien)
   * [Frameworks](#frameworks-)
 
 <!-- tocstop -->
@@ -246,28 +245,26 @@ Im Folgenden sind die wichtigsten Routen des Express-Servers (siehe `server/serv
 
 | Methode | Pfad | Beschreibung |
 |---------|------|--------------|
-| `POST`  | `/users` | Registrierung eines neuen Nutzers inkl. optionaler Behindertenausweis-Daten |
-| `POST`  | `/sessions` | Benutzeranmeldung, legt Session-Cookie an |
-| `GET`   | `/session` | Prüft, ob ein Nutzer eingeloggt ist und liefert Profilinformationen |
-| `DELETE` | `/session` | Beendet die aktuelle Session |
-| `GET`   | `/users/me/address` | Liefert die hinterlegte Anschrift des eingeloggten Nutzers |
-| `GET`   | `/disability-marks` | Auflistung möglicher Markierungen des Behindertenausweises |
-| `GET`   | `/disability-requests/pending` | Offene Anträge auf Nachteilsausgleich für den Service-Bereich |
-| `PATCH` | `/disability-requests/:id/accepted` | Antrag eines Nutzers akzeptieren |
-| `PATCH` | `/disability-requests/:id/declined` | Antrag eines Nutzers ablehnen |
-| `GET`   | `/artists` | Auflistung aller Künstler |
-| `POST`  | `/artists` | Neuen Künstler anlegen |
-| `GET`   | `/tours/detailed` | Touren inkl. Events und Zugänglichkeitsdaten |
-| `POST`  | `/tours` | Neue Tour anlegen |
-| `GET`   | `/venues/detailed` | Liste aller Veranstaltungsorte mit Areas |
-| `POST`  | `/venues` | Neuen Veranstaltungsort anlegen |
-| `POST`  | `/cart-items` | Ticket zur Warenkorb-Session hinzufügen |
-| `GET`   | `/checkout` | Aktuellen Checkout laden |
-| `POST`  | `/orders` | Bestellung aus abgeschlossenem Checkout erzeugen |
+| `POST`  | `/register-user` | Registrierung eines neuen Nutzers inkl. optionaler Behindertenausweis-Daten |
+| `POST`  | `/login-user` | Benutzeranmeldung, legt Session-Cookie an |
+| `GET`   | `/session-status` | Prüft, ob ein Nutzer eingeloggt ist und liefert Profilinformationen |
+| `POST`  | `/logout` | Beendet die aktuelle Session |
+| `GET`   | `/user-address` | Liefert die hinterlegte Anschrift des eingeloggten Nutzers |
+| `GET`   | `/disability-marks` | Auflistung möglicher Markierungen des Behindertenausweises |
+| `GET`   | `/pending-disability-requests` | Offene Anträge auf Nachteilsausgleich für den Service-Bereich |
+| `POST`  | `/disability-requests/:id/accept` | Antrag eines Nutzers akzeptieren |
+| `POST`  | `/disability-requests/:id/decline` | Antrag eines Nutzers ablehnen |
+| `GET`   | `/artists` | Auflistung aller Künstler |
+| `POST`  | `/create-artist` | Neuen Künstler anlegen |
+| `GET`   | `/tours-detailed` | Touren inkl. Events und Zugänglichkeitsdaten |
+| `POST`  | `/create-tour` | Neue Tour anlegen |
+| `GET`   | `/venues-detailed` | Liste aller Veranstaltungsorte mit Areas |
+| `POST`  | `/create-venue` | Neuen Veranstaltungsort anlegen |
+| `POST`  | `/cart-items` | Ticket zur Warenkorb-Session hinzufügen |
+| `GET`   | `/checkout-items` | Aktuellen Checkout laden |
+| `POST`  | `/orders` | Bestellung aus abgeschlossenem Checkout erzeugen |
 
 Aus Platzgründen wurde auf die Darstellung aller Backend-Routen verzichtet. Weitere Endpunkte finden sich direkt im Quellcode von `server/server.js`.
-
-Die Endpunkte folgen den Best Practices von REST-API-Schnittstellen und halten konsequent Ressourcenorientierung, sprechende URLs sowie eindeutige HTTP-Statuscodes ein. Darüber hinaus wurde bei der Konstruktion der Endpunkte auf eine einheitliche Fehlerbehandlung und eine klare Trennung zwischen Daten- und Geschäftslogik geachtet.
 
 Im Folgenden wird die verwendete Datenbank sowie deren Tabellen betrachtet.
 
@@ -431,9 +428,7 @@ Umgesetzt wird dies durch ein Zusammenspiel aus clientseitigen Guards und server
 
 ### Ausfallsicherheit und Auto-Recovery <a name="ausfallsicherheit-und-auto-recovery"></a>
 
-Im Falle eines Absturz des Backends oder der Datenbank wird dieses durch die Verwendung von `PM2` und `opossum` automatisch neugestartet. Übersteigt die Antwortzeit einer Datenbank-Query den in `opossum` gesetzten Timeout, werden Requests an die Datenbank blockiert. `PM2` startet dann einen neuen Worker, der Timer wird zurückgesetzt und ein neuer Connection-Pool zwischen Datenbank und Backend aufgebaut.
-
-Die Ausfallsicherheit wird durch mehrere Maßnahmen gewährleistet:
+Im Falle eines Absturz des Backends oder der Datenbank wird dieses durch die Verwendung von `PM2` und `opossum` automatisch neugestartet. Übersteigt die Antwortzeit einer Datenbank-Query den in `opossum` gesetzten Timeout, werden Requests an die Datenbank blockiert. `PM2` startet dann einen neuen Worker, der Timer wird zurückgesetzt und ein neuer Connection-Pool zwischen Datenbank und Backend aufgebaut. Die Ausfallsicherheit wird durch folgende Maßnahmen gewährleistet:
 
 - `server/db.js` implementiert einen Circuit-Breaker auf Basis von `opossum`, der bei Datenbankfehlern nach 5 Sekunden einen Reconnect versucht und verhindert, dass wiederholte Fehler das System überlasten
 - `server/server.js` startet erst, wenn eine stabile DB-Verbindung besteht, und führt alle 15 Minuten Aufräumjobs für abgelaufene Sessions durch
@@ -441,7 +436,7 @@ Die Ausfallsicherheit wird durch mehrere Maßnahmen gewährleistet:
 - Periodische Health-Checks alle 10s prüfen die Verbindung zur Datenbank und lösen bei Bedarf einen kontrollierten Neustart aus
 - Ungefangene Exceptions werden zentral protokolliert und führen zu einem geordneten Exit-Code, damit PM2 sofort einen neuen Prozess starten kann
 
-Diese Architektur gewährleistet, dass temporäre Datenbankausfälle oder Speicherprobleme die Anwendungsverfügbarkeit nur minimal beeinträchtigen und das System selbstständig in einen funktionsfähigen Zustand zurückkehrt.
+Diese Architektur gewährleistet, dass temporäre Datenbankausfälle odie Anwendungsverfügbarkeit nur minimal beeinträchtigen und das System selbstständig neustartet.
 
 <div class="pagebreak"></div>
 
@@ -693,9 +688,9 @@ In unserem Fall konzentrieren sich die User-Tests auf folgende Aspekte:
 
 Die Tests simulieren reale Nutzungsszenarien und prüfen, ob das System wie erwartet reagiert, besonders in Grenzsituationen wie dem Versuch, mehr Tickets zu kaufen als verfügbar sind oder Daten zu löschen, die noch in Verwendung sind.
 
-![User-Testfälle](./pictures/test_cases.png)
-
 Als Normalnutzer wurde zunächst versucht, durch direkte Eingabe der URL „/admin/<unterseite>“ auf den Admin-Bereich zuzugreifen (TC01). Das System leitete jedoch konsequent auf die Anmeldeseite um. Anschließend folgte eine Reihe von Löschtests: Beim Versuch, eine Stadt zu entfernen, in der bereits ein Event existiert (TC02), erschien ein Popup mit dem Hinweis, dass das Löschen fehlschlug, weil Städte dieses Landes in einem Stadion verwendet werden. Gleiches geschah beim Löschen einer Venue mit bestehendem Event (TC03); hier meldete das System, die Venue könne nicht entfernt werden, da Tickets für Events existieren. Auch das Löschen eines Landes, in dem Events stattfinden (TC04), wurde mit einem entsprechenden Fehler-Popup verhindert, das erneut auf verwendete Städte verwies.
+
+![User-Testfälle](./pictures/test_cases.png)
 
 Der Versuch, einen Nutzer direkt über die Benutzeroberfläche zu löschen, obwohl noch Buchungen für zukünftige Veranstaltungen bestehen (TC05), scheiterte ebenfalls: Unterhalb der Darstellung erschien der Text, das Konto könne nicht gelöscht werden, solange Tickets für noch nicht stattgefundene Events vorhanden sind. Ein Event mit bereits verkauften Tickets zu löschen (TC06) war gar nicht erst vorgesehen – die Option existierte schlicht nicht; dasselbe galt für das Entfernen einer Tour, die Events mit verkauften Tickets enthält (TC07). Artists ließen sich generell nicht löschen (TC08). Beim Versuch, ein Genre zu entfernen, für das bereits Tickets eines Events existieren (TC09), zeigte das System ein Popup, das einen Fehler beim Löschen meldete und als mögliche Ursache eine Tour-Verknüpfung nannte. Identisch verhielt es sich beim Sub-Genre (TC10): Auch hier verhinderte ein Fehlerhinweis das Löschen und verwies auf eine mögliche Verbindung zu einer Tour.
 
@@ -769,6 +764,8 @@ Das Grundgerüst funktioniert lokal stabil: Registrierung, Login, Rollenverwaltu
 
 Die Session-Verwaltung und die Eingabevalidierung sollten prioritär angegangen werden, da sie die Stabilität und Sicherheit der Anwendung direkt beeinflussen.
 
+<div class="pagebreak"></div>
+
 ## Anhang <a name="appendix"></a>
 
 ### Datenbank-Modell <div class="datenbank-modell"></div>
@@ -803,7 +800,7 @@ Die Session-Verwaltung und die Eingabevalidierung sollten prioritär angegangen 
 | **disability_marks** | Mögliche Merkmale auf Behindertenausweisen. | `areas` via `area_id` |
 | **user_disability_marks** | Zuordnung User ↔ Marks. | `users`, `disability_marks` |
 
-### Versionen eingesetzter Technologien
+<div class="pagebreak"></div>
 
 ### Frameworks <div class="frameworks"></div>
 
@@ -812,6 +809,8 @@ Die Session-Verwaltung und die Eingabevalidierung sollten prioritär angegangen 
 | `@types/node` | 22.15.21 |
 | `@types/react` | 19.1.5 |
 | `concurrently` | ^9.1.2 |
+
+<div class="pagebreak"></div>
 
 #### Libraries/Packages
 

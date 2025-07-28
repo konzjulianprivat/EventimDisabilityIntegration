@@ -21,7 +21,7 @@ body {
   flex-direction: column;
   justify-content: center;
   align-items: center;
-  height: 95vh;                /* fill the page */
+  height: 100vh;                /* fill the page */
   background-color: #FFD300;    /* match PDF yellow */
   color: #000;
   page-break-after: always;
