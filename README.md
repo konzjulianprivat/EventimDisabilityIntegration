@@ -2,8 +2,8 @@
 
 <div class="title-page">
   <h1>Eventim Disability Integration</h1>
-  <p><em>Barrierefreie Abwicklung von Ticketbestellungen &amp; Nachteilsausgleichsanträgen</em></p>
-  <p><em>Version 1.0 – 23. Juli 2025</em></p>
+  <p><em>Barrierefreie Abwicklung von Ticketbestellungen &amp; Nachteilsausgleichsanträgen der Evebtim-Webseite</em></p>
+  <p><em>Version 1.0 – 29. Juli 2025</em></p>
 </div>
 
 <div class="pagebreak"></div>
@@ -16,54 +16,68 @@ Dieses Repository enthält eine Next.js Anwendung samt Express Backend, mit der 
 
 <!-- toc -->
 
-- [Einleitung (Soheil)](#einleitung-soheil)
+- [Einleitung](#einleitung)
   * [Projekthintergrund und Motivation](#projekthintergrund-und-motivation)
-  * [Aktuelle Herausforderungen:](#aktuelle-herausforderungen)
-  * [Gesellschaftlicher und rechtlicher Kontex:](#gesellschaftlicher-und-rechtlicher-kontext)
+  * [Aktuelle Herausforderungen](#aktuelle-herausforderungen)
+  * [Gesellschaftlicher und rechtlicher Kontext](#gesellschaftlicher-und-rechtlicher-kontext)
 - [Projektvision und Zielsetzung](#projektvision-und-zielsetzung)
+  * [Kernfunktionalitäten](#kernfunktionalitäten)
   * [Ziele](#ziele)
   * [Zielgruppen und Stakeholder](#zielgruppen-und-stakeholder)
   * [Interne Stakeholder](#interne-stakeholder)
-- [Projektübersicht (Soheil)](#projektubersicht-soheil)
+- [Projektübersicht](#projektubersicht)
 - [Setup](#setup)
-- [Projektstruktur](#projektstruktur)
+  * [Installations-Guide](#installations-guide)
+  * [Login-Daten](#login-daten)
 - [Architektur und eingesetzte Technologien](#architektur-und-eingesetzte-technologien)
+  * [Ordnerstruktur](#ordnerstruktur)
   * [Frontend](#frontend)
   * [Backend](#backend)
   * [Datenbank](#datenbank)
-  * [Komponenten und Hooks](#komponenten-und-hooks)
+  * [Verwendete Technologien](#verwendete-technologien)
+  * [Sessions](#sessions)
 - [Security & Fault Tolerance](#security--fault-tolerance)
-  * [Rollen und Fähigkeiten](#rollen-und-fahigkeiten)
-  * [Fehlertoleranz des Backends](#fehlertoleranz-des-backends)
+  * [Rollen und Zugriffsberechtigungen](#rollen-und-zugriffsberechtigungen)
+  * [Doppelte Validierung zwischen Front- und Backend bei CRUD-Operations](#doppelte-validierung-zwischen-front--und-backend-bei-crud-operations)
+  * [Ausfallsicherheit & Auto-Recovery](#ausfallsicherheit--auto-recovery)
 - [Testkonzept](#testkonzept)
   * [User-Tests](#user-tests)
-- [Nächste Schritte](#nachste-schritte)
+  * [Backend-Tests](#backend-tests)
+- [Nächste Schritte](#nächste-schritte)
 - [Anhang](#anhang)
+  * [FAQ Section](#faq-section)
   * [Datenbank-Modell](#datenbank-modell)
+  * [Versionen eingesetzter Technologien](#versionen-eingesetzter-technologien)
+  * [Workflows](#workflows)
+
+<div class="pagebreak"></div>
 
 <!-- tocstop -->
 
-## Einleitung (Soheil)
+## Einleitung <a name="einleitung"></a>
 
-### Projekthintergrund und Motivation
+### Projekthintergrund und Motivation <a name="projekthintergrund-und-motivation"></a>
 
 Die Eventim-Plattform ist eine der führenden Ticketing-Lösungen im deutschsprachigen Raum und verarbeitet jährlich Millionen von Ticket-Transaktionen für Konzerte, Festivals, Theater und Sportveranstaltungen. Trotz dieser marktführenden Position existiert eine bedeutende Lücke in der Barrierefreiheit und digitalen Inklusion für Menschen mit Behinderungen.
 
-### Aktuelle Herausforderungen:
-
-- Menschen mit Schwerbehindertenausweis müssen ihre Tickets derzeit telefonisch buchen
-- Nachteilsausgleiche (reduzierte Preise, kostenfreie Begleitpersonen) werden nicht automatisch angewendet
-- Keine digitale Verifizierung von Behindertenausweisen möglich
-- Manuelle Bearbeitung führt zu langen Wartezeiten und Fehlerquellen
-- Schlechte User Experience für eine vulnerable Zielgruppe
-
-### Gesellschaftlicher und rechtlicher Kontext:
 
 In Deutschland leben etwa 7,9 Millionen Menschen mit einer anerkannten Schwerbehinderung (Stand 2021). Diese Personengruppe hat nach dem Sozialgesetzbuch IX (SGB IX) und verschiedenen Landesgesetzen Anspruch auf Nachteilsausgleiche bei kulturellen Veranstaltungen. Die EU-Richtlinie zur Barrierefreiheit (European Accessibility Act) verpflichtet zudem bis 2025 zur digitalen Barrierefreiheit von Ticketing-Systemen.
 
 ## Projektvision und Zielsetzung
 
 Vision: "Eventim wird zur ersten vollständig inklusiven Ticketing-Plattform, die Menschen mit Behinderungen den gleichen komfortablen, digitalen Zugang zu kulturellen Erlebnissen ermöglicht wie allen anderen Nutzern."
+
+### Kernfunktionalitäten
+
+- **Behindertenausweis-Verifizierung**
+  - Zwei Einstiegspunkte
+    - Registrierung eines neuen Benutzerkontos
+    - Nachträgliche Beantragung über `/profile` möglich
+  - Upload-Interface für Vorder- und Rückseite des Schwerbehindertenausweises
+
+- **Automatisierte Nachteilsausgleiche**
+  - Dynamische Darstellung von zusätzlichen Kategorien abhängig von Event und Venue, welche nur für diese Nutzergruppe buchbar sind und einen reduzierten Preis haben
+  - Automatische Zubuchung eines kostenfreien Begleitpersonen-Tickets bei Buchung mit Merkzeichen "B" (Begleitperson) im Schwerbehindertenausweis
 
 ### Ziele
 
@@ -108,90 +122,81 @@ Vision: "Eventim wird zur ersten vollständig inklusiven Ticketing-Plattform, di
 - Bedürfnisse: Einfache Konfiguration von barrierefreien Bereichen
 - Erfolgsmetriken: Reduzierte Setup-Zeit für neue Events
 
-## Projektübersicht (Soheil)
-
-Das Eventim Disability Integration System ist eine umfassende Erweiterung der bestehenden Ticketing-Plattform, die Menschen mit Behinderungen vollständige digitale Autonomie beim Ticket-Kauf ermöglicht. Das System integriert sich nahtlos in die bestehende Eventim-Architektur und erweitert diese um spezialisierte Funktionen für Barrierefreiheit und Nachteilsausgleiche.
-
-Kernfunktionalitäten:
-
-- **Intelligente Behindertenausweis-Verifizierung**
-  - Upload-Interface für Vorder- und Rückseite des Schwerbehindertenausweises
-  - OCR-basierte automatische Datenextraktion (Grad, Merkzeichen, Gültigkeit)
-  - Manuelle Nachbearbeitung durch geschulte Service-Mitarbeiter
-  - Echtzeit-Validierung gegen bekannte Ausweis-Muster
-
-- **Automatisierte Nachteilsausgleiche**
-  - Dynamische Preisanpassungen basierend auf Behinderungsgrad und Merkzeichen
-  - Automatische Begleitpersonen-Integration für B-Merkzeichen-Inhaber
-  - Priorisierte Anzeige barrierefreier Sitzplätze und Bereiche
-  - Transparente Darstellung aller Vergünstigungen im Checkout
-
 ## Setup
+
+### Installations-Guide
 
 1. **Repository klonen** und in das Projekt wechseln:
 
-   ```bash
-   git clone <repo-url>
-   cd EventimDisabilityIntegration/eventim-disability-integration
-   ```
+```bash
+git clone <repo-url>
+cd EventimDisabilityIntegration/eventim-disability-integration
+```
 
 2. **Abhängigkeiten installieren**:
 
-   ```bash
-   npm install
-   ```
+```bash
+npm install
+```
 
 3. **Datenbankzugang konfigurieren**:
 
    Legen Sie im Verzeichnis `server` eine Datei `credentials.json` an. Beispiel:
-   ```json
-   {
-      "host": "152.53.119.113",
-      "port": 5433,
-      "user": "postgres",
-      "password": "example",
-      "database": "db1",
-      "sessionSecret": "example-secret"
-   }
-   ```
+```json 
+{
+  "host": "152.53.119.113",
+  "port": 5433,
+  "user": "postgres",
+  "password": "example",
+  "database": "db1",
+  "sessionSecret": "example-secret"
+}
+``` 
 
 4. **Entwicklungsumgebung starten**:
 
-   ```bash
-   npm run dev
-   ```
-   Damit starten sowohl das Next.js Frontend auf [http://localhost:3000](http://localhost:3000), das Backend unter [http://localhost:4000](http://localhost:4000) sowie P2M zur Überwachung der Datenbank- und Backendverbindung.
+```bash
+npm run dev
+```
 
-<a name="projektstruktur"></a>
-
-## Projektstruktur
-
-Der gesamte Quellcode liegt im Unterordner `eventim-disability-integration`. Nachfolgende Tabelle bietet einen schnellen Überblick über die wichtigsten Verzeichnisse:
-
-| Pfad | Inhalt |
-|------|-------|
-| `src/pages/` | Sämtliche Next.js Seiten. Unterordner wie `admin/` oder `artists/` bilden dynamische Routen ab. |
-| `src/components/` | Wiederverwendbare UI-Bausteine (Modals, Navigationsleisten, Karten usw.) |
-| `src/hooks/` | Custom Hooks wie `useAuth` oder `useCart`, die zentrale Logik kapseln |
-| `src/__tests__/` | Kleine Jest-Tests zur Absicherung wichtiger Backend-Funktionen |
-| `server/` | Express‑Backend (`server.js`), DB-Anbindung (`db.js`), `backup_script.sql` und PM2-Konfiguration |
-| `public/` | Statische Dateien, die unverändert von Next.js bereitgestellt werden |
-
-In der Repository-Wurzel befinden sich zudem `diagrams/` und `pictures/` mit den PlantUML‑Quellen und exportierten SVG-Grafiken des Designs.
+Damit starten sowohl das Next.js Frontend auf [http://localhost:3000](http://localhost:3000), das Backend unter [http://localhost:4000](http://localhost:4000) sowie P2M zur Überwachung der Datenbank- und Backendverbindung.
 
 <a name="technologien"></a>
+
+### Login-Daten
+
+Im Zuge der Bewertung der Webseite bleibt es Ihnen offen, ob Sie sich selbst einen/mehrere eigene Accounts anlegen wollen oder ob sie bereits vordefinierte Accounts nutzen wollen. Folgende User wurden bereits gestellt und können genutzt werden:
+
+| Rolle | E-Mail | Passwort |
+| ----- | ------ | -------- |
+| `USER` | testUser1@test.de | testUser1@test.de |
+| `SERVICE` | testService1@test.de | testService1@test.de |
+| `ADMIN` | testAdmin1@test.de | testAdmin1@test.de |
 
 ## Architektur und eingesetzte Technologien
 
 Die Anwendung besteht aus einem [Next.js](https://nextjs.org/) Frontend und einem [Express](https://expressjs.com/) Backend. Als Datenbank kommt [PostgreSQL](https://www.postgresql.org/) zum Einsatz. Die Wahl fiel auf diese Kombination, da sie leichtgewichtig, gut erweiterbar und auch ohne großen Konfigurationsaufwand lokal ausführbar ist. Next.js liefert die React basierte Oberfläche und kann sowohl statische Seiten als auch serverseitig gerenderte Inhalte bereitstellen. Express dient als schlanker REST‑API Server, der über die `server`‑Ordnerstruktur umgesetzt ist. Die Kommunikation zwischen Frontend und Backend erfolgt ausschließlich über JSON‑basierte HTTP‑Aufrufe.
 
+### Ordnerstruktur
+
+Der gesamte Quellcode liegt im Ordner `eventim-disability-integration`. Die nachfolgende Tabelle bietet einen schnellen Überblick über alle relevanten Verzeichnisse:
+
+| Pfad | Inhalt |
+|------|-------|
+| `src/pages/` | Sämtliche Next.js Seiten in `*.jsx`-Dateien. Unterordner wie `admin/` oder `artists/` bilden dynamische Routen ab und strukturieren den Code in für den Endnutzer intuitive Pfade |
+| `src/components/` | Wiederverwendbare UI-Bausteine (Modals, Navigationsleisten, Karten usw.) |
+| `src/hooks/` | Custom Hooks wie `useAuth` oder `useCart`, die zentrale Logik kapseln, welche auf mehreren Seiten/in mehreren Komponenten benötigt wird|
+| `src/__tests__/` | Jest-Tests zur automatisierten Durchführung von  Backend-Tests zur Sicherstellung der Verfügbarkeit aller REST-API-Endpunkte |
+| `server/` | Express‑Backend (`server.js`), DB-Anbindung (`db.js`), `backup_script.sql` und PM2-Konfiguration |
+| `public/` | Statische Dateien, die unverändert von Next.js bereitgestellt werden (bspw. Icons, Logos usw.)|
+
 <a name="frontend"></a>
 
 ### Frontend
 
-Im Frontend der Applikation wurde Next.js in Kombination mit React eingesetzt, weil diese Lösung serverseitiges Rendering ermöglicht und eine klare Komponentenstruktur vorgibt. Im Gegensatz zu einer klassischen Client-only-Umsetzung mit Create React App profitieren wir so von besseren Ladezeiten und SEO.
+Das Frontend einer Applikation ist die sichtbare Benutzeroberfläche (UI), über die Anwender mit den Funktionen und Daten der Anwendung arbeiten. Es ist aufgeteilt in Seiten (Pages) unter `/pages`, welche sich in Darstellung, Daten und Funktionalität unterscheiden. Nutzer können über das Frontend Abläufe der APplikationslogik starten, welche über das Backend und den Browser dynamisch Daten abrufen, sichern oder manipulieren.
 
-Alternative Umsetzungen wären etwa mit Vue.js/Nuxt oder Angular möglich gewesen, jedoch besitzt das Team bereits umfangreiche Erfahrung mit React, was die Wartung vereinfacht.
+Im Frontend der Applikation wurde Next.js in Kombination mit React eingesetzt, weil diese Lösung serverseitiges Rendering ermöglicht und eine klare Komponentenstruktur vorgibt. Alternative Umsetzungen wären etwa mit Vue.js/Nuxt oder Angular möglich gewesen, jedoch besitzt das Team bereits umfangreiche Erfahrung mit React, was die Wartung vereinfacht.
 
 #### Seitenübersicht
 
@@ -200,25 +205,31 @@ Die Next.js Anwendung befindet sich unter `src/pages` und nutzt dynamische Route
 | Pfad | Zweck / Inhalte |
 |------|----------------|
 | `/` | Startseite mit Highlights sowie Künstler- und Tourübersicht |
-| `/artists/[artist]` | Detailseite eines Künstlers und Übersicht zugehöriger Touren |
-| `/artists/[artist]/[tour]` | Informationen und Events einer Tour |
-| `/artists/[artist]/[tour]/[event]` | Detailseite eines Events mit Buchungsoption |
-| `/registration` | Formular zur Kontoerstellung und Erfassung optionaler Behindertenausweis-Daten |
-| `/login` | Anmelden bzw. Schnellanmeldung inkl. Passwort-Reset |
-| `/profile` | Persönliche Daten, Bestellungen und eigene Events verwalten |
-| `/checkout` | Mehrstufiger Bestellprozess (Versanddaten, Zahlung, Abschluss) |
+| `/artists/[artist]` | Detailseite eines Künstlers und Übersicht zugehöriger aktiver Touren und deren Events |
+| `/artists/[artist]/[tour]` | Übersicht aller Events einer ausgewählten Tour inkl. Verfügbarkeit von Tickets und Information über verfügbare barrierefreie Kategorien |
+| `/artists/[artist]/[tour]/[event]` | Detailseite eines Events, verfügbarer Kategorien sowie die Möglichkeit, Tickets in den Warenkorb zu legen |
+| `/registration` | Formular zur Kontoerstellung und Beantragung eines Nachteilsausgleichs mit Erstellung des Nutzerkontos |
+| `/login` | Anmeldungsseite |
+| `/profile` | Übersicht über gebuchte Events, getätigte Bestellungen, Verwaltung persönlicher Daten sowie einer FAQ-Section. Falls der Nutzer noch keinen Nachteilsausgleich beantragt hat kann dieser das hier tun oder den Status seines Antrags einsehen |
+| `/checkout` | Mehrstufiger Bestellprozess (Versanddaten, Zahlung, Abschluss) zur Buchung von Tickets |
 | `/admin` | Einstieg in alle Admin-Unterseiten zur Pflege von Künstlern, Ländern, Genres, Touren und Veranstaltungsorten |
-| `/service` | Zugriffspunkt für Service-Mitarbeiter (u.a. Nachteilsausgleichsanträge und Account-Management) |
+| `/service` | Zugriffspunkt für Service-Mitarbeiter (u.a. Nachteilsausgleichsanträge und Account-Management) zur Verwaltung von Nachteilsausgleichanträgen und Nutzerdaten zum Nachgang der telefonischen Servicetätigkeiten |
 
 Alle Seiten unter `/admin/*` und `/service/*` setzen entsprechende Berechtigungen voraus und sind nur Admin- bzw. Servicemitarbeitern gestattet. Falls ein Nutzer, welcher entweder nicht angemeldet ist oder nicht die notwendigen Berechtigungen besitzt auf diese Webseite geht, so wird dieser auf die Homepage zurückgewiesen.
+
+Die Möglichkeit, einen Nachteilsausgleich als schwerbehinderte Person zu beantragen ist sowohl bei der Registrierung als auch nachträglich im Benutzerprofil möglich. Die Buchung von Tickets mit Nachteilsausgleich erfolgt über genannte Routen zur Buchung von Tickets und beinhaltet weitere Kategorien spoezifisch für schwerbehinderte Nutzer, welche nur Nutzer buchen können mit validierten Schwerbehindertenstatus durch einen Service-Nutzer.
+
+Im Folgenden wird das Backend der Applikation beschrieben.
 
 <a name="backend"></a>
 
 ### Backend
 
-Im Backend der Applikation wurde Express als leichtgewichtiges Framework eingesetzt, da es eine minimalistische Struktur besitzt und Middleware sehr flexibel eingebunden werden kann. Im Gegensatz zu komplexeren Lösungen wie NestJS ermöglicht Express einen schnellen Einstieg und volle Kontrolle über den Request-Flow.
+Das Backend ist die serverseitige Schicht, die HTTP‑Anfragen des Frontends entgegennimmt, über die Applikationslogik verarbeitet und anschließend auf die Datenbank zugreift, um Daten zu speichern oder abzurufen. Es stellt sogenannte Endpunkte zur Verfügung, mit denen die Applikationslogik über HTTP‑Methoden (GET, POST, PUT, DELETE) angesprochen wird, um CRUD‑Operationen auf den Daten auszuführen und diese in der Datenbank festzuhalten. Die Applikation nutzt einen lokal laufenden Server, der über das Skript `server/server.js` gestartet wird und unter http://localhost:4000/ erreichbar ist.
 
-Alternative Umsetzungen wären mit NestJS oder Fastify möglich gewesen, doch Express ist in der Node.js-Community weit verbreitet und dementsprechend ausgezeichnet dokumentiert.
+Im Backend der Applikation wurde Express als leichtgewichtiges Framework eingesetzt, da es eine minimalistische Struktur besitzt und Middleware sehr flexibel eingebunden werden kann. Im Gegensatz zu komplexeren Lösungen wie NestJS ermöglicht Express einen schnellen Einstieg und volle Kontrolle über den Request-Flow. Alternative Umsetzungen wären mit NestJS oder Fastify möglich gewesen, doch Express ist in der Node.js-Community weit verbreitet und dementsprechend ausgezeichnet dokumentiert.
+
+#### REST-Endpunkte
 
 Im Folgenden sind die wichtigsten Routen des Express-Servers (siehe `server/server.js`) aufgeführt:
 
@@ -243,11 +254,45 @@ Im Folgenden sind die wichtigsten Routen des Express-Servers (siehe `server/serv
 | `GET`   | `/checkout` | Aktuellen Checkout laden |
 | `POST`  | `/orders` | Bestellung aus abgeschlossenem Checkout erzeugen |
 
-Dies ist nur ein Auszug. Weitere Endpunkte finden sich direkt im Quellcode von `server/server.js`.
+Aus Platzgründen wurde auf die Darstellung aller Backend-Routen verzichtet. Weitere Endpunkte finden sich direkt im Quellcode von `server/server.js`.
 
 Die Endpunkte folgen den Best Practices von REST-API-Schnittstellen und halten konsequent Ressourcenorientierung, sprechende URLs sowie eindeutige HTTP-Statuscodes ein. Darüber hinaus wurde bei der Konstruktion der Endpunkte auf eine einheitliche Fehlerbehandlung und eine klare Trennung zwischen Daten- und Geschäftslogik geachtet.
 
-### Technologie‑Übersicht
+Im Folgenden wird die verwendete Datenbank sowie deren Tabellen betrachtet.
+
+<a name="datenbank"></a>
+
+### Datenbank
+
+Eine Datenbank ist eine Anwendung, die Daten anhand eines vordefinierten Schemas organisiert, dauerhaft ablegt und über standardisierte Schnittstellen abfragbar macht. Realisiert werden diese Abfragen mittels einer Library
+
+Die eingesetzte Datenbank basiert auf PostgreSQL und wurde einmalig über `server/backup_script.sql` erstellt. Enthalten sind Tabellen für Benutzer, Rollen, Künstler, Touren, Events, Veranstaltungsorte sowie Tabellen zur Abwicklung von Bestellungen und zur Speicherung von Disability-Merkmalen. Hierbei wurde darauf geachtet, dass alle Metadaten ebenfalls in der Datenbank angepasst werden können, somit flexibel angepasst und erweitert werden können.
+
+Es wurde sich für eine PostgreSQL Datenbank entschieden, da diese ACID-konforme Transaktionen sowie eine ausgereifte Query-Engine bietet und gleichzeitig JSON-Datenstrukturen unterstützt. Alternativen wie MySQL oder MongoDB wurden geprüft, jedoch erschien PostgreSQL aufgrund der breiten Community-Unterstützung und der stabilen Erweiterbarkeit am sinnvollsten.
+
+Über das `pg`-Modul von PostgreSQL wird zwischen Backend und Datenbank ein Connection-Pool aufgebaut, welcher eine effiziente Verwaltung von Datenbankverbindungen ermöglicht. Diese Technik reduziert den Overhead beim Öffnen und Schließen von Verbindungen erheblich und verbessert dadurch die Performance des Systems. Der Pool wird beim Start des Servers initialisiert und bleibt während der gesamten Laufzeit bestehen.
+
+Die Kommunikation erfolgt über parametrisierte SQL-Queries, die vor SQL-Injection-Angriffen schützen. Sollte die Datenbankverbindung unterbrochen werden, versucht der in `server/db.js` implementierte Circuit-Breaker automatisch, den Pool neu zu initialisieren. Diese Architektur gewährleistet eine robuste und ausfallsichere Datenpersistenz für alle Transaktionen der Anwendung.
+
+Im Folgenden ein Überblick über die wichtigsten Datenbanktabellen und ihre Beziehungen zueinander.
+
+#### Datenbanktabellen
+
+![Datenbank-Schema](./pictures/ERM_database.svg)
+
+Zu sehen sind alle verwendeten Datenbanktabellen sowie ihre Beziehungen zueinander. Die Datenbank liegt normiert in 3. Normalform vor, um Redundanzen in Daten und Abhängigkeiten sowie Anomalien vorzubeugen. Zur Sicherstellung von Datenintegrität kann jedes Element jeder Tabelle mittels seiner eindeutigen V4-UUID identifiziert werden. Fremdschlüsselbeziehungen
+
+Für einfache Lookups existieren diverse Join‑Tabellen (z. B. `tour_genres`). Bei der Konstruktion des Datenbankmodells wurde stets darauf geachtet, dass die Datenbank in dritter Normalform vorliegt, somit Anomalien durch Löschen oder Anpassungen von Daten weitesgehend midigiert werden können.
+
+Eine detaillierte Ansicht aller Tabellen, eine zugehörige Beschreibung sowie ihre Zusammenhänge zueinander befindet sich im Anhang.
+
+Im Folgenden werden weitere Technologien beschrieben, welche als Runtime / Framework / Library in den Code der Applikation eingebunden wurden.
+
+<a name="komponenten-hooks"></a>
+
+## Verwendete Technologien
+
+### Frameworks & Libraries
 
 Neben den eingesetzten Frameworks wurden in diesem Projekt mehrere Libraries eingebunden, welche im Folgenden aufgelistet werden.
 
@@ -260,71 +305,24 @@ Neben den eingesetzten Frameworks wurden in diesem Projekt mehrere Libraries ein
 | **PostgreSQL** | Datenbank | Persistente Speicherung aller Daten |
 | **pg** | Library | Zugriff auf PostgreSQL im Backend |
 | **bcrypt** | Library | Hashing von Passwörtern |
-| **multer** | Library | Datei‑Uploads in die Datenbank |
+| **multer** | Library | Verarbeiten von Datei‑Uploads (multipart/form-data) im Server zur Speicherung in der DB |
 | **react-router-dom** | Library | Clientseitige Navigation |
 | **react-toastify** | Library | Anzeigen von Toast‑Benachrichtigungen |
-| **opossum** | Library | Circuit‑Breaker für Fehlerbehandlung |
-| **PM2** | Tool | Prozessmanager für den Server |
+| **opossum** | Library | Circuit‑Breaker für Fehlerbehandlung und automatisierte Neustarts |
+| **PM2** | Tool | Prozessmanager für den Server zur Absicherung der Applikation gegenüber Störungen |
 | **nodemon** | Tool | Automatischer Neustart im Entwicklungsmodus |
-| **uuid** | Library | Erzeugen eindeutiger IDs |
-| **Testing Library / Jest** | Testframeworks | Frontend‑Tests |
+| **uuid** | Library | Erzeugen eindeutiger V4 UUIDs |
+| **Testing Library / Jest** | Testframeworks | Unit‑ und Integrationstests für Frontend (und bei Bedarf Backend) |
 
 Es wurde insbesondere `react-toastify` genutzt, um auf der Seite ein konsistentes Benachrichtigungssystem umzusetzen. Darüber hinaus sorgen `opossum` und `PM2` für eine resiliente Fehlerbehandlung im Backend und einen stabilen Betrieb.
 
-<a name="datenbank"></a>
-
-### Datenbank
-
-![Datenbank-Schema](./pictures/ERM_database.png)
-
-Die Datenbank basiert auf PostgreSQL und wurde einmalig über `server/backup_script.sql` erstellt. Enthalten sind Tabellen für Benutzer, Rollen, Künstler, Touren, Events, Veranstaltungsorte sowie Tabellen zur Abwicklung von Bestellungen und zur Speicherung von Disability-Merkmalen. Hierbei wurde darauf geachtet, dass alle Metadaten ebenfalls in der Datenbank angepasst werden können, somit flexibel angepasst und erweitert werden können.
-
-Es wurde sich für eine PostgreSQL Datenbank entschieden, da diese ACID-konforme Transaktionen sowie eine ausgereifte Query-Engine bietet und gleichzeitig JSON-Datenstrukturen unterstützt. Alternativen wie MySQL oder MongoDB wurden geprüft, jedoch erschien PostgreSQL aufgrund der breiten Community-Unterstützung und der stabilen Erweiterbarkeit am sinnvollsten.
-
-#### Übersicht der Datenbanktabellen
-Nachfolgend eine kurze Beschreibung jeder Tabelle und ihrer Beziehungen.
-
-| Tabelle | Zweck / wichtige Spalten | Abhängigkeiten |
-|---------|--------------------------|---------------|
-| **countries** | Länder mit ISO‑Code. | – |
-| **cities** | Städte innerhalb eines Landes. | `countries` via `country_id` |
-| **user_roles** | Definiert Rechte einer Rolle. | – |
-| **users** | Registrierte Personen samt Adresse und optionalen Disability‑Angaben. | `user_roles` via `role` |
-| **artists** | Künstlerinformationen. | – |
-| **genres** / **subgenres** | Klassifikation von Touren. | `genres` via `genre_id` |
-| **tours** | Übergeordnete Tour einer Reihe von Events. | – |
-| **tour_artists** | Zuordnung Künstler ↔ Tour. | `artists`, `tours` |
-| **tour_genres** / **tour_subgenres** | Genre‑Verknüpfungen einer Tour. | `tours`, `genres`/`subgenres` |
-| **venues** | Veranstaltungsorte. | `cities` via `city_id` |
-| **areas** | Sitzplatz‑ bzw. Zugänglichkeitsbereiche. | – |
-| **venue_areas** | Bereiche innerhalb eines Venues. | `venues`, `areas` |
-| **events** | Konkrete Veranstaltungstermine. | `tours`, `venues` |
-| **event_categories** | Ticket‑Kategorien (Preis, Support für Behinderte). | `events` via `event_id` |
-| **event_supporting_acts** | Support‑Acts eines Events. | `events`, `artists` |
-| **event_venue_areas** | Zuordnung Event ↔ Bereich mit Kapazität. | `events`, `venue_areas`, `event_categories` |
-| **images** | Speicherung von hochgeladenen Bildern. | Beliebige Entität über `entity_type`/`entity_id` |
-| **carts** | Aktiver Warenkorb eines Nutzers. | `users` |
-| **cart_items** | Einzelne Artikel im Warenkorb. | `carts`, `events`, `event_categories` |
-| **checkouts** | Zwischenschritt zwischen Warenkorb und Bestellung. | `users` |
-| **checkout_items** | Positionen des Checkouts inkl. Preis. | `checkouts`, `events`, `event_categories` |
-| **payment_options** / **shipping_options** | Stammdaten für Zahlungs‑ und Versandarten. | – |
-| **orders** | Abgeschlossene Bestellungen. | `users`, `payment_options` |
-| **tickets** | Konkrete Ticketdatensätze. | `orders`, `event_categories` |
-| **order_tickets** | Relation zwischen Order und Ticket (1‑n). | `orders`, `tickets` |
-| **disability_marks** | Mögliche Merkmale auf Behindertenausweisen. | `areas` via `area_id` |
-| **user_disability_marks** | Zuordnung User ↔ Marks. | `users`, `disability_marks` |
-
-Die Fremdschlüssel schützen vor inkonsistenten Daten. Viele Tabellen nutzen UUIDs als Primärschlüssel. Preise werden als `NUMERIC(10,2)` gespeichert, was zwei Nachkommastellen erlaubt. Für einfache Lookups existieren diverse Join‑Tabellen (z. B. `tour_genres`). Bei der Konstruktion des Datenbankmodells wurde stets darauf geachtet, dass die Datenbank in dritter Normalform vorliegt, somit Anomalien durch Löschen oder Anpassungen von Daten weitesgehend midigiert werden können.
-
-<a name="komponenten-hooks"></a>
-
-### Komponenten und Hooks
+### 
 
 Eine Komponente im Kontext dieser Arbeit ist ein kapselbarer UI-Baustein auf React-Basis, wohingegen ein Hook wiederverwendbare Logik wie Zustandsverwaltung oder Seiteneffekte abbildet. Beide Konzepte eignen sich dazu, komplexe Abläufe zu abstrahieren und die Wiederverwendbarkeit des Codes signifikant zu erhöhen.
 
-Der Quellcode unter `src` gliedert sich in wiederverwendbare React‑Komponenten und mehrere Custom Hooks:
+Der Quellcode unter `src` gliedert sich in wiederverwendbare React‑Komponenten und mehrere Custom Hooks, welche auf mehreren Seiten implementiert wuden
 
-**Komponenten** (Auswahl)
+#### Komponenten
 
 | Datei | Einsatz |
 |-------|--------|
@@ -335,7 +333,9 @@ Der Quellcode unter `src` gliedert sich in wiederverwendbare React‑Komponenten
 | `DeleteAccountModal.jsx` | Bestätigungsdialog zum Löschen des Accounts |
 | `smallArtistCard.jsx` / `smallTourCard.jsx` | Vorschaukarten auf der Startseite |
 
-**Hooks**
+Die Komponenten sind so aufgebaut, dass sie in verschiedenen Seiten wiederverwendet werden können. Jede Komponente wurde nach dem Prinzip der Single Responsibility entwickelt und nutzt Props für die Datenweitergabe. Beispielsweise rendert `smallArtistCard.jsx` einen Künstler in verschiedenen Kontexten (Startseite, Suche, Verwaltung) mit konsistenter Darstellung aber unterschiedlichen Callback-Funktionen. Die Komponenten implementieren zudem das React-Memoization-Pattern, wodurch unnötige Re-Renderings vermieden und die Performance optimiert wird.
+
+#### Hooks
 
 | Hook | Zweck |
 |------|------|
@@ -344,60 +344,109 @@ Der Quellcode unter `src` gliedert sich in wiederverwendbare React‑Komponenten
 | `useRequireAccess` | Leitet unberechtigte Nutzer auf die Login‑Seite um |
 | `useValidation` | Hilft bei Formularvalidierungen |
 
-Die Komponenten sind so aufgebaut, dass sie in verschiedenen Seiten wiederverwendet werden können. Die Hooks stellen gemeinsam genutzte Logik bereit und erleichtern die Anbindung an das Backend.
+Die Hooks kapseln wiederverwendbare Geschäftslogik und stellen eine konsistente Schnittstelle zum Backend bereit. Während `useAuth` Session-Management und Berechtigungsprüfung implementiert, orchestriert `useCart` die asynchrone Kommunikation mit dem Server für Warenkorb-Operationen. Diese modulare Struktur reduziert Redundanz und garantiert einheitliches Verhalten über die gesamte Anwendung hinweg.
 
-<a name="weiterfuehrende-hinweise"></a>
+### Sessions
 
-## Schnittstellen zwischen Datenbank, Backend und Frontend
+Eine Session ist eine temporäre Verbindung zwischen Client und Server, die Benutzerdaten während der Interaktion mit einer Webanwendung speichert. Die Anwendung nutzt serverseitiges Session-Management mittels `express-session`. Die Session-Verwaltung basiert auf einem Cookie-basierten Ansatz, bei dem der Browser nur eine einzigartige Session-ID enthält, während die eigentlichen Session-Daten sicher auf dem Server verbleiben.
 
-### REST-Endpunkte
+#### Session-Architektur
 
-Die Kommunikation zwischen Frontend und Backend erfolgt ausschließlich über klar definierte REST-Endpunkte, die einheitliche JSON-Strukturen zur Verfügung stellen.
+- **Session-ID**: Wird als Cookie namens `sid` im Browser gespeichert
+- **Session-Store**: Standardmäßig nutzt die Anwendung einen `MemoryStore` im Express-Server
+- **Lebensdauer**: Sessions sind auf ihre Lebensdauer begrenzt, verlängern sich jedoch bei Aktivität
+- **Sicherheit**: Die Cookies werden mit dem Flag `httpOnly` gesendet, um Client-seitigen JavaScript-Zugriff zu verhindern
 
-### Trennung von Geschäfts- und Applikationslogik
+#### Gespeicherte Daten
 
-Die Geschäftslogik befindet sich hauptsächlich im Backend, während das Frontend primär für die Darstellung und Benutzerinteraktion zuständig ist. Dadurch bleibt der Client schlank und die Kernprozesse lassen sich unabhängig testen.
+In den Sessions werden abhängig vom Anwendungsfall verschiedene Informationen gespeichert:
+
+| Session-Typ | Gespeicherte Daten | Lebensdauer |
+|-------------|-------------------|-------------|
+| **Login-Session** | `userId`, `email`, Rollenrechte | 60 Minuten |
+| **Checkout-Session** | Warenkorb-Items, Versand- und Zahlungsdaten | 15 Minuten Inaktivität |
+
+#### Session-Workflow
+
+1. Bei Anmeldung erstellt der Server eine neue Session und füllt sie mit Benutzerdaten
+2. Während der Navigation werden Session-Daten genutzt, um Berechtigungen zu prüfen
+3. Im Kaufprozess werden Artikel und Checkout-Informationen in der Session gespeichert
+4. Bei Abmeldung oder Timeout wird die Session zerstört
+
+Die Session-Daten werden serverseitig validiert, um unbefugte Zugriffe oder Manipulationen zu verhindern. Dies ist besonders wichtig für die Rollenverwaltung und Berechtigungsprüfungen beim Zugriff auf geschützte Bereiche der Anwendung.
 
 ## Security & Fault Tolerance
 
-Um Userdaten bestmöglich zu schützen, werden alle API-Aufrufe über HTTPS gesichert und Sessions serverseitig verwaltet.
-
-- Das Frontend erwartet als API-Basis `NEXT_PUBLIC_API_URL` (Standard: `http://localhost:4000`).
-- Für Datei-Uploads wird `multer` verwendet. Bilder werden in der Tabelle `images` gespeichert und über `/image/:id` ausgeliefert.
-- Ein Cronjob im Server entfernt veraltete Warenkörbe und Checkouts alle 60 Sekunden.
-
-### Rollen und Fähigkeiten
+### Rollen und Zugriffsberechtigungen
 
 Die Tabelle `user_roles` definiert Berechtigungen. Aktuell existieren drei Rollen:
 
-| Rollenname | Beschreibung | Edit | Create | Appoint Roles | Account Mgmt | Disability Approval | Delete |
+| Rollenname | Beschreibung | Edit Entities | Create Entities | Appoint Roles | Delete Entities | Disability Approval | Account Mgmt |
 |------|--------------|------|--------|---------------|--------------|--------------------|--------|
-| **user** | Regulärer Eventim Nutzer | false | false | false | false | false | false |
-| **service** | Service-Mitarbeiter von Eventim | false | false | false | true | true | false |
-| **admin** | Vollzugriff auf alle Funktionen | true | true | true | true | true | true |
+| **user** | Regulärer Eventim Nutzer | `false` | `false` | `false` | `false` | `false` | `false` |
+| **service** | Service-Mitarbeiter von Eventim | `false` | `false` | `false` | `false` | `true` | `true` |
+| **admin** | Admin-Nutzer (alle Rechte) | `true` | `true` | `true` | `true` | `true` | `true` |
 
-Um im Falle eines Datenbank- oder Backend-Fehlers dem Nutzer weiterhin ein funktionsfähiges System zu bieten, werden Fehlerzustände serverseitig abgefangen und dem Frontend in strukturierter Form gemeldet.
+Damit wird garantiert, dass nur Nutzer mit Berechtigungen ausgewählte Aktionen durchführen dürfen und Rechte durch einen Administrator verwaltet werden können. Hierbei wurde zusätzlich darauf geachtet, dass im System mindestens ein Administrator bestehen muss, indem diesem das Löschen seines eigenen Accounts verweigert wird, sofern kein anderer Admin existiert.
 
-- `server/db.js` überwacht die Datenbankverbindung und versucht bei Fehlern einen Reconnect. Ein Circuit-Breaker auf Basis von `opossum` verhindert Kaskadenfehler.
-- `server/server.js` startet erst, wenn eine DB-Verbindung besteht, und führt regelmäßige Aufräumjobs aus.
-- Der Server wird mit **PM2** im Cluster-Modus betrieben und startet bei Fehlern automatisch neu.
-- Ungefangene Fehler führen zu einem kontrollierten Exit, damit PM2 unmittelbar einen Neustart durchführen kann.
+Zusätzlich ist es Nutzern mit fehlenden Berechtigungen nicht möglich, auf Seiten zu navigieren, zu denen sie keine Berechtigung haben, indem in der Login-Session die Rollenrechte des Nutzers gespeichert werden und auf ausgewählten Seiten abgefragt wird, ob diese erfüllt sind oder nicht. Sind diese nicht berechtigt, die Seite aufzurufen, so werden sie mittels eines `307: Temporary Redirect` auf die Ursprungsseite zurückverwiesen.
 
-Damit wird garantiert, dass auch bei temporären Ausfällen keine inkonsistenten Daten geschrieben werden und der Dienst sich automatisch erholt.
+### Doppelte Validierung zwischen Front- und Backend bei CRUD-Operations
 
-### Doppelte Validierung zwischen Front- und Backend
-
-Fälle, in denen eine Anpassung/ein Löschen von Daten nicht zugelassen werden soll sind sowohl in Front- als auch im Backend abgefangen. Beim Versuch, eine Tour bzw. ein Event zu löschen validiert zunächst das Frontend, ob zu dieser Tour/ einem Event dieser Tour bereits Tickets existieren. Nur wenn keine Tickets in `orders` hinterlegt sind, erscheint die Möglichkeit das Event zu löschen.
+Um im Falle eines Datenbank- oder Backend-Fehlers dem Nutzer weiterhin ein funktionsfähiges System zu bieten, werden Fehlerzustände serverseitig abgefangen und dem Frontend in strukturierter Form gemeldet. Beim Versuch, eine Tour bzw. ein Event zu löschen validiert zunächst das Frontend, ob zu dieser Tour/ einem Event dieser Tour bereits Tickets existieren. Nur wenn keine Tickets in `orders` hinterlegt sind, erscheint die Möglichkeit das Event zu löschen.
 
 Sollte das Frontend in einen Fehler laufen und dennoch ein "Löschen"-Icon anzeigen wirft das Backend in `server/server.js` einen Fehler, dass diese Aktion nicht erlaubt ist, bevor dads Event auf der Datenbank gelöscht wird. Dieser wird vom Frontend entgegengenommen und in Form einer Fehlermeldung dem User angezeigt, dass die von ihm durchgeführte Aktion nicht möglich ist.
 
-Umgesetzt wird dies durch ein Zusammenspiel aus clientseitigen Guards und serverseitiger Validierung, welche jede Manipulation der Daten prüft.
+Folgende Fälle werden durch die Applikation abgedeckt:
+
+| Komponente                   | HTTP-Operation | Verhalten                                       |
+| ---------------------------- | -------------- | ----------------------------------------------- |
+| Admin-Bereich                | `GET`          | Weiterleitung zur Login-Seite bei fehlenden Rechten |
+| Stadt                        | `DELETE`       | Popup: Stadt in Stadion genutzt                |
+| Venue                        | `DELETE`       | Popup: Tickets vorhanden, Löschen nicht möglich |
+| Land                         | `DELETE`       | Popup: Städte in Stadion genutzt               |
+| Nutzerkonto                  | `DELETE`       | Fehler: bestehende Buchungen verhindern Löschung |
+| Event                        | `DELETE`       | Löschen nicht möglich bei verkauften Tickets   |
+| Tour                         | `DELETE`       | Löschen nicht möglich bei gebuchten Events     |
+| Artist                       | `DELETE`       | Künstler nicht löschbar                        |
+| Genre                        | `DELETE`       | Popup: Genre in Tour genutzt                   |
+| Sub-Genre                    | `DELETE`       | Popup: Sub-Genre in Tour genutzt               |
+| Ticketkauf                   | `PUT`          | Button ausgegraut bei Maximalanzahl            |
+| SB-Antrag     | `DELETE`       | Antrag wird entfernt                           |
+| Event-Sitzplatzkonf. | `POST`         | Fehler: Kategorie-Wert muss > 0 sein            |
+| SB-Ticketkauf | `POST`         | Button ausgegraut, Kauf blockiert              |
+
+Umgesetzt wird dies durch ein Zusammenspiel aus clientseitigen Guards und serverseitiger Validierung, welche jede Manipulation der Daten prüft. Diese doppelte Validierung erlaubt es, dass die Daten trotz Fehler in Front- und Backend nicht fehlerhaft auf der Datenbank gesichert/manipuliert werden.
+
+### Ausfallsicherheit & Auto-Recovery
+
+Im Falle eines Absturz des Backends oder der Datenbank wird dieses durch die Verwendung von `PM2` und `opossum` automatisch neugestartet. Übersteigt die Antwortzeit einer Datenbank-Query den in `opossum` gesetzten Timeout, werden Requests an die Datenbank blockiert. `PM2` startet dann einen neuen Worker, der Timer wird zurückgesetzt und ein neuer Connection-Pool zwischen Datenbank und Backend aufgebaut.
+
+Die Ausfallsicherheit wird durch mehrere Maßnahmen gewährleistet:
+
+- `server/db.js` implementiert einen Circuit-Breaker auf Basis von `opossum`, der bei Datenbankfehlern nach 5 Sekunden einen Reconnect versucht und verhindert, dass wiederholte Fehler das System überlasten
+- `server/server.js` startet erst, wenn eine stabile DB-Verbindung besteht, und führt alle 15 Minuten Aufräumjobs für abgelaufene Sessions durch
+- Der Express-Server läuft unter **PM2** im Cluster-Modus, wodurch bei Abstürzen ein Neustart erfolgt
+- Periodische Health-Checks alle 10s prüfen die Verbindung zur Datenbank und lösen bei Bedarf einen kontrollierten Neustart aus
+- Ungefangene Exceptions werden zentral protokolliert und führen zu einem geordneten Exit-Code, damit PM2 sofort einen neuen Prozess starten kann
+
+Diese Architektur gewährleistet, dass temporäre Datenbankausfälle oder Speicherprobleme die Anwendungsverfügbarkeit nur minimal beeinträchtigen und das System selbstständig in einen funktionsfähigen Zustand zurückkehrt.
 
 ## Testkonzept
 
 Zur Validierung der Ergebnisse aus der Applikation werden Tests durchgeführt, die sowohl Unit- als auch Integrationstestfälle umfassen. Geprüft werden hierbei die REST-Endpunkte des Backends, die Funktionsweise der React-Komponenten sowie komplette Nutzerflüsse mittels End-to-End-Tests.
 
 ### User-Tests
+
+User-Tests bezeichnen systematische Überprüfungen, bei denen reale Benutzer mit dem System interagieren, um dessen Benutzerfreundlichkeit, Funktionalität und Zuverlässigkeit zu bewerten. Bei diesen Tests werden typische Anwendungsfälle durchgespielt, um Probleme zu identifizieren, bevor sie in der Produktivumgebung auftreten.
+
+In unserem Fall konzentrieren sich die User-Tests auf folgende Aspekte:
+- Zugriffsberechtigungen und Rollenbeschränkungen
+- Datenkonsistenz bei Löschoperationen
+- Validierung von Eingaben und Geschäftsregeln
+- Barrierefreiheit und Behindertenunterstützung
+
+Die Tests simulieren reale Nutzungsszenarien und prüfen, ob das System wie erwartet reagiert, besonders in Grenzsituationen wie dem Versuch, mehr Tickets zu kaufen als verfügbar sind oder Daten zu löschen, die noch in Verwendung sind.
 
 ![User-Testfälle](./pictures/test_cases.png)
 
@@ -427,46 +476,8 @@ Vor einer finalen Bereitstellung sollten noch folgende Punkte bearbeitet werden:
 Bereits sehr gut funktionieren das Rollenmodell, die Bild-Uploads sowie die periodische Datenbereinigung im Backend.
 
 <a name="appendix"></a>
-## Anhang: Abhängigkeiten und Versionen
 
-Die folgenden Tabellen listen alle im Projekt genutzten Pakete samt Version auf. Die Angaben stammen aus `package.json`.
-
-### Runtime- und Bibliotheksabhängigkeiten
-
-| Paket | Version |
-|-------|---------|
-| `@testing-library/dom` | ^10.4.0 |
-| `@testing-library/jest-dom` | ^6.6.3 |
-| `@testing-library/react` | ^16.3.0 |
-| `@testing-library/user-event` | ^13.5.0 |
-| `bcrypt` | ^6.0.0 |
-| `cors` | ^2.8.5 |
-| `express` | ^5.1.0 |
-| `express-session` | ^1.18.1 |
-| `multer` | ^2.0.0 |
-| `next` | ^15.3.2 |
-| `nodemon` | ^3.1.10 |
-| `opossum` | ^5.0.1 |
-| `pg` | ^8.16.0 |
-| `prop-types` | ^15.8.1 |
-| `react` | ^19.1.0 |
-| `react-dom` | ^19.1.0 |
-| `react-router-dom` | ^7.6.1 |
-| `react-scripts` | ^0.0.0 |
-| `react-toastify` | ^11.0.5 |
-| `toastify` | ^2.0.1 |
-| `uuid` | ^11.1.0 |
-| `web-vitals` | ^2.1.4 |
-
-### Entwicklungsabhängigkeiten
-
-| Paket | Version |
-|-------|---------|
-| `@types/node` | 22.15.21 |
-| `@types/react` | 19.1.5 |
-| `concurrently` | ^9.1.2 |
-
-Die Anwendung wurde zuletzt mit Node.js v22 getestet. Eine aktuelle Node-Version wird empfohlen, um alle Features von Next.js nutzen zu können.
+## Anhang
 
 ## FAQ Section
 
@@ -527,344 +538,73 @@ Die Anwendung wurde zuletzt mit Node.js v22 getestet. Eine aktuelle Node-Version
 - Wie kann die App dennoch abstürzen?
   - Trotz Circuit Breaker und PM2 können unbehandelte Exceptions, Speicherlecks oder Logikfehler im Code zum Absturz führen. Wenn beispielsweise ein API-Endpunkt eine falsche Query ausführt oder Endlosschleifen erzeugt, beendet sich der Prozess. PM2 startet ihn zwar neu, aber der Fehler muss im Quellcode behoben werden.
 
-
-=======
-## Anhang
 ### Datenbank-Modell
-```plantuml
-@startuml
-!theme plain
-top to bottom direction
-skinparam linetype ortho
 
-class areas {
-   name: varchar(50)
-   description: varchar(100)
-   disability_category_for: char(3)
-   id: uuid
-}
-class artists {
-   name: varchar(255)
-   biography: text
-   website: varchar(255)
-   created_at: timestamp with time zone
-   updated_at: timestamp with time zone
-   artist_image: uuid
-   id: uuid
-}
-class cart_items {
-   cart_id: uuid
-   event_id: uuid
-   event_category_id: uuid
-   quantity: integer
-   added_at: timestamp with time zone
-   is_assistance_ticket: boolean
-   id: uuid
-}
-class carts {
-   user_id: uuid
-   created_at: timestamp with time zone
-   updated_at: timestamp with time zone
-   id: uuid
-}
-class checkout_items {
-   checkout_id: uuid
-   event_category_id: uuid
-   quantity: integer
-   price: numeric(10,2)
-   added_at: timestamp with time zone
-   event_id: uuid
-   is_assistance_ticket: boolean
-   id: uuid
-}
-class checkouts {
-   user_id: uuid
-   created_at: timestamp with time zone
-   updated_at: timestamp with time zone
-   id: uuid
-}
-class cities {
-   name: varchar(100)
-   country_id: uuid
-   id: uuid
-}
-class countries {
-   name: varchar(100)
-   iso_code: char(2)
-   id: uuid
-}
-class disability_marks {
-   description: varchar(100)
-   area_id: uuid
-   mark_code: char(3)
-}
-class event_categories {
-   event_id: uuid
-   name: text
-   price: numeric(10,2)
-   disability_support_for: char(3)
-   id: uuid
-}
-class event_supporting_acts {
-   event_id: uuid
-   artist_id: uuid
-}
-class event_venue_areas {
-   event_id: uuid
-   venue_area_id: uuid
-   capacity: integer
-   category_id: uuid
-   id: uuid
-}
-class events {
-   tour_id: uuid
-   venue_id: uuid
-   description: text
-   created_at: timestamp with time zone
-   updated_at: timestamp with time zone
-   start_time: timestamp with time zone
-   end_time: timestamp with time zone
-   door_time: timestamp with time zone
-   id: uuid
-}
-class genres {
-   name: varchar(50)
-   id: uuid
-}
-class images {
-   image_data: bytea
-   image_type: text
-   entity_type: text
-   entity_id: uuid
-   id: uuid
-}
-class order_tickets {
-   order_id: uuid
-   ticket_id: uuid
-   id: uuid
-}
-class orders {
-   user_id: uuid
-   created_at: timestamp with time zone
-   street_address: varchar(255)
-   postal_code: varchar(20)
-   city: varchar(100)
-   country: varchar(100)
-   is_paid: boolean
-   salutation: varchar(20)
-   first_name: varchar(100)
-   last_name: varchar(100)
-   company: varchar(255)
-   payment_option_id: uuid
-   id: uuid
-}
-class payment_options {
-   label: varchar(50)
-   description: varchar(100)
-   icon_src: varchar(50)
-   id: uuid
-}
-class shipping_options {
-   label: varchar(100)
-   price: numeric
-   description: varchar(100)
-   id: uuid
-}
-class subgenres {
-   genre_id: uuid
-   name: text
-   id: uuid
-}
-class tickets {
-   order_id: uuid
-   event_category_id: uuid
-   seat_number: varchar(50)
-   price: numeric(10,2)
-   created_at: timestamp with time zone
-   is_assistance_ticket: boolean
-   id: uuid
-}
-class tour_artists {
-   tour_id: uuid
-   artist_id: uuid
-}
-class tour_genres {
-   tour_id: uuid
-   genre_id: uuid
-}
-class tour_subgenres {
-   tour_id: uuid
-   subgenre_id: uuid
-}
-class tours {
-   title: varchar(255)
-   subtitle: varchar(255)
-   start_date: date
-   end_date: date
-   created_at: timestamp with time zone
-   updated_at: timestamp with time zone
-   tour_image: uuid
-   id: uuid
-}
-class user_disability_marks {
-   user_id: uuid
-   mark_code: char(3)
-}
-class user_roles {
-   name: varchar(50)
-   description: varchar(100)
-   has_editing_access: boolean
-   has_creation_access: boolean
-   has_role_appointing_capability: boolean
-   has_account_management_access: boolean
-   has_disability_approval_access: boolean
-   has_deletion_permission: boolean
-   id: uuid
-}
-class users {
-   salutation: varchar(20)
-   first_name: varchar(100)
-   last_name: varchar(100)
-   company: varchar(255)
-   street_address: varchar(255)
-   postal_code: varchar(20)
-   city: varchar(100)
-   country: varchar(100)
-   email: varchar(255)
-   phone: varchar(20)
-   birth_date: date
-   request_for_disability: boolean
-   disability_degree: integer
-   disability_card_image_front: uuid
-   created_at: timestamp with time zone
-   updated_at: timestamp with time zone
-   password: text
-   disability_card_image_back: uuid
-   is_currently_disabled: boolean
-   disability_card_expiry_date: date
-   role: uuid
-   visible_user_id: integer
-   user_id: uuid
-}
-class venue_areas {
-   venue_id: uuid
-   max_capacity: integer
-   area_id: uuid
-   id: uuid
-}
-class venues {
-   name: varchar(255)
-   address: varchar(500)
-   city_id: uuid
-   website: varchar(255)
-   created_at: timestamp with time zone
-   updated_at: timestamp with time zone
-   venue_image: uuid
-   id: uuid
-}
+| Tabelle | Zweck / wichtige Spalten | Abhängigkeiten |
+|---------|--------------------------|---------------|
+| **countries** | Länder mit ISO‑Code. | – |
+| **cities** | Städte innerhalb eines Landes. | `countries` via `country_id` |
+| **user_roles** | Definiert Rollen und zugehörige Rechte. | – |
+| **users** | Registrierte Personen samt Adresse und optionalen Disability‑Angaben. | `user_roles` via `role` |
+| **artists** | Angaben zu Künstlern. | – |
+| **genres** / **subgenres** | Klassifikation von Touren. | `genres` via `genre_id` |
+| **tours** | Übergeordnete Tour einer Reihe von Events. | – |
+| **tour_artists** | Zuordnung Künstler ↔ Tour. | `artists`, `tours` |
+| **tour_genres** / **tour_subgenres** | Genre‑Verknüpfungen einer Tour. | `tours`, `genres`/`subgenres` |
+| **venues** | Veranstaltungsorte. | `cities` via `city_id` |
+| **areas** | Sitzplatz‑ bzw. Zugänglichkeitsbereiche. | – |
+| **venue_areas** | Bereiche innerhalb eines Venues. | `venues`, `areas` |
+| **events** | Konkrete Veranstaltungstermine. | `tours`, `venues` |
+| **event_categories** | Ticket‑Kategorien (Preis, Support für Behinderte). | `events` via `event_id` |
+| **event_supporting_acts** | Support‑Acts eines Events. | `events`, `artists` |
+| **event_venue_areas** | Zuordnung Event ↔ Bereich mit Kapazität. | `events`, `venue_areas`, `event_categories` |
+| **images** | Speicherung von hochgeladenen Bildern. | Beliebige Entität über `entity_type`/`entity_id` |
+| **carts** | Aktiver Warenkorb eines Nutzers. | `users` |
+| **cart_items** | Einzelne Artikel im Warenkorb. | `carts`, `events`, `event_categories` |
+| **checkouts** | Zwischenschritt zwischen Warenkorb und Bestellung. | `users` |
+| **checkout_items** | Positionen des Checkouts inkl. Preis. | `checkouts`, `events`, `event_categories` |
+| **payment_options** / **shipping_options** | Stammdaten für Zahlungs‑ und Versandarten. | – |
+| **orders** | Abgeschlossene Bestellungen. | `users`, `payment_options` |
+| **tickets** | Konkrete Ticketdatensätze. | `orders`, `event_categories` |
+| **order_tickets** | Relation zwischen Order und Ticket (1‑n). | `orders`, `tickets` |
+| **disability_marks** | Mögliche Merkmale auf Behindertenausweisen. | `areas` via `area_id` |
+| **user_disability_marks** | Zuordnung User ↔ Marks. | `users`, `disability_marks` |
 
-cart_items             -[#595959,plain]-^  carts                 : "cart_id:id"
-cart_items             -[#595959,plain]-^  event_categories      : "event_category_id:id"
-cart_items             -[#595959,plain]-^  events                : "event_id:id"
-carts                  -[#595959,plain]-^  users                 : "user_id"
-checkout_items         -[#595959,plain]-^  checkouts             : "checkout_id:id"
-checkout_items         -[#595959,plain]-^  event_categories      : "event_category_id:id"
-checkout_items         -[#595959,plain]-^  events                : "event_id:id"
-checkouts              -[#595959,plain]-^  users                 : "user_id"
-cities                 -[#595959,plain]-^  countries             : "country_id:id"
-disability_marks       -[#595959,plain]-^  areas                 : "area_id:id"
-event_categories       -[#595959,plain]-^  events                : "event_id:id"
-event_supporting_acts  -[#595959,plain]-^  artists               : "artist_id:id"
-event_supporting_acts  -[#595959,plain]-^  events                : "event_id:id"
-event_venue_areas      -[#595959,plain]-^  event_categories      : "category_id:id"
-event_venue_areas      -[#595959,plain]-^  events                : "event_id:id"
-event_venue_areas      -[#595959,plain]-^  venue_areas           : "venue_area_id:id"
-events                 -[#595959,plain]-^  tours                 : "tour_id:id"
-events                 -[#595959,plain]-^  venues                : "venue_id:id"
-order_tickets          -[#595959,plain]-^  orders                : "order_id:id"
-order_tickets          -[#595959,plain]-^  tickets               : "ticket_id:id"
-orders                 -[#595959,plain]-^  payment_options       : "payment_option_id:id"
-orders                 -[#595959,plain]-^  users                 : "user_id"
-subgenres              -[#595959,plain]-^  genres                : "genre_id:id"
-tickets                -[#595959,plain]-^  event_categories      : "event_category_id:id"
-tickets                -[#595959,plain]-^  orders                : "order_id:id"
-tour_artists           -[#595959,plain]-^  artists               : "artist_id:id"
-tour_artists           -[#595959,plain]-^  tours                 : "tour_id:id"
-tour_genres            -[#595959,plain]-^  genres                : "genre_id:id"
-tour_genres            -[#595959,plain]-^  tours                 : "tour_id:id"
-tour_subgenres         -[#595959,plain]-^  subgenres             : "subgenre_id:id"
-tour_subgenres         -[#595959,plain]-^  tours                 : "tour_id:id"
-user_disability_marks  -[#595959,plain]-^  disability_marks      : "mark_code"
-user_disability_marks  -[#595959,plain]-^  users                 : "user_id"
-users                  -[#595959,plain]-^  user_roles            : "role:id"
-venue_areas            -[#595959,plain]-^  areas                 : "area_id:id"
-venue_areas            -[#595959,plain]-^  venues                : "venue_id:id"
-venues                 -[#595959,plain]-^  cities                : "city_id:id"
-@enduml
-```
+### Versionen eingesetzter Technologien
 
-### Workflows
+### Frameworks
 
-Die folgenden Aktivitätsdiagramme visualisieren typische Abläufe im System. Sie zeigen jeweils, auf welchen Seiten sich der Nutzer befindet und welche Daten einzugeben sind.
+| Paket | Version |
+|-------|---------|
+| `@types/node` | 22.15.21 |
+| `@types/react` | 19.1.5 |
+| `concurrently` | ^9.1.2 |
 
-#### Registrierte*n Benutzer*in mit Behinderung anlegen und anmelden
+#### Libraries/Packages
 
-Der Prozess führt vom ersten Aufruf der Loginseite über die Registrierung bis zum erfolgreichen Login. Während der Registrierung kann direkt ein Behindertenausweis hochgeladen und die relevanten Merkzeichen angegeben werden.
+Die folgenden Tabellen listen alle im Projekt genutzten Pakete samt Version auf. Die Angaben stammen aus `package.json`.
 
-![Registrierung / Anmelden](./diagrams/pictures/registration.svg)
-
-#### Ticketkauf als behinderte Person
-
-Nach erfolgreicher Anmeldung navigiert der Nutzende durch die Tour‐ und Eventseiten, fügt Tickets dem Warenkorb hinzu und schließt den Checkout  ab.
-
-![Ticketkauf](./diagrams/pictures/buying_tickets.svg)
-
-#### Nachteilsausgleichsantrag im Profil stellen
-
-Im Profil kann jederzeit ein Antrag gestellt oder aktualisiert werden. Dazu werden Grad der Behinderung, Ausweisbilder und Merkzeichen hinterlegt.
-
-![Nachteilsausgleich stellen](./diagrams/pictures/request_for_disadvantages.svg)
-
-#### Nachteilsausgleichsantrag als Service-Mitarbeiter bearbeiten
-
-Service-User rufen die Übersicht der offenen Anträge auf, prüfen die Angaben und akzeptieren oder lehnen den Antrag ab.
-
-![Nachteilsausgleich akzeptieren](./diagrams/pictures/accept_or_decline_rfd.svg)
-
-#### Rolle eines Nutzers ändern (Admin)
-
-Mit entsprechender Berechtigung können Service-Mitarbeitende die Rolle eines
-Accounts anpassen.
-
-![Nutzerrolle anpassen](./diagrams/pictures/change_user_role.svg)
-
-#### Tour samt Event anlegen
-
-Administratoren erstellen zunächst eine Tour und fügen anschließend Events hinzu.
-
-![Tour mit Event erstellen](./diagrams/pictures/create_event.svg)
-
-#### Tour löschen (erfolgreich oder nicht möglich)
-
-Eine Tour lässt sich nur entfernen, wenn für keine ihrer Events bereits Tickets verkauft wurden.
-
-![Tour löschen](./diagrams/pictures/delete_tour.svg)
-
-#### Benutzerkonto löschen
-
-Nutzer können ihr Konto im Profil endgültig entfernen, sofern keine zukünftigen Events mehr besucht werden müssen.
-
-![Account löschen](./diagrams/pictures/delete_account.svg)
-
-#### Abmelden
-
-Der Logout erfolgt über das Dropdown-Menü der Navigationsleiste.
-
-![Logout](./diagrams/pictures/logout.svg)
-
-#### Profildaten aktualisieren
-
-Persönliche Daten wie Adresse oder Telefonnummer lassen sich direkt im Profil
-anpassen.
-
-![Profildaten anpassen](./diagrams/pictures/edit_profile_data.svg)
+| Paket | Version |
+|-------|---------|
+| `@testing-library/dom` | ^10.4.0 |
+| `@testing-library/jest-dom` | ^6.6.3 |
+| `@testing-library/react` | ^16.3.0 |
+| `@testing-library/user-event` | ^13.5.0 |
+| `bcrypt` | ^6.0.0 |
+| `cors` | ^2.8.5 |
+| `express` | ^5.1.0 |
+| `express-session` | ^1.18.1 |
+| `multer` | ^2.0.0 |
+| `next` | ^15.3.2 |
+| `nodemon` | ^3.1.10 |
+| `opossum` | ^5.0.1 |
+| `pg` | ^8.16.0 |
+| `prop-types` | ^15.8.1 |
+| `react` | ^19.1.0 |
+| `react-dom` | ^19.1.0 |
+| `react-router-dom` | ^7.6.1 |
+| `react-scripts` | ^0.0.0 |
+| `react-toastify` | ^11.0.5 |
+| `toastify` | ^2.0.1 |
+| `uuid` | ^11.1.0 |
+| `web-vitals` | ^2.1.4 |
