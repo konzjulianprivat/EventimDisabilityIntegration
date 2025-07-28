@@ -92,7 +92,7 @@ export default function AreaCreation() {
                     )}
                 </div>
 
-                {/* Beschreibung */}
+                {/* Description */}
                 <div style={{ marginBottom: '1rem' }}>
                     <label style={{ display: 'block', fontWeight: 'bold', marginBottom: '.5rem' }}>
                         Beschreibung

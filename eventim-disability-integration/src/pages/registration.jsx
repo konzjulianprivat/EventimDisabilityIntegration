@@ -262,7 +262,7 @@ export default function Registration() {
             )}
 
             <form onSubmit={handleSubmit}>
-                {/* ---------------- Anrede ---------------- */}
+                {/* ---------------- Salutation ---------------- */}
                 <div style={{ marginBottom: '1rem' }}>
                     <label
                         htmlFor="salutation"
@@ -290,7 +290,7 @@ export default function Registration() {
                     </select>
                 </div>
 
-                {/* ---------------- Vorname ---------------- */}
+                {/* ---------------- First name ---------------- */}
                 <div style={{ marginBottom: '1rem' }}>
                     <label
                         htmlFor="firstName"
@@ -320,7 +320,7 @@ export default function Registration() {
                     )}
                 </div>
 
-                {/* ---------------- Nachname ---------------- */}
+                {/* ---------------- Last name ---------------- */}
                 <div style={{ marginBottom: '1rem' }}>
                     <label
                         htmlFor="lastName"
@@ -350,7 +350,7 @@ export default function Registration() {
                     )}
                 </div>
 
-                {/* ---------------- Firma ---------------- */}
+                {/* ---------------- Company ---------------- */}
                 <div style={{ marginBottom: '1rem' }}>
                     <label
                         htmlFor="company"
@@ -373,7 +373,7 @@ export default function Registration() {
                     />
                 </div>
 
-                {/* ---------------- Straße und Hausnummer ---------------- */}
+                {/* ---------------- Street and house number ---------------- */}
                 <div style={{ marginBottom: '1rem' }}>
                     <label
                         htmlFor="streetAddress"
@@ -397,7 +397,7 @@ export default function Registration() {
                     />
                 </div>
 
-                {/* ---------------- PLZ / Stadt ---------------- */}
+                {/* ---------------- Postal code / City ---------------- */}
                 <div style={{ marginBottom: '1rem', display: 'flex', gap: '1rem' }}>
                     <div style={{ flex: '1' }}>
                         <label
@@ -445,7 +445,7 @@ export default function Registration() {
                     </div>
                 </div>
 
-                {/* ---------------- Land ---------------- */}
+                {/* ---------------- Country ---------------- */}
                 <div style={{ marginBottom: '1rem' }}>
                     <label
                         htmlFor="country"
@@ -471,7 +471,7 @@ export default function Registration() {
 
                 {/* E-Mail + Passwort sind unsichtbar, aber in formData enthalten */}
 
-                {/* ---------------- Geburtsdatum ---------------- */}
+                {/* ---------------- Date of birth ---------------- */}
                 <div style={{ marginBottom: '1rem' }}>
                     <label
                         htmlFor="birthDate"
@@ -494,7 +494,7 @@ export default function Registration() {
                     />
                 </div>
 
-                {/* ---------------- Telefon ---------------- */}
+                {/* ---------------- Phone ---------------- */}
                 <div style={{ marginBottom: '1rem' }}>
                     <label
                         htmlFor="phone"
@@ -519,7 +519,7 @@ export default function Registration() {
 
                 <label className="new-label">NEW</label>
 
-                {/* ---------------- Behindertenausweis Checkbox ---------------- */}
+                {/* ---------------- Disability card checkbox ---------------- */}
                 <div style={{ marginBottom: '1rem' }}>
                     <div style={{ display: 'flex', alignItems: 'center' }}>
                         <input
@@ -536,10 +536,10 @@ export default function Registration() {
                     </div>
                 </div>
 
-                {/* ---------------- Wenn Behindertenausweis gesetzt, zeige Grad + Datei + Markierungen ---------------- */}
+                {/* ---------------- If disability card selected, show degree + file + marks ---------------- */}
                 {formData.requestForDisability && (
                     <>
-                        {/* Grad der Behinderung */}
+      {/* Degree of disability */}
                         <div style={{ marginBottom: '1rem' }}>
                             <label
                                 htmlFor="disabilityDegree"
@@ -564,7 +564,7 @@ export default function Registration() {
                             />
                         </div>
 
-                        {/* Behindertenausweis Vorderseite hochladen */}
+      {/* Upload disability card front */}
                         <div style={{ marginBottom: '1rem' }}>
                             <label
                                 htmlFor="disabilityCardImageFront"
@@ -586,7 +586,7 @@ export default function Registration() {
                             />
                         </div>
 
-                        {/* Behindertenausweis Rückseite hochladen */}
+      {/* Upload disability card back */}
                         <div style={{ marginBottom: '1rem' }}>
                             <label
                                 htmlFor="disabilityCardImageBack"
@@ -608,7 +608,7 @@ export default function Registration() {
                             />
                         </div>
 
-                        {/* Befristung des Ausweises */}
+      {/* Card expiration */}
                         <div style={{ marginBottom: '1rem' }}>
                             <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 'bold' }}>
                                 Gültigkeit des Ausweises
@@ -650,7 +650,7 @@ export default function Registration() {
                             )}
                         </div>
 
-                        {/* ---------------- Grad der Behinderung: Auswahl der Markierungen ---------------- */}
+      {/* ---------------- Degree of disability: select marks ---------------- */}
                         <div style={{ marginBottom: '1rem' }}>
                             <label
                                 style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 'bold' }}
@@ -658,7 +658,7 @@ export default function Registration() {
                                 Grad der Behinderung – Markierungen
                             </label>
 
-                            {/* Grid-Container für alle Marks */}
+          {/* Grid container for all marks */}
                             <div className="marks-grid">
                                 {disabilityMarks.map(mark => {
                                     const isSelected = selectedMarks.includes(mark.mark_code);
@@ -689,7 +689,7 @@ export default function Registration() {
                     </>
                 )}
 
-                {/* ---------------- Submit Button ---------------- */}
+                {/* ---------------- Submit button ---------------- */}
                 <button
                     type="submit"
                     disabled={loading || !validation.isValid()}

@@ -183,7 +183,7 @@ export default function TourCreation() {
             )}
 
             <form onSubmit={handleSubmit}>
-                {/* Titel */}
+                {/* Title */}
                 <div className="form-group">
                     <label htmlFor="title" className="form-label">Titel *</label>
                     <input
@@ -200,7 +200,7 @@ export default function TourCreation() {
                     )}
                 </div>
 
-                {/* Beschreibung */}
+                {/* Description */}
                 <div className="form-group">
                     <label htmlFor="description" className="form-label">Beschreibung</label>
                     <textarea
@@ -213,7 +213,7 @@ export default function TourCreation() {
                     />
                 </div>
 
-                {/* Start- & Enddatum */}
+                {/* Start & end date */}
                 <div className="form-group form-row">
                     <div className="form-group">
                         <label htmlFor="startDate" className="form-label">Startdatum *</label>
@@ -247,7 +247,7 @@ export default function TourCreation() {
                     </div>
                 </div>
 
-                {/* Künstler */}
+                {/* Artists */}
                 <div className="form-group">
                     <label className="form-label">Künstler hinzufügen</label>
                     {tourArtists.map((aid, idx) => (
@@ -278,7 +278,7 @@ export default function TourCreation() {
                     </button>
                 </div>
 
-                {/* Tour-Bild */}
+                {/* Tour image */}
                 <div className="form-group">
                     <label htmlFor="tourImage" className="form-label">Tour-Bild hochladen</label>
                     <input

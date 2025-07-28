@@ -22,13 +22,13 @@ export default function EventCreation() {
     const [artists, setArtists] = useState([]);
     const [eventArtists, setEventArtists] = useState([]);
 
-    // alle VenueAreas (inkl. disability_category_for)
+    // all venue areas (including disability_category_for)
     const [venueAreas, setVenueAreas] = useState([]);
 
-    // „Normale“ Kategorien
+    // Regular categories
     const [categories, setCategories] = useState([]);
 
-    // Für jede Disability-Area: eigener Preis und eigene Kapazität
+    // Each disability area has its own price and capacity
     const [disabilityPriceMap, setDisabilityPriceMap] = useState({});
     const [disabilityCapacityMap, setDisabilityCapacityMap] = useState({});
 
@@ -38,7 +38,7 @@ export default function EventCreation() {
 
     // 1) Load tours, venues, artists
     useEffect(() => {
-        // wir brauchen start_date und end_date für Validierung
+        // we need start_date and end_date for validation
         fetch('http://localhost:4000/tours-detailed')
             .then(r => r.json())
             .then(d => setTours(d.tours));
@@ -66,7 +66,7 @@ export default function EventCreation() {
                 const allAreas = d.venueAreas || [];
                 setVenueAreas(allAreas);
 
-                // Für jede Behinderten-Area Einträge in die Maps anlegen
+                // Create map entries for each disabled area
                 const newPriceMap = {};
                 const newCapacityMap = {};
                 allAreas
@@ -173,7 +173,7 @@ export default function EventCreation() {
         setDisabilityCapacityMap(cm => ({ ...cm, [areaId]: val }));
     };
 
-    // 6) Hilfsfunktion: Gesamtkapazität summieren (normale Kategorien)
+    // 6) Helper: sum total capacity (regular categories)
     const getTotalCapacityForCategory = cat =>
         cat.venueAreas.reduce(
             (sum, entry) => sum + (parseInt(entry.capacity, 10) || 0),
@@ -217,7 +217,7 @@ export default function EventCreation() {
             }
         }
 
-        // ─── Normale Kategorien validieren ───
+        // ─── Validate regular categories ───
         for (const cat of categories) {
             if (!cat.name || !cat.price) {
                 setMessage('Alle Kategorien benötigen Namen und Preis');
@@ -238,11 +238,11 @@ export default function EventCreation() {
             }
         }
 
-        // ─── Disability-Kategorien validieren ───
+        // ─── Validate disability categories ───
         const disabilityAreas = venueAreas.filter(
             va => va.disability_category_for != null
         );
-        // wenn keine Disability-Areas, muss mindestens eine normale Kategorie existieren
+        // if there are no disability areas, at least one regular category must exist
         if (disabilityAreas.length === 0 && categories.length === 0) {
             setMessage('Mindestens eine Kategorie muss definiert werden');
             setLoading(false);
@@ -564,7 +564,7 @@ export default function EventCreation() {
                 </div>
 
                 {/* -------------------------------------------------- */}
-                {/* Normale Kategorien */}
+                {/* Regular categories */}
                 {/* -------------------------------------------------- */}
                 <div style={{ marginBottom: '1rem' }}>
                     <label
@@ -757,14 +757,14 @@ export default function EventCreation() {
                 </div>
 
                 {/* -------------------------------------------------- */}
-                {/* Kategorien für Menschen mit besonderen Bedürfnissen */}
+                {/* Categories for people with special needs */}
                 {/* -------------------------------------------------- */}
 
                 <label style={{ display: 'block', fontWeight: 'bold', marginBottom: '.5rem' }}>
-                    Kategorien für Menschen mit Einschränkungen
+                    Categories for people with disabilities
                 </label>
 
-                {/* 1) Wenn kein VenueId gewählt: Hinweis anzeigen */}
+                {/* 1) If no venue ID selected, show notice */}
                 {!formData.venueId && (
                     <div
                         className="disability-category"
@@ -786,7 +786,7 @@ export default function EventCreation() {
                     </div>
                 )}
 
-                {/* 2) Wenn Venue gewählt, aber keine Behinderten-Areas in venueAreas */}
+                {/* 2) If a venue is selected but no disabled areas exist */}
                 {formData.venueId &&
                     venueAreas.filter(va => va.disability_category_for != null).length === 0 && (
                         <div
@@ -809,7 +809,7 @@ export default function EventCreation() {
                         </div>
                     )}
 
-                {/* 3) Für jede Behinderten-Area eine eigene Kategorie-Box */}
+                {/* 3) One category box per disabled area */}
                 {venueAreas
                     .filter(va => va.disability_category_for != null)
                     .map((va, idx) => (
@@ -836,7 +836,7 @@ export default function EventCreation() {
                                 </strong>
                             </div>
 
-                            {/* Preis-Eingabe für genau diese Area */}
+                            {/* Price input for this specific area */}
                             <input
                                 type="number"
                                 min="0"
@@ -852,7 +852,7 @@ export default function EventCreation() {
                                 }}
                             />
 
-                            {/* Kapazität für genau diese Area */}
+                            {/* Capacity for this specific area */}
                             <input
                                 type="number"
                                 min="0"

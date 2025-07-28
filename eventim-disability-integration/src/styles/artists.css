@@ -1,6 +1,6 @@
 /*-----------------------------------------------
-  Eventim Look: Blau (#005EA5), Grau/ Weiß, dichter
-  (Nur für Artists; separater File)
+  Eventim look: blue (#005EA5), gray/white, compact
+  (Artists only; separate file)
 -----------------------------------------------*/
 
 /* ──────────────────────────────────────────────
@@ -13,8 +13,8 @@
 }
 
 /* ──────────────────────────────────────────────
-   2) Wrapper um Filter‐Bar + Raster:
-      Stellt sicher, dass beides vertikal angeordnet ist
+   2) Wrapper around filter bar and grid:
+      Ensures both are vertically arranged
 ────────────────────────────────────────────── */
 .artists-wrapper {
     display: flex;
@@ -31,8 +31,8 @@
 }
 
 /* ──────────────────────────────────────────────
-   4) Grid‐Container für Künstler‐Karten
-      3 Karten nebeneinander, responsiv
+   4) Grid container for artist cards
+      3 cards side by side, responsive
 ────────────────────────────────────────────── */
 .artists-grid {
     display: grid;
@@ -51,7 +51,7 @@
 }
 
 /* ──────────────────────────────────────────────
-   5) „Keine Künstler“-Hinweis
+   5) "No artists" notice
 ────────────────────────────────────────────── */
 .no-artists {
     grid-column: 1 / -1;  /* volle Breite im Grid */
@@ -62,7 +62,7 @@
 }
 
 /* ------------------------------------------------
-   6) Artist-Card: Box + Shadow ähnlich zu Tours
+   6) Artist card: box + shadow similar to tours
 ------------------------------------------------ */
 .artist-card {
     background-color: #fff;
@@ -153,8 +153,8 @@
     font-size: 0.875rem;
     line-height: 1.2;
     color: #333;
-    max-height: 3.6em; /* ca. 3 Zeilen bei 1.2er Zeilenhöhe */
-    overflow: hidden;  /* Versteckt Rest */
+    max-height: 3.6em; /* about 3 lines at 1.2 line-height */
+    overflow: hidden;  /* hides remaining text */
     margin: 0 0 0.5rem;
     position: relative;
     word-break: break-word;
@@ -221,7 +221,7 @@
 }
 
 /* ------------------------------------------------
-   11) Modal (Löschen‐Bestätigung)
+   11) Modal (delete confirmation)
 ------------------------------------------------ */
 .modal-overlay {
     position: fixed;
@@ -279,7 +279,7 @@
 }
 
 /* ------------------------------------------------
-   12) Überschrift + „+ Neuer Künstler“-Button
+   12) Heading + "New artist" button
 ------------------------------------------------ */
 .artists-header {
     display: flex;

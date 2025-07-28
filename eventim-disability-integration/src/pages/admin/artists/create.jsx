@@ -121,7 +121,7 @@ export default function ArtistCreation() {
                     )}
                 </div>
 
-                {/* Biografie */}
+                {/* Biography */}
                 <div className="form-group">
                     <label htmlFor="biography" className="form-label">
                         Biografie
@@ -155,7 +155,7 @@ export default function ArtistCreation() {
                     )}
                 </div>
 
-                {/* Künstlerbild */}
+                {/* Artist image */}
                 <div className="form-group">
                     <label htmlFor="artistImage" className="form-label">
                         Künstlerbild hochladen
