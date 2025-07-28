@@ -28,9 +28,9 @@ coverage
 # Ignore all build directories
 build
 # Ignore all test files
-*.test.js
-# Ignore all test files
-*.spec.js
+# Allow test files to be tracked
+!*.test.js
+!*.spec.js
 # Ignore all TypeScript declaration files
 *.d.ts
 # Ignore all TypeScript configuration files
