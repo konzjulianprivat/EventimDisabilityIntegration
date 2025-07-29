@@ -3,11 +3,13 @@
 
 import React, { useState, useRef, useEffect } from 'react';
 import Image from 'next/image';
+import { useRouter } from 'next/router';
 import { useAuth } from '../hooks/useAuth';
 import { useCart } from '../hooks/useCart';
 import { API_BASE_URL } from '../config';
 
 export default function NavBar() {
+    const router = useRouter();
     const [openDropdown, setOpenDropdown] = useState(null);
     const [genres, setGenres] = useState([]);
     const [cities, setCities] = useState([]);
@@ -336,7 +338,7 @@ export default function NavBar() {
                                                         credentials: 'include',
                                                     });
                                                     if (res.ok) {
-                                                        window.location.href = '/checkout/shopping-cart';
+                                                        router.push('/checkout/shopping-cart');
                                                     } else if (res.status === 409) {
                                                         setShowCheckoutModal(true);
                                                     } else {

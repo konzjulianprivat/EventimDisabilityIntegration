@@ -4117,9 +4117,28 @@ app.get('/checkout-items', async (req, res) => {
         return res.status(401).json({ message: 'Not logged in' });
     }
 
-    const checkoutSession = req.session.checkout;
+    let checkoutSession = req.session.checkout;
     if (!checkoutSession || Date.now() - checkoutSession.startedAt > 15 * 60 * 1000) {
-        return res.status(404).json({ message: 'No active checkout' });
+        // try to restore from DB when the session information is missing
+        try {
+            const { rows } = await client.query(
+                'SELECT id, created_at FROM checkouts WHERE user_id = $1',
+                [userId]
+            );
+            if (rows.length === 0) {
+                req.session.checkout = null;
+                return res.status(404).json({ message: 'No active checkout' });
+            }
+            const { id, created_at } = rows[0];
+            checkoutSession = req.session.checkout = {
+                id,
+                startedAt: new Date(created_at).getTime(),
+                shippingInfo: null,
+            };
+        } catch (err) {
+            console.error('Error restoring checkout session:', err);
+            return res.status(500).json({ message: 'Server error' });
+        }
     }
 
     try {
