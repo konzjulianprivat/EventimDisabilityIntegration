@@ -72,6 +72,37 @@ function restoreSession(req, res, next) {
 
 app.use(restoreSession);
 
+// Try to restore an active checkout from the database if the session
+// does not currently contain one. This mirrors the behaviour of the
+// login session restoration based on the auth token.
+async function restoreCheckout(req, res, next) {
+    const userId = req.session.userId;
+    if (!userId) return next();
+    const co = req.session.checkout;
+    if (co && Date.now() - co.startedAt <= 15 * 60 * 1000) {
+        return next();
+    }
+    try {
+        const { rows } = await client.query(
+            'SELECT id, created_at FROM checkouts WHERE user_id = $1',
+            [userId]
+        );
+        if (rows.length) {
+            const { id, created_at } = rows[0];
+            req.session.checkout = {
+                id,
+                startedAt: new Date(created_at).getTime(),
+                shippingInfo: null,
+            };
+        }
+    } catch (err) {
+        console.error('Error restoring checkout session:', err);
+    }
+    next();
+}
+
+app.use(restoreCheckout);
+
 // Serve /uploads as static
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
