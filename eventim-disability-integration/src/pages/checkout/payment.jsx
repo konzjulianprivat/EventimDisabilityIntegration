@@ -6,19 +6,13 @@ import { useRouter } from "next/router";
 import { API_BASE_URL } from "../../config";
 import CheckoutExpiredModal from "../../components/CheckoutExpiredModal";
 
-export async function getServerSideProps({ req, res }) {
+export async function getServerSideProps({ req }) {
     const cookie = req.headers.cookie || "";
     try {
-        const backendRes = await fetch(`${API_BASE_URL}/checkout-items`, {
+        const res = await fetch(`${API_BASE_URL}/checkout-items`, {
             headers: { cookie },
         });
-
-        const setCookie = backendRes.headers.get("set-cookie");
-        if (setCookie) {
-            res.setHeader("set-cookie", setCookie);
-        }
-
-        if (backendRes.status !== 200) {
+        if (res.status !== 200) {
             return { redirect: { destination: "/", permanent: false } };
         }
     } catch {
