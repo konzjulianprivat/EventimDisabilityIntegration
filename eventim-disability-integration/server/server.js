@@ -72,36 +72,6 @@ function restoreSession(req, res, next) {
 
 app.use(restoreSession);
 
-async function restoreCheckout(req, res, next) {
-    if (!req.session.userId || req.session.checkout) return next();
-    const checkoutId = req.cookies && req.cookies.checkoutId;
-    if (!checkoutId) return next();
-    try {
-        const { rows } = await client.query(
-            'SELECT created_at FROM checkouts WHERE id = $1 AND user_id = $2',
-            [checkoutId, req.session.userId]
-        );
-        if (!rows.length) {
-            res.clearCookie('checkoutId');
-            return next();
-        }
-        const created = rows[0].created_at;
-        const started = new Date(created).getTime();
-        if (Date.now() - started > 15 * 60 * 1000) {
-            await client.query('DELETE FROM checkout_items WHERE checkout_id = $1', [checkoutId]);
-            await client.query('DELETE FROM checkouts WHERE id = $1', [checkoutId]);
-            res.clearCookie('checkoutId');
-            return next();
-        }
-        req.session.checkout = { id: checkoutId, startedAt: started, shippingInfo: null };
-    } catch (err) {
-        console.error('Error restoring checkout:', err);
-    }
-    next();
-}
-
-app.use(restoreCheckout);
-
 // Serve /uploads as static
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
@@ -861,7 +831,6 @@ app.post('/checkout-shipping', (req, res) => {
 
     if (Date.now() - req.session.checkout.startedAt > 15 * 60 * 1000) {
         req.session.checkout = null;
-        res.clearCookie('checkoutId');
         return res.status(400).json({ message: 'Checkout expired' });
     }
 
@@ -881,7 +850,6 @@ app.get('/checkout-shipping', (req, res) => {
 
     if (Date.now() - req.session.checkout.startedAt > 15 * 60 * 1000) {
         req.session.checkout = null;
-        res.clearCookie('checkoutId');
         return res.status(404).json({ message: 'Checkout expired' });
     }
 
@@ -899,7 +867,6 @@ app.post('/checkout-payment', (req, res) => {
 
     if (Date.now() - req.session.checkout.startedAt > 15 * 60 * 1000) {
         req.session.checkout = null;
-        res.clearCookie('checkoutId');
         return res.status(400).json({ message: 'Checkout expired' });
     }
 
@@ -919,7 +886,6 @@ app.get('/checkout-payment', (req, res) => {
 
     if (Date.now() - req.session.checkout.startedAt > 15 * 60 * 1000) {
         req.session.checkout = null;
-        res.clearCookie('checkoutId');
         return res.status(404).json({ message: 'Checkout expired' });
     }
 
@@ -4135,13 +4101,6 @@ app.post('/checkout', async (req, res) => {
             shippingInfo: null,
         };
 
-        res.cookie('checkoutId', checkoutId, {
-            httpOnly: true,
-            secure: false,
-            sameSite: 'lax',
-            maxAge: 15 * 60 * 1000,
-        });
-
         return res.status(201).json({ checkoutId });
     } catch (err) {
         await client.query('ROLLBACK');
@@ -4160,8 +4119,6 @@ app.get('/checkout-items', async (req, res) => {
 
     const checkoutSession = req.session.checkout;
     if (!checkoutSession || Date.now() - checkoutSession.startedAt > 15 * 60 * 1000) {
-        req.session.checkout = null;
-        res.clearCookie('checkoutId');
         return res.status(404).json({ message: 'No active checkout' });
     }
 
@@ -4172,7 +4129,6 @@ app.get('/checkout-items', async (req, res) => {
             [userId]
         );
         if (coRows.length === 0) {
-            res.clearCookie('checkoutId');
             return res.status(404).json({ message: 'No active checkout' });
         }
         const { id: checkoutId, created_at } = coRows[0];
@@ -4236,7 +4192,6 @@ app.delete('/checkout', async (req, res) => {
         await client.query('DELETE FROM checkouts WHERE id = $1', [checkoutId]);
         await client.query('COMMIT');
         req.session.checkout = null;
-        res.clearCookie('checkoutId');
 
         return res.json({ message: 'Checkout cleared' });
     } catch (err) {
@@ -4280,7 +4235,6 @@ app.delete('/checkout-items/:id', async (req, res) => {
         if (remaining.length === 0) {
             await client.query('DELETE FROM checkouts WHERE user_id = $1', [userId]);
             req.session.checkout = null;
-            res.clearCookie('checkoutId');
         }
 
         return res.json({ message: 'Item removed' });
@@ -4297,7 +4251,6 @@ app.post('/orders', async (req, res) => {
     const sessionCheckout = req.session.checkout;
     if (!sessionCheckout || Date.now() - sessionCheckout.startedAt > 15 * 60 * 1000) {
         req.session.checkout = null;
-        res.clearCookie('checkoutId');
         return res.status(400).json({ message: 'Checkout expired' });
     }
     if (!sessionCheckout.shippingInfo || !sessionCheckout.paymentMethod) {
@@ -4432,7 +4385,6 @@ app.post('/orders', async (req, res) => {
         await client.query('COMMIT');
 
         req.session.checkout = null;
-        res.clearCookie('checkoutId');
         return res.status(201).json({ orderId });
     } catch (err) {
         await client.query('ROLLBACK');
