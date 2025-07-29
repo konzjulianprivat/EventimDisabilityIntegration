@@ -820,16 +820,30 @@ app.post('/disability-requests/:id/decline', async (req, res) => {
 });
 
 // Temporäres Speichern der Versandinformationen in der Session (wird später in der DB gespeichert)
-app.post('/checkout-shipping', (req, res) => {
+app.post('/checkout-shipping', async (req, res) => {
     if (!req.session.userId) {
         return res.status(401).json({ message: 'Not logged in' });
     }
 
-    if (!req.session.checkout) {
-        return res.status(400).json({ message: 'No active checkout' });
+    let checkout = req.session.checkout;
+    if (!checkout) {
+        try {
+            const { rows } = await client.query(
+                'SELECT id FROM checkouts WHERE user_id = $1',
+                [req.session.userId]
+            );
+            if (!rows.length) {
+                return res.status(400).json({ message: 'No active checkout' });
+            }
+            checkout = { id: rows[0].id, startedAt: Date.now(), shippingInfo: null };
+            req.session.checkout = checkout;
+        } catch (err) {
+            console.error('Error restoring checkout in POST /checkout-shipping:', err);
+            return res.status(500).json({ message: 'Server error' });
+        }
     }
 
-    if (Date.now() - req.session.checkout.startedAt > 15 * 60 * 1000) {
+    if (Date.now() - checkout.startedAt > 15 * 60 * 1000) {
         req.session.checkout = null;
         return res.status(400).json({ message: 'Checkout expired' });
     }
@@ -839,16 +853,30 @@ app.post('/checkout-shipping', (req, res) => {
 });
 
 // Liefert die aktuell in der Checkout-Session gespeicherten Lieferinformationen
-app.get('/checkout-shipping', (req, res) => {
+app.get('/checkout-shipping', async (req, res) => {
     if (!req.session.userId) {
         return res.status(401).json({ message: 'Not logged in' });
     }
 
-    if (!req.session.checkout) {
-        return res.status(404).json({ message: 'No active checkout' });
+    let checkout = req.session.checkout;
+    if (!checkout) {
+        try {
+            const { rows } = await client.query(
+                'SELECT id FROM checkouts WHERE user_id = $1',
+                [req.session.userId]
+            );
+            if (!rows.length) {
+                return res.status(404).json({ message: 'No active checkout' });
+            }
+            checkout = { id: rows[0].id, startedAt: Date.now(), shippingInfo: null };
+            req.session.checkout = checkout;
+        } catch (err) {
+            console.error('Error restoring checkout in GET /checkout-shipping:', err);
+            return res.status(500).json({ message: 'Server error' });
+        }
     }
 
-    if (Date.now() - req.session.checkout.startedAt > 15 * 60 * 1000) {
+    if (Date.now() - checkout.startedAt > 15 * 60 * 1000) {
         req.session.checkout = null;
         return res.status(404).json({ message: 'Checkout expired' });
     }
@@ -856,16 +884,30 @@ app.get('/checkout-shipping', (req, res) => {
     return res.json({ shippingInfo: req.session.checkout.shippingInfo || null });
 });
 // Temporäres Speichern der Zahlungsart in der Session
-app.post('/checkout-payment', (req, res) => {
+app.post('/checkout-payment', async (req, res) => {
     if (!req.session.userId) {
         return res.status(401).json({ message: 'Not logged in' });
     }
 
-    if (!req.session.checkout) {
-        return res.status(400).json({ message: 'No active checkout' });
+    let checkout = req.session.checkout;
+    if (!checkout) {
+        try {
+            const { rows } = await client.query(
+                'SELECT id FROM checkouts WHERE user_id = $1',
+                [req.session.userId]
+            );
+            if (!rows.length) {
+                return res.status(400).json({ message: 'No active checkout' });
+            }
+            checkout = { id: rows[0].id, startedAt: Date.now(), shippingInfo: null };
+            req.session.checkout = checkout;
+        } catch (err) {
+            console.error('Error restoring checkout in POST /checkout-payment:', err);
+            return res.status(500).json({ message: 'Server error' });
+        }
     }
 
-    if (Date.now() - req.session.checkout.startedAt > 15 * 60 * 1000) {
+    if (Date.now() - checkout.startedAt > 15 * 60 * 1000) {
         req.session.checkout = null;
         return res.status(400).json({ message: 'Checkout expired' });
     }
@@ -875,16 +917,30 @@ app.post('/checkout-payment', (req, res) => {
 });
 
 // Liefert die aktuell gespeicherte Zahlungsart
-app.get('/checkout-payment', (req, res) => {
+app.get('/checkout-payment', async (req, res) => {
     if (!req.session.userId) {
         return res.status(401).json({ message: 'Not logged in' });
     }
 
-    if (!req.session.checkout) {
-        return res.status(404).json({ message: 'No active checkout' });
+    let checkout = req.session.checkout;
+    if (!checkout) {
+        try {
+            const { rows } = await client.query(
+                'SELECT id FROM checkouts WHERE user_id = $1',
+                [req.session.userId]
+            );
+            if (!rows.length) {
+                return res.status(404).json({ message: 'No active checkout' });
+            }
+            checkout = { id: rows[0].id, startedAt: Date.now(), shippingInfo: null };
+            req.session.checkout = checkout;
+        } catch (err) {
+            console.error('Error restoring checkout in GET /checkout-payment:', err);
+            return res.status(500).json({ message: 'Server error' });
+        }
     }
 
-    if (Date.now() - req.session.checkout.startedAt > 15 * 60 * 1000) {
+    if (Date.now() - checkout.startedAt > 15 * 60 * 1000) {
         req.session.checkout = null;
         return res.status(404).json({ message: 'Checkout expired' });
     }
@@ -4117,9 +4173,27 @@ app.get('/checkout-items', async (req, res) => {
         return res.status(401).json({ message: 'Not logged in' });
     }
 
-    const checkoutSession = req.session.checkout;
+    let checkoutSession = req.session.checkout;
     if (!checkoutSession || Date.now() - checkoutSession.startedAt > 15 * 60 * 1000) {
-        return res.status(404).json({ message: 'No active checkout' });
+        try {
+            const { rows } = await client.query(
+                'SELECT id FROM checkouts WHERE user_id = $1',
+                [userId]
+            );
+            if (!rows.length) {
+                return res.status(404).json({ message: 'No active checkout' });
+            }
+            // restore session checkout if DB record exists
+            checkoutSession = {
+                id: rows[0].id,
+                startedAt: Date.now(),
+                shippingInfo: null,
+            };
+            req.session.checkout = checkoutSession;
+        } catch (err) {
+            console.error('Error restoring checkout session:', err);
+            return res.status(500).json({ message: 'Server error' });
+        }
     }
 
     try {
@@ -4248,10 +4322,23 @@ app.post('/orders', async (req, res) => {
     const userId = req.session.userId;
     if (!userId) return res.status(401).json({ message: 'Not logged in' });
 
-    const sessionCheckout = req.session.checkout;
+    let sessionCheckout = req.session.checkout;
     if (!sessionCheckout || Date.now() - sessionCheckout.startedAt > 15 * 60 * 1000) {
-        req.session.checkout = null;
-        return res.status(400).json({ message: 'Checkout expired' });
+        try {
+            const { rows } = await client.query(
+                'SELECT id FROM checkouts WHERE user_id = $1',
+                [userId]
+            );
+            if (!rows.length) {
+                req.session.checkout = null;
+                return res.status(400).json({ message: 'Checkout expired' });
+            }
+            sessionCheckout = { id: rows[0].id, startedAt: Date.now(), shippingInfo: null };
+            req.session.checkout = sessionCheckout;
+        } catch (err) {
+            console.error('Error restoring checkout in POST /orders:', err);
+            return res.status(500).json({ message: 'Server error' });
+        }
     }
     if (!sessionCheckout.shippingInfo || !sessionCheckout.paymentMethod) {
         return res.status(400).json({ message: 'Missing checkout info' });
