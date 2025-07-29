@@ -1,4 +1,3 @@
-// pages/checkout/payment.jsx
 "use client";
 
 import React, { useState, useEffect, useRef } from "react";
@@ -7,196 +6,233 @@ import { API_BASE_URL } from "../../config";
 import CheckoutExpiredModal from "../../components/CheckoutExpiredModal";
 
 export async function getServerSideProps({ req }) {
-    const cookie = req.headers.cookie || "";
-    try {
-        const res = await fetch(`${API_BASE_URL}/checkout-items`, {
-            headers: { cookie },
-        });
-        if (res.status !== 200) {
-            return { redirect: { destination: "/", permanent: false } };
-        }
-    } catch {
-        return { redirect: { destination: "/", permanent: false } };
+  const cookie = req.headers.cookie || "";
+  try {
+    const res = await fetch(`${API_BASE_URL}/checkout-items`, {
+      headers: { cookie },
+    });
+    if (res.status !== 200) {
+      return { redirect: { destination: "/", permanent: false } };
     }
-    return { props: {} };
+  } catch {
+    return { redirect: { destination: "/", permanent: false } };
+  }
+  return { props: {} };
 }
 
 export default function Payment() {
-    const router = useRouter();
+  const router = useRouter();
 
-    // --- checkout + timer state (same as shipping) ---
-    const [items, setItems] = useState([]);
-    const [createdAt, setCreatedAt] = useState(null);
-    const [timer, setTimer] = useState(0);
-    const offsetRef = useRef(0);
+  // --- checkout + timer state (same as shipping) ---
+  const [items, setItems] = useState([]);
+  const [createdAt, setCreatedAt] = useState(null);
+  const [timer, setTimer] = useState(0);
+  const offsetRef = useRef(0);
 
-    // --- load payment options from DB ---
-    const [paymentOptions, setPaymentOptions] = useState([]);
-    const [selectedPayment, setSelectedPayment] = useState(null);
+  // --- load payment options from DB ---
+  const [paymentOptions, setPaymentOptions] = useState([]);
+  const [selectedPayment, setSelectedPayment] = useState(null);
 
-    // --- shipping options and selection ---
-    const [shippingOptions, setShippingOptions] = useState([]);
-    const [selectedShipping, setSelectedShipping] = useState(null);
+  // --- shipping options and selection ---
+  const [shippingOptions, setShippingOptions] = useState([]);
+  const [selectedShipping, setSelectedShipping] = useState(null);
+  const [shippingInfo, setShippingInfo] = useState(null);
 
-    const [showExpiredModal, setShowExpiredModal] = useState(false);
+  const [showExpiredModal, setShowExpiredModal] = useState(false);
 
-    // Fetch payment options on mount
-    useEffect(() => {
-        fetch(`${API_BASE_URL}/payment-options`, {
-            credentials: "include",
-        })
-            .then((res) => res.json())
-            .then(({ paymentOptions }) => {
-                setPaymentOptions(paymentOptions);
-                if (paymentOptions.length) {
-                    setSelectedPayment(paymentOptions[0]);
-                }
-            })
-            .catch((err) => console.error("Error fetching payment options:", err));
-    }, []);
-
-    // Fetch shipping options on mount
-    useEffect(() => {
-        fetch(`${API_BASE_URL}/shipping-options`, { credentials: "include" })
-            .then((res) => (res.ok ? res.json() : { options: [] }))
-            .then(({ options }) => setShippingOptions(options || []))
-            .catch((err) => console.error("Error fetching shipping options:", err));
-    }, []);
-
-    // After shipping options loaded, load selection from session
-    useEffect(() => {
-        if (!shippingOptions.length) return;
-        fetch(`${API_BASE_URL}/checkout-shipping`, { credentials: "include" })
-            .then((res) => (res.ok ? res.json() : null))
-            .then((data) => {
-                if (data && data.shippingInfo && data.shippingInfo.shippingMethod) {
-                    const opt = shippingOptions.find(
-                        (o) => o.id === data.shippingInfo.shippingMethod
-                    );
-                    if (opt) setSelectedShipping(opt);
-                }
-            })
-            .catch((err) => console.error("Error fetching session shipping:", err));
-    }, [shippingOptions]);
-
-    // After payment options loaded, check if session stored a method
-    useEffect(() => {
-        if (!paymentOptions.length) return;
-        fetch(`${API_BASE_URL}/checkout-payment`, { credentials: "include" })
-            .then((res) => (res.ok ? res.json() : null))
-            .then((data) => {
-                if (data && data.paymentMethod) {
-                    const opt = paymentOptions.find((o) => o.id === data.paymentMethod);
-                    if (opt) setSelectedPayment(opt);
-                }
-            })
-            .catch((err) => console.error("Error fetching session payment:", err));
-    }, [paymentOptions]);
-
-    // Persist selection in session whenever it changes
-    useEffect(() => {
-        if (!selectedPayment) return;
-        fetch(`${API_BASE_URL}/checkout-payment`, {
-            method: "POST",
-            credentials: "include",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ paymentMethod: selectedPayment.id }),
-        }).catch(() => {});
-    }, [selectedPayment]);
-
-    // --- fetch checkout items + createdAt ---
-    const fetchCheckout = async () => {
-        try {
-            const res = await fetch(`${API_BASE_URL}/checkout-items`, {
-                credentials: "include",
-            });
-            if (res.status === 404) {
-                if (createdAt !== null) {
-                    setShowExpiredModal(true);
-                } else {
-                    window.location.href = "/";
-                }
-                return;
-            }
-            const { createdAt: serverCreatedAt, items: fetchedItems } =
-                await res.json();
-            setItems(Array.isArray(fetchedItems) ? fetchedItems : []);
-            offsetRef.current = 0;
-            setCreatedAt(new Date(serverCreatedAt).getTime());
-        } catch (err) {
-            console.error("Error fetching checkout:", err);
+  // Fetch payment options on mount
+  useEffect(() => {
+    fetch(`${API_BASE_URL}/payment-options`, {
+      credentials: "include",
+    })
+      .then((res) => res.json())
+      .then(({ paymentOptions }) => {
+        setPaymentOptions(paymentOptions);
+        if (paymentOptions.length) {
+          setSelectedPayment(paymentOptions[0]);
         }
-    };
+      })
+      .catch((err) => console.error("Error fetching payment options:", err));
+  }, []);
 
-    useEffect(() => {
-        fetchCheckout();
-        const poll = setInterval(fetchCheckout, 15_000);
-        return () => clearInterval(poll);
-    }, []);
+  // Fetch shipping options on mount
+  useEffect(() => {
+    fetch(`${API_BASE_URL}/shipping-options`, { credentials: "include" })
+      .then((res) => (res.ok ? res.json() : { options: [] }))
+      .then(({ options }) => setShippingOptions(options || []))
+      .catch((err) => console.error("Error fetching shipping options:", err));
+  }, []);
 
-    // --- timer logic ---
-    useEffect(() => {
-        if (!createdAt) return;
-        const iv = setInterval(() => {
-            const now = Date.now() + offsetRef.current;
-            const elapsed = Math.floor((now - createdAt) / 1000);
-            const remaining = 15 * 60 - elapsed;
-            if (remaining <= 0) {
-                clearInterval(iv);
-                fetch(`${API_BASE_URL}/checkout`, {
-                    method: "DELETE",
-                    credentials: "include",
-                }).finally(() => {
-                    setShowExpiredModal(true);
-                });
-            } else {
-                setTimer(remaining);
-            }
-        }, 1000);
-        return () => clearInterval(iv);
-    }, [createdAt]);
-
-    const formatTimer = (s) => {
-        const m = Math.floor(s / 60);
-        const sec = s % 60 < 10 ? `0${s % 60}` : s % 60;
-        return `${m}:${sec} Min.`;
-    };
-
-    // --- compute totals ---
-    const subtotal = items.reduce((sum, t) => sum + t.price * t.quantity, 0);
-    const shippingCost = selectedShipping ? Number(selectedShipping.price) : 0;
-    const total = subtotal + shippingCost;
-
-    // --- submit selected payment ---
-    const handleSubmit = async () => {
-        if (!selectedPayment) return;
-        try {
-            await fetch(`${API_BASE_URL}/checkout-payment`, {
-                method: "POST",
-                credentials: "include",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ paymentMethod: selectedPayment.id }),
-            });
-
-            const res = await fetch(`${API_BASE_URL}/orders`, {
-                method: "POST",
-                credentials: "include",
-                headers: { "Content-Type": "application/json" },
-            });
-
-            if (res.ok) {
-                router.push({
-                    pathname: '/checkout/success',
-                    query: { from: 'payment' },
-                });
-            } else {
-                console.error("Order creation failed");
-            }
-        } catch (err) {
-            console.error("Error creating order:", err);
+  // After shipping options loaded, load selection and info from session
+  useEffect(() => {
+    if (!shippingOptions.length) return;
+    fetch(`${API_BASE_URL}/checkout-shipping`, { credentials: "include" })
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (data && data.shippingInfo) {
+          setShippingInfo(data.shippingInfo);
+          if (data.shippingInfo.shippingMethod) {
+            const opt = shippingOptions.find(
+              (o) => o.id === data.shippingInfo.shippingMethod
+            );
+            if (opt) setSelectedShipping(opt);
+          }
         }
-    };
+      })
+      .catch((err) => console.error("Error fetching session shipping:", err));
+  }, [shippingOptions]);
 
+  // After payment options loaded, check if session stored a method
+  useEffect(() => {
+    if (!paymentOptions.length) return;
+    fetch(`${API_BASE_URL}/checkout-payment`, { credentials: "include" })
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (data && data.paymentMethod) {
+          const opt = paymentOptions.find((o) => o.id === data.paymentMethod);
+          if (opt) setSelectedPayment(opt);
+        }
+      })
+      .catch((err) => console.error("Error fetching session payment:", err));
+  }, [paymentOptions]);
+
+  // Persist selection in session whenever it changes
+  useEffect(() => {
+    if (!selectedPayment) return;
+    fetch(`${API_BASE_URL}/checkout-payment`, {
+      method: "POST",
+      credentials: "include",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ paymentMethod: selectedPayment.id }),
+    }).catch(() => {});
+  }, [selectedPayment]);
+
+  // --- fetch checkout items + createdAt ---
+  const fetchCheckout = async () => {
+    try {
+      const res = await fetch(`${API_BASE_URL}/checkout-items`, {
+        credentials: "include",
+      });
+      if (res.status === 404) {
+        if (createdAt !== null) {
+          setShowExpiredModal(true);
+        } else {
+          window.location.href = "/";
+        }
+        return;
+      }
+      const { createdAt: serverCreatedAt, items: fetchedItems } =
+        await res.json();
+      setItems(Array.isArray(fetchedItems) ? fetchedItems : []);
+      offsetRef.current = 0;
+      setCreatedAt(new Date(serverCreatedAt).getTime());
+    } catch (err) {
+      console.error("Error fetching checkout:", err);
+    }
+  };
+
+  useEffect(() => {
+    fetchCheckout();
+    const poll = setInterval(fetchCheckout, 15_000);
+    return () => clearInterval(poll);
+  }, []);
+
+  // --- timer logic ---
+  useEffect(() => {
+    if (!createdAt) return;
+    const iv = setInterval(() => {
+      const now = Date.now() + offsetRef.current;
+      const elapsed = Math.floor((now - createdAt) / 1000);
+      const remaining = 15 * 60 - elapsed;
+      if (remaining <= 0) {
+        clearInterval(iv);
+        fetch(`${API_BASE_URL}/checkout`, {
+          method: "DELETE",
+          credentials: "include",
+        }).finally(() => {
+          setShowExpiredModal(true);
+        });
+      } else {
+        setTimer(remaining);
+      }
+    }, 1000);
+    return () => clearInterval(iv);
+  }, [createdAt]);
+
+  const formatTimer = (s) => {
+    const m = Math.floor(s / 60);
+    const sec = s % 60 < 10 ? `0${s % 60}` : s % 60;
+    return `${m}:${sec} Min.`;
+  };
+
+  // --- compute totals ---
+  const subtotal = items.reduce((sum, t) => sum + t.price * t.quantity, 0);
+  const shippingCost = selectedShipping ? Number(selectedShipping.price) : 0;
+  const total = subtotal + shippingCost;
+
+  // --- submit selected payment ---
+  const handleSubmit = async () => {
+    if (!selectedPayment || !selectedShipping || !shippingInfo) {
+      alert("Please select both payment and shipping methods, and ensure shipping information is complete.");
+      return;
+    }
+    try {
+      // 1) Save payment method
+      const payRes = await fetch(`${API_BASE_URL}/checkout-payment`, {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ paymentMethod: selectedPayment.id }),
+      });
+      const payBody = await payRes.json();
+      if (!payRes.ok) {
+        console.error("Failed to set payment method:", payBody);
+        alert(payBody.message || "Failed to set payment method");
+        return;
+      }
+
+      // 2) Ensure shipping info is set
+      const updatedShippingInfo = { ...shippingInfo, shippingMethod: selectedShipping.id };
+      const shippingRes = await fetch(`${API_BASE_URL}/checkout-shipping`, {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ shippingInfo: updatedShippingInfo }),
+      });
+      if (!shippingRes.ok) {
+        console.error("Failed to set shipping info:", await shippingRes.json());
+        alert("Failed to set shipping information");
+        return;
+      }
+
+      // 3) Create order
+      const orderRes = await fetch(`${API_BASE_URL}/orders`, {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+      });
+      const orderBody = await orderRes.json();
+      if (!orderRes.ok) {
+        console.error("Order creation failed:", orderBody);
+        alert(orderBody.message || "Order creation failed");
+        return;
+      }
+
+      // 4) On success, navigate to success page
+      router.push({
+        pathname: '/checkout/success',
+        query: { from: 'payment' },
+      });
+    } catch (err) {
+      console.error("Error creating order:", err);
+      if (err.message === "Missing checkout info") {
+        alert("Some checkout information is missing. Please ensure all details are filled out.");
+      } else {
+        alert("Unexpected error, please try again.");
+      }
+    }
+  };
+  
     return (
         <>
         <div className="checkoutPage">

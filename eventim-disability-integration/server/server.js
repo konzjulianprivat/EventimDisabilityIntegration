@@ -4333,15 +4333,23 @@ app.post('/orders', async (req, res) => {
                 req.session.checkout = null;
                 return res.status(400).json({ message: 'Checkout expired' });
             }
-            sessionCheckout = { id: rows[0].id, startedAt: Date.now(), shippingInfo: null };
+            sessionCheckout = { id: rows[0].id, startedAt: Date.now(), shippingInfo: null, paymentMethod: null };
             req.session.checkout = sessionCheckout;
         } catch (err) {
             console.error('Error restoring checkout in POST /orders:', err);
             return res.status(500).json({ message: 'Server error' });
         }
     }
+
+    console.log('Session checkout:', sessionCheckout);
+
     if (!sessionCheckout.shippingInfo || !sessionCheckout.paymentMethod) {
-        return res.status(400).json({ message: 'Missing checkout info' });
+        console.log('Missing checkout info. ShippingInfo:', sessionCheckout.shippingInfo, 'PaymentMethod:', sessionCheckout.paymentMethod);
+        return res.status(400).json({ 
+            message: 'Missing checkout info',
+            missingShippingInfo: !sessionCheckout.shippingInfo,
+            missingPaymentMethod: !sessionCheckout.paymentMethod
+        });
     }
 
     try {
@@ -4358,6 +4366,8 @@ app.post('/orders', async (req, res) => {
         }
         const checkoutId = coRows[0].id;
 
+        console.log('Found checkout record:', checkoutId);
+
         // Pull event_id as well so we can look up capacity for this category
         const { rows: items } = await client.query(
             `SELECT id,
@@ -4370,6 +4380,8 @@ app.post('/orders', async (req, res) => {
        WHERE checkout_id = $1`,
             [checkoutId]
         );
+
+        console.log('Fetched checkout items:', items);
 
         // Insert order header
         const info = sessionCheckout.shippingInfo.shippingInfo || {};
@@ -4401,6 +4413,8 @@ app.post('/orders', async (req, res) => {
             ]
         );
 
+        console.log('Inserted order header:', orderId);
+
         // For each category in the cart, figure out seat numbers
         for (const it of items) {
             // 1) load capacity for this category (and event, if you want to enforce per-event)
@@ -4416,6 +4430,8 @@ app.post('/orders', async (req, res) => {
             }
             const capacity = capRows[0].capacity;
 
+            console.log(`Capacity for category ${it.event_category_id}:`, capacity);
+
             // 2) grab all already-taken seats for this category
             const { rows: seatRows } = await client.query(
                 `SELECT seat_number
@@ -4425,6 +4441,8 @@ app.post('/orders', async (req, res) => {
             );
             // parse to integers
             const taken = new Set(seatRows.map(r => parseInt(r.seat_number, 10)));
+
+            console.log(`Taken seats for category ${it.event_category_id}:`, taken);
 
             // 3) for each ticket to mint, pick the lowest-numbered free seat
             for (let i = 0; i < it.quantity; i++) {
@@ -4463,6 +4481,8 @@ app.post('/orders', async (req, res) => {
            VALUES ($1, $2, $3)`,
                     [uuidv4(), orderId, ticketId]
                 );
+
+                console.log(`Created ticket ${ticketId} for seat ${seatNum}`);
             }
         }
 
@@ -4470,6 +4490,8 @@ app.post('/orders', async (req, res) => {
         await client.query('DELETE FROM checkout_items WHERE checkout_id = $1', [checkoutId]);
         await client.query('DELETE FROM checkouts      WHERE id          = $1', [checkoutId]);
         await client.query('COMMIT');
+
+        console.log('Order creation completed successfully');
 
         req.session.checkout = null;
         return res.status(201).json({ orderId });
