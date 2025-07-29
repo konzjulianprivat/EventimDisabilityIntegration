@@ -56,3 +56,27 @@
   - Im Projekt werden keine speziellen PM2-Intervalle definiert, da PM2 permanent den Prozessstatus beobachtet. Der Circuit Breaker führt jedoch alle zehn Sekunden einen Datenbank-Healthcheck durch und öffnet sich fünf Sekunden lang nach jedem Fehler (`resetTimeout`), bevor ein erneuter Verbindungsversuch erfolgt.
 - Wie kann die App dennoch abstürzen?
   - Trotz Circuit Breaker und PM2 können unbehandelte Exceptions, Speicherlecks oder Logikfehler im Code zum Absturz führen. Wenn beispielsweise ein API-Endpunkt eine falsche Query ausführt oder Endlosschleifen erzeugt, beendet sich der Prozess. PM2 startet ihn zwar neu, aber der Fehler muss im Quellcode behoben werden.
+
+#### Wie funktioniert Rendering mit Nest.js/Express und allen genutzten Technologien?
+
+- Welche Rendering-Strategie wird auf dieser Webseite genutzt
+- Wie wird sichergestellt auf der Websiete, dass Rendern nicht zu lange braucht
+- Welche Vorteile beim Rendering würden andere Frameworks bieten, die nicht genutzt wurden?
+
+#### Was sind die konkreten Unterschiede von Nest.js zu...
+
+- Svelte
+- SvelteKit
+- Vue
+- Angular
+- React
+
+#### Integrationen von Backend, Frontend und Datenbank
+
+- Welche Libraries und Module wurden benutzt, um eine Kommunikation zwischen Frontend, Backend und Datenbank zu ermöglichen
+- Wie genau wird diese kommunikation technisch ermöglicht und wie genau funktionieren die frameworks technisch?
+- welche konkreten Methoden machen dies im Code? generiere die code snippets als Beispiel dafür aus einem der Files in Frontend, Backend (server/server.js)
+
+#### Weitere Fragen
+
+Schreibe hier selbst Fragen die sehr technisch sind und ein Dozent in einer Abfrage zu der App stellen könnte und beantworte diese selbst, damti ein volliges tenihes verständnis über die app entsteht. es müpssen mind 10 fragen sein
