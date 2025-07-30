@@ -1,22 +1,22 @@
 /* squareTourCard.css */
 
-/* Wrapper, der die gesamte Karte umschließt */
+/* Wrapper that encloses the entire card */
 .square-tourCard-class {
-    width: 180px;        /* feste Breite */
-    flex-shrink: 0;      /* im flex-Container nicht schrumpfen */
+    width: 180px;        /* fixed width */
+    flex-shrink: 0;      /* do not shrink inside flex container */
     background-color: #ffffff;
     border: 1px solid #e0e0e0;
     border-radius: 4px;
     overflow: hidden;
     display: flex;
     flex-direction: column;
-    margin: 0;           /* kein eigener Margin: gap liefert Abstand */
+    margin: 0;           /* no own margin: gap provides spacing */
 }
 
-/* Bild-Wrapper, damit das Bild exakt 180 × 180 px groß ist */
+/* Image wrapper so the image is exactly 180 × 180 px */
 .square-tourCard-image-wrapper {
     width: 100%;
-    height: 180px;       /* Bild-Teil exakt 180px hoch */
+    height: 180px;       /* image section exactly 180px high */
     overflow: hidden;
     position: relative;
 }

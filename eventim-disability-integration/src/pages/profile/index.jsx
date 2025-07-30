@@ -57,7 +57,7 @@ export default function ProfilePage() {
     const { loading: authLoading, user } = useAuth();
 
     // --------------------------------------------
-    // Meine Daten section state
+    // My Data section state
     // --------------------------------------------
     const [editMode, setEditMode] = useState(false);
     const [profileData, setProfileData] = useState({
@@ -187,7 +187,7 @@ export default function ProfilePage() {
     };
 
     // --------------------------------------------
-    // Meine Daten helper functions
+    // My Data helper functions
     // --------------------------------------------
     const fetchProfileData = async () => {
         try {
@@ -426,7 +426,7 @@ export default function ProfilePage() {
     const formatTime = (d) =>
         new Date(d).toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' });
 
-    // Slices for blue cards (Meine Events) and recommendations
+    // Slices for blue cards (My Events) and recommendations
     const blueCards = myEvents.slice(0, visibleCount);
     // const recommendCards = tours.slice(
     //     carouselIndex,
@@ -471,7 +471,7 @@ export default function ProfilePage() {
             <main className="main-content" ref={mainContentRef}>
                 <div className="inner-container">
 
-                    {/* „Meine Events“ */}
+                    {/* "My Events" */}
                     <div className="white-box events-white-box">
                         <div className="content-inner">
                             <div ref= {eventsRef} className="events-header">

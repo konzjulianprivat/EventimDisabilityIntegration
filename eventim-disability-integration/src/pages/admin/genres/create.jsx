@@ -92,7 +92,7 @@ export default function GenreCreation() {
             )}
 
             <form onSubmit={handleSubmit}>
-                {/* Genre-Name */}
+                {/* Genre name */}
                 <div className="form-group">
                     <label htmlFor="name" className="form-label">
                         Genre Name *

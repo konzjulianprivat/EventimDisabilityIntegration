@@ -5,11 +5,11 @@ import React, { useState, useEffect } from "react";
 
 const ImageScroller = ({ tour }) => {
     const placeholderImage = "/pictures/placeholder.png";
-    // `tour` ist ein Array von { imageId, title, link }
-    // Nur zweimal fuer Endlosschleife noetig
+    // `tour` is an array of { imageId, title, link }
+    // Duplicated twice to create a seamless loop
     const loopedTours = [...tour, ...tour];
 
-    // Hier speichern wir die gemappten Object-URLs
+    // Store the mapped object URLs here
     const [urls, setUrls] = useState({}); // { [imageId]: objectURL }
     const [ready, setReady] = useState(false);
 

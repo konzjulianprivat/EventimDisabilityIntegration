@@ -1,3 +1,4 @@
+// Database pool and circuit breaker configuration
 const { Pool } = require('pg');
 const CircuitBreaker = require('opossum');
 const credentials = require('./credentials.json');

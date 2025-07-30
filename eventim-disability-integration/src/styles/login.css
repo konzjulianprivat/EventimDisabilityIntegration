@@ -1,35 +1,35 @@
-/* 1. Container-Große und Grund-Font */
+/* 1. Container size and base font */
 .login-container {
-    max-width: 700px;        /* Etwas schmaler, damit das weiße Kästchen nicht zu weit ausschießt */
-    margin: 4rem auto;       /* Abstand von oben/unten */
+    max-width: 700px;        /* Slightly narrower so the white box doesn't overflow */
+    margin: 4rem auto;       /* Spacing top/bottom */
     padding: 0 1rem;
     font-family: Arial, sans-serif;
 }
 
-/* 2. Hauptüberschrift */
+/* 2. Main heading */
 .login-title {
     padding-top: 2rem;
-    font-size: 2rem;         /* Groß genug, aber nicht zu riesig */
+    font-size: 2rem;         /* Large enough but not huge */
     font-weight: 600;
     color: #1d3058;
     margin-bottom: 1.5rem;
     text-align: left;
 }
 
-/* 3. Tab-Leiste */
+/* 3. Tab bar */
 .tab-list {
     display: flex;
     border: 1px solid #e0e5ea;
     border-radius: 8px 8px 0 0;
     overflow: hidden;
-    margin-bottom: 0;        /* Kurzer, schmaler Abstand vor dem Inhaltsbereich */
+    margin-bottom: 0;        /* Small gap before the content area */
     background-color: #f8fafd;
 }
 
 /* Einzelner Tab-Button */
 .tab {
     flex: 1;
-    padding: 0.75rem 1rem;   /* Etwas weniger vertikaler Padding als vorher */
+    padding: 0.75rem 1rem;   /* Slightly less vertical padding than before */
     background-color: #f8fafd;
     border: none;
     cursor: pointer;
@@ -40,55 +40,55 @@
     transition: background 0.2s;
 }
 
-/* Linke/rechte Abtrennung der Tabs */
+/* Left/right separation of tabs */
 .tab + .tab {
     border-left: 1px solid #e0e5ea;
 }
 
-/* wenn ein Tab aktiv ist */
+/* when a tab is active */
 .tab-active {
     background-color: #ffffff;
     border-bottom: 3px solid #007bff;  /* Farbige Unterstreichung */
 }
 
-/* Titeltext (“Ich habe bereits ein Konto”) */
+/* Title text ("I already have an account") */
 .tab-label {
-    font-size: 1rem;         /* Normale Lesbarkeit */
+    font-size: 1rem;         /* Normal readability */
     font-weight: 600;
     color: #1d3058;
     margin-bottom: 0.25rem;
 }
 
-/* Untertitel im Tab (“Login mit E-Mail-Adresse…”) */
+/* Subtitle in tab ("Login with email address…") */
 .tab-subtitle {
     font-size: 0.875rem;
     color: #577099;
     line-height: 1.2;
 }
 
-/* 4. Weißer Inhaltsbereich */
+/* 4. White content area */
 .form-section {
     border: 1px solid #e0e5ea;
     border-top: none;
     border-radius: 0 0 8px 8px;
     background-color: #ffffff;
-    padding: 2rem 2rem 2rem 2rem;  /* Homogener Innenabstand (oben, unten, links, rechts) */
+    padding: 2rem 2rem 2rem 2rem;  /* Even padding on all sides */
 }
 
-/* 5. Formular-Flex-Container */
+/* 5. Form flex container */
 .form-content {
     display: flex;
     flex-direction: column;
-    gap: 1.25rem;            /* Etwas größere Lücke zwischen den Feldern */
+    gap: 1.25rem;            /* Slightly larger gap between fields */
 }
 
-/* 6. Einzelnes Formularfeld (Label+Input) */
+/* 6. Single form field (label + input) */
 .form-group {
     display: flex;
     flex-direction: column;
 }
 
-/* Label über jedem Input                                      */
+/* Label above each input */
 .label {
     font-size: 1rem;
     font-weight: 500;
@@ -96,9 +96,9 @@
     margin-bottom: 0.5rem;
 }
 
-/* Input-Felder (Text/E-Mail/Passwort)                        */
+/* Input fields (text/email/password) */
 .input {
-    padding: 0.75rem 1rem;   /* Geringerer vertikaler Padding für schlankeren Look */
+    padding: 0.75rem 1rem;   /* Slightly smaller vertical padding for a slim look */
     border: 1px solid #c4c9d6;
     border-radius: 4px;
     font-size: 1rem;
@@ -106,21 +106,21 @@
     background-color: #ffffff;
 }
 
-/* Focus-Zustand für Input                                         */
+/* Focus state for input */
 .input:focus {
     outline: none;
     border-color: #007bff;
     box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.15);
 }
 
-/* 7. Link “Passwort vergessen?” rechtsbündig                   */
+/* 7. "Forgot password?" link aligned right */
 .form-footer {
     display: flex;
     justify-content: flex-end;
-    margin-top: -0.5rem;     /* Leichter Negativ-Abstand, damit der Link näher an den Inputs liegt */
+    margin-top: -0.5rem;     /* Slight negative margin so the link sits closer to the inputs */
 }
 
-/* Link-Styling                                                    */
+/* Link styling */
 .link-forgot,
 .link-inline {
     font-size: 0.875rem;
@@ -133,15 +133,15 @@
     text-decoration: underline;
 }
 
-/* 8. Beschreibende Texte im Registrierungs-Tab                   */
+/* 8. Descriptive text in registration tab */
 .info-text {
     font-size: 0.875rem;
     color: #4e5d78;
     line-height: 1.5;
-    margin-bottom: 0.75rem;  /* Abstand nach unten, damit der Button nicht so dicht sitzt */
+    margin-bottom: 0.75rem;  /* Space below so the button isn't too close */
 }
 
-/* 9. Primärer Button für Login/Weiter                            */
+/* 9. Primary button for login/continue */
 .button-primary {
     background-color: #007bff;
     color: #ffffff;
@@ -151,7 +151,7 @@
     border: none;
     border-radius: 4px;
     cursor: pointer;
-    margin-top: 1rem;        /* Etwas mehr Abstand über dem Button */
+    margin-top: 1rem;        /* A bit more space above the button */
     transition: background 0.2s;
 }
 
@@ -159,7 +159,7 @@
     background-color: #0069d9;
 }
 
-/* 10. Anpassung der Gesamtbox: leicht abgerundete Ecken und Schatten */
+/* 10. Overall box styling: slightly rounded corners and shadow */
 .login-container {
     border-radius: 8px;
     background-color: #ffffff;
@@ -167,7 +167,7 @@
     padding-bottom: 2rem;
 }
 
-/* Zusatz: Wenn das Fenster sehr klein wird, soll es nie breiter als 95% sein */
+/* Extra: never wider than 95% on very small screens */
 @media (max-width: 768px) {
     .login-container {
         max-width: 95%;

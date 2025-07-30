@@ -1,6 +1,6 @@
 /* filter-bar.css */
 /* -------------------------------------------------------------
-   Generische Filter‐Bar (Eventim‐Style in Blau/Grau/Weiß)
+   Generic filter bar (Eventim style in blue/gray/white)
 -------------------------------------------------------------*/
 .filter-bar-container {
     background-color: #fff;
@@ -117,7 +117,7 @@
     color: #333;
 }
 
-/* Checkbox‐Sets für Kategorien & Künstler */
+/* Checkbox sets for categories & artists */
 .filter-tour-fieldset {
     flex: 1;
 }

@@ -112,11 +112,11 @@
 
 .inner-container {
     width: 100%;
-    margin: 0 auto; /* zentriert */
+    margin: 0 auto; /* centered */
 }
 
 /* -----------------------------------
-   4) Weiße Boxen („white-box“)
+   4) White boxes ("white-box")
    ----------------------------------- */
 .white-box {
     background-color: #ffffff;
@@ -197,7 +197,7 @@
 .blue-cards {
     display: flex;
     gap: 1rem;
-    justify-content: flex-start; /* zentriert die ersten N Karten */
+    justify-content: flex-start; /* centers the first N cards */
     margin: 0 2rem
 }
 
@@ -226,7 +226,7 @@
 .carousel-track {
     display: flex;
     gap: 1rem;
-    justify-content: center; /* zentriert die sichtbaren Karten */
+    justify-content: center; /* centers the visible cards */
     transition: transform 0.3s ease;
 }
 
@@ -660,14 +660,14 @@
     transform: rotateX(180deg);
 }
 
-.profile__expiry-container {     /* oder Euer Eventim-Farbton */
+.profile__expiry-container {     /* or your Eventim color */
     border-radius: 4px;
-    padding: 0.5rem 1rem;         /* etwas horizontalen Puffer */
-    display: flex;                /* <— wichtig: checkbox + text inline */
+    padding: 0.5rem 1rem;         /* a bit of horizontal padding */
+    display: flex;                /* <— important: checkbox + text inline */
     align-items: center;
     gap: 0.5rem;
     margin-top: 0.5rem;
-    width: fit-content;           /* passt die Box eng ans Inhaltsmaß an */
+    width: fit-content;           /* fits box tightly to content */
 }
 
 .profile__expiry-checkbox {
